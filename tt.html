@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教師/班別時間表查詢</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .input-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            flex-wrap: wrap;
+        }
+        .dropdown-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-grow: 1;
+            position: relative;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            width: 18ch;
+            max-width: 18ch;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        .period-col {
+            width: 4ch !important;
+            max-width: 4ch;
+            background-color: #ffff22;
+            color: white;
+            font-weight: bold;
+        }
+        .time-col {
+            width: 10ch !important;
+            max-width: 10ch;
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+        .empty-cell {
+            background-color: #f9f9f9;
+        }
+        .break-cell {
+            background-color: #e6e6e6;
+            color: #777;
+            font-style: italic;
+        }
+        .main-lesson {
+            font-weight: bold;
+            white-space: normal;
+            word-wrap: break-word;
+            display: inline-block;
+            max-width: 100%;
+            text-align: center;
+        }
+        .co-teachers {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .dismissal-time {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+        }
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        input {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            width: 200px;
+        }
+        .hidden {
+            display: none;
+        }
+        .export-btn {
+            padding: 10px 15px;
+            margin: 0 5px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .export-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        /* 上方按鈕組靠右對齊 */
+        .dropdown-group #exportBtnGroup {
+            margin-left: auto;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        /* 下方按鈕組置中對齊 */
+        .container > #exportBtnGroup {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>教師/班別時間表查詢</h1>
+        
+        <div id="loading">載入時間表數據中...</div>
+        
+        <div class="input-section">
+            <input type="text" id="teacherName" placeholder="輸入教師姓名或班別 (如 1A)">
+            
+            <div class="dropdown-group">
+                <span>或</span>
+                <select id="teacherDropdown">
+                    <option value="">選擇教師...</option>
+                </select>
+                <span>或</span>
+                <select id="classDropdown">
+                    <option value="">選擇班別...</option>
+                </select>
+                <!-- 上方按鈕組 (靠右對齊) -->
+                <div id="exportBtnGroup"></div>
+                <!-- 重新下載 JS 檔案 -->
+                <button id="reloadBtn" class="export-btn">重新下載資料庫</button>
+            </div>
+        </div>
+        
+        <div id="result"></div>
+        <table id="timetable">
+            <!-- 時間表將在這裡動態生成 -->
+        </table>
+
+        <!-- 下方按鈕組 (置中對齊) -->
+        <div id="exportBtnGroup"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- <script src="timetable.js"></script> -->
+<script src="timetable.js?v=${new Date().getTime()}"></script>
+</body>
+</html>

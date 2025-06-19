@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佛教何南金中學 - 時間表查詢系統</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* 禁用滾動條 */
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin: 0 0 20px 0;
+            padding: 0;
+            font-size: 1.5em;
+        }
+        .tab-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            gap: 20px;
+            overflow: hidden;
+        }
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab-button {
+            padding: 10px 15px;
+            background-color: #f1f1f1;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab-button:hover {
+            background-color: #ddd;
+        }
+        .tab-button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            flex: 1;
+            padding: 0;
+            background-color: white;
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>佛教何南金中學 - 時間表查詢系統</h1>
+    
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-button active" onclick="openTab(event, 'teacherTimetable')">教師/班別時間表</button>
+            <button class="tab-button" onclick="openTab(event, 'rooms')">房間時間表</button>
+            <button class="tab-button" onclick="openTab(event, 'freePeriods')">教師空堂查詢</button>
+            <button class="tab-button" onclick="openTab(event, 'commonFreePeriods')">共同空堂搜尋</button>
+        </div>
+        
+        <div id="teacherTimetable" class="tab-content active">
+            <div class="loading">載入教師/班別時間表查詢功能...</div>
+            <iframe id="ttFrame" src="tt.html" onload="hideLoading('teacherTimetable')"></iframe>
+        </div>
+        
+        <div id="rooms"" class="tab-content">
+            <div class="loading">載入房間時間表查詢功能...</div>
+            <iframe id="ttFrame" src="room.html" onload="hideLoading('rooms')"></iframe>
+        </div>
+
+        <div id="freePeriods" class="tab-content">
+            <div class="loading">載入教師空堂查詢功能...</div>
+            <iframe id="freeFrame" src="free.html" onload="hideLoading('freePeriods')"></iframe>
+        </div>
+        
+        <div id="commonFreePeriods" class="tab-content">
+            <div class="loading">載入共同空堂搜尋功能...</div>
+            <iframe id="meetingFrame" src="bysub.html" onload="hideLoading('commonFreePeriods')"></iframe>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>© 2025 佛教何南金中學 - 時間表查詢系統 | 版本 1.0</p>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            // 隱藏所有選項卡內容
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            // 移除所有按鈕的active類
+            const tabButtons = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            
+            // 顯示當前選項卡並添加active類到按鈕
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        
+        function hideLoading(tabId) {
+            const tab = document.getElementById(tabId);
+            const loading = tab.querySelector('.loading');
+            if (loading) {
+                loading.style.display = 'none';
+            }
+        }
+        
+        // 預載入所有iframe以加快切換速度
+        window.onload = function() {
+            document.getElementById('roomFrame').src = "free.html";
+            document.getElementById('freeFrame').src = "free.html";
+            document.getElementById('meetingFrame').src = "bysub.html";
+        };
+    </script>
+</body>
+</html>
