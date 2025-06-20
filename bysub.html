@@ -4,44 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>共同時間表</title>
-    
-    <script>
-    /*
-    // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
-    const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 假設的網域名稱，請務必修改
-
-    // 解碼 JWT
-    function decodeJwtResponse(token) {
-        try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        } catch (e) {
-            return null;
-        }
-    }
-
-    // 檢查 sessionStorage 中是否有有效的登入憑證
-    const id_token = window.sessionStorage.getItem('google_id_token');
-    let is_authenticated = false;
-
-    if (id_token) {
-        const payload = decodeJwtResponse(id_token);
-        // 檢查憑證是否存在、網域是否正確，以及憑證是否已過期
-        if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp * 1000 > Date.now()) {
-            is_authenticated = true;
-        }
-    }
-
-    // 如果未通過驗證，則導向到主登入頁面
-    if (!is_authenticated) {
-        // 使用 window.top 來確保是整個視窗跳轉，而不是只有 iframe 跳轉
-        window.top.location.href = 'index.html';
-    }*/
-</script>
+    <link rel="stylesheet" type="text/css" href="mystyle.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -174,8 +137,9 @@
     </style>
 </head>
 <body>
+    <script src="reload.js"></script>
     <div class="container">
-        <h1>科目/教師共同時間表查詢</h1>
+        <h1>科目/教師/組別共同時間表查詢</h1>
         
         <div class="form-group">
             <label for="subject">選擇科目:</label>
@@ -183,7 +147,17 @@
                 <option value="">-- 請選擇科目 --</option>
                 <!-- 科目選項將由JavaScript動態生成 -->
             </select>
-            
+            <div class="action-buttons">
+                <button id="generateBySubjectBtn">按科目生成時間表</button>
+            </div>
+            <label for="group">選擇組別:</label>
+            <select id="group">
+                <option value="">-- 請選擇組別 --</option>
+                <!-- 組別選項將由JavaScript動態生成 -->
+            </select>
+            <div class="action-buttons">
+                <button id="generateByGroupBtn">按組別生成時間表</button>
+            </div>
             <div id="teacherSelection">
                 <label>選擇教師:</label>
                 <div id="teachersCheckboxContainer" class="teachers-container"></div>
@@ -195,8 +169,12 @@
             </div>
         </div>
         
-        <button id="generateBySubjectBtn">按科目生成時間表</button>
-        <button id="generateByTeachersBtn">按教師生成時間表</button>
+        <div class="action-buttons">
+            <button id="generateBySubjectBtn">按科目生成時間表</button>
+            <button id="generateByTeachersBtn">按教師生成時間表</button>
+            <button id="generateByGroupBtn">按組別生成時間表</button>
+        </div>
+        
         <div id="errorMsg" class="error"></div>
         
         <div id="loading" class="loading" style="display: none;">載入中，請稍候...</div>
@@ -209,9 +187,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const subjectSelect = document.getElementById('subject');
+            const groupSelect = document.getElementById('group');
             const teachersCheckboxContainer = document.getElementById('teachersCheckboxContainer');
             const generateBySubjectBtn = document.getElementById('generateBySubjectBtn');
             const generateByTeachersBtn = document.getElementById('generateByTeachersBtn');
+            const generateByGroupBtn = document.getElementById('generateByGroupBtn');
             const selectAllBtn = document.getElementById('selectAllBtn');
             const clearAllBtn = document.getElementById('clearAllBtn');
             const timetableContainer = document.getElementById('timetableContainer');
@@ -222,25 +202,87 @@
             let subjects = [];
             let subjectTeachersMap = {};
             let allTeachers = new Set();
+            let groupData = {};
+            let allGroups = new Set();
             
             // 固定星期和節數
             const allWeeks = [1, 2, 3, 4, 5]; // 星期一至五
             const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 1-10節
             
             // 載入CSV文件
-            function loadCSV() {
-                loading.style.display = 'block';
-                errorMsg.textContent = '';
-                timetableContainer.innerHTML = '';
+ function loadCSV() {
+        loading.style.display = 'block';
+        errorMsg.textContent = '';
+        timetableContainer.innerHTML = '';
+        
+        // 使用 Promise.all 同時載入兩個文件
+        Promise.all([
+            fetchCSV('tt.csv'),
+            fetchCSV('agroup.csv')
+        ])
+        .then(([ttData, agroupData]) => {
+            processGroupCSV(agroupData);
+            processCSV(ttData);
+        })
+        .catch(error => {
+            console.error('載入數據失敗:', error);
+            errorMsg.textContent = '無法載入數據';
+            loading.style.display = 'none';
+        });
+    }
+
+    // 新增的 fetchCSV 函數，處理文件讀取
+    function fetchCSV(filename) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', filename, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        resolve(xhr.responseText);
+                    } else {
+                        reject(new Error(`無法載入 ${filename} (狀態碼: ${xhr.status})`));
+                    }
+                }
+            };
+            xhr.send(null);
+        });
+    }
+            
+            // 處理組別CSV數據
+            function processGroupCSV(csvText) {
+                csvText = csvText.replace(/^\uFEFF/, '');
+                const lines = csvText.split('\n');
                 
-                fetch('tt.csv')
-                    .then(response => response.text())
-                    .then(processCSV)
-                    .catch(error => {
-                        console.error('載入CSV文件時出錯:', error);
-                        errorMsg.textContent = '無法載入CSV文件，請確認文件是否存在且格式正確。';
-                        loading.style.display = 'none';
-                    });
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line) {
+                        const parts = line.split(',');
+                        if (parts.length >= 2) {
+                            const initial = parts[0].trim();
+                            const duties = [];
+                            
+                            // 收集所有職務 (職務1-4)
+                            for (let j = 1; j < 5; j++) {
+                                if (parts[j] && parts[j].trim() !== '') {
+                                    duties.push(parts[j].trim());
+                                    allGroups.add(parts[j].trim());
+                                }
+                            }
+                            
+                            groupData[initial] = duties;
+                        }
+                    }
+                }
+                
+                // 填充組別選擇框
+                groupSelect.innerHTML = '<option value="">-- 請選擇組別 --</option>';
+                Array.from(allGroups).sort().forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group;
+                    option.textContent = group;
+                    groupSelect.appendChild(option);
+                });
             }
             
             // 處理CSV數據
@@ -401,6 +443,39 @@
                 // 使用setTimeout讓UI有時間更新
                 setTimeout(() => {
                     generateTimetableByTeachers(selectedTeachers);
+                    loading.style.display = 'none';
+                }, 100);
+            });
+            
+            // 按組別生成時間表
+            generateByGroupBtn.addEventListener('click', function() {
+                const selectedGroup = groupSelect.value;
+                
+                if (!selectedGroup) {
+                    errorMsg.textContent = '請選擇一個組別';
+                    return;
+                }
+                
+                errorMsg.textContent = '';
+                loading.style.display = 'block';
+                
+                setTimeout(() => {
+                    // 找出屬於該組別的所有教師 initials
+                    const groupTeachers = [];
+                    for (const [initial, duties] of Object.entries(groupData)) {
+                        if (duties.includes(selectedGroup)) {
+                            groupTeachers.push(initial);
+                        }
+                    }
+                    
+                    if (groupTeachers.length === 0) {
+                        errorMsg.textContent = '該組別沒有教師';
+                        loading.style.display = 'none';
+                        return;
+                    }
+                    
+                    // 生成時間表
+                    generateTimetableByTeachers(groupTeachers);
                     loading.style.display = 'none';
                 }, 100);
             });
