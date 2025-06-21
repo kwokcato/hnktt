@@ -7,6 +7,42 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>教師空堂查詢</title>
+    <script>
+    // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
+    const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 假設的網域名稱，請務必修改
+
+    // 解碼 JWT
+    function decodeJwtResponse(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // 檢查 sessionStorage 中是否有有效的登入憑證
+    const id_token = window.sessionStorage.getItem('google_id_token');
+    let is_authenticated = false;
+
+    if (id_token) {
+        const payload = decodeJwtResponse(id_token);
+        // 檢查憑證是否存在、網域是否正確，以及憑證是否已過期
+        if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp * 1000 > Date.now()) {
+            is_authenticated = true;
+        }
+    }
+
+    // 如果未通過驗證，則導向到主登入頁面
+    if (!is_authenticated) {
+        // 使用 window.top 來確保是整個視窗跳轉，而不是只有 iframe 跳轉
+        window.top.location.href = 'index.html';
+    }
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -133,25 +169,36 @@
             padding: 8px;
             width: 300px;
         }
+
+        .btn {
+            padding: 10px 15px;
+            margin: 0 5px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>教師空堂列表</h1>
+        <h1>教師空堂查詢</h1>
         
         <div id="loading">載入時間表數據中...</div>
         
         <div class="input-section">
             <input type="text" id="teacher-search" list="teacher-list" placeholder="輸入教師姓名或從下拉選單選擇">
             <datalist id="teacher-list"></datalist>
-            <button id="generateFreePeriods">生成空堂列表</button>
+            <button id="generateFreePeriods"  class="btn">空堂列表</button>
             <div class="checkbox-group" style="margin-top: 0px;">
                 <div class="checkbox-item">
                     <input type="checkbox" id="s6-finished" name="s6-finished">
                     <label for="s6-finished">中六已完結</label>
                 </div>
                 <!-- 重新下載 JS 檔案 -->
-                <button id="reloadBtn" class="export-btn">重新下載資料庫</button>
+                <button id="reloadBtn" class="btn">重新下載資料庫</button>
             </div>
         </div>
         <div id="free-periods-result"></div>
