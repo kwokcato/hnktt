@@ -124,26 +124,76 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 使用html2pdf.js庫
         const element = document.createElement('div');
+        element.style.width = '100%';
         element.innerHTML = `
-            <h1 style="text-align:center;font-family:Arial;">${currentTitle}</h1>
+            <h1 style="text-align:center;font-family:Arial;margin-bottom:20px;">${currentTitle}</h1>
             ${generateTimetableHTML(currentLessons, currentTitle.includes('班別'))}
         `;
         
         const opt = {
-            margin: 10,
+            margin: [10, 5, 10, 5], // 上下左右邊距
             filename: `${currentTitle}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, logging: true, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape' }
+            html2canvas: { 
+                scale: 2, 
+                logging: true, 
+                useCORS: true,
+                scrollY: 0,
+                windowHeight: document.getElementById('timetable').scrollHeight + 200
+            },
+            jsPDF: { 
+                unit: 'mm', 
+                format: 'a3', 
+                orientation: 'landscape',
+                compress: true
+            },
+            pagebreak: { 
+                mode: ['avoid-all', 'css', 'legacy'] 
+            }
         };
         
         // 引入html2pdf庫
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
         script.onload = function() {
-            html2pdf().set(opt).from(element).save();
+            // 添加處理程序確保所有內容都已渲染
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save()
+                    .then(() => {
+                        console.log('PDF generated successfully');
+                    })
+                    .catch(err => {
+                        console.error('PDF generation error:', err);
+                        // 嘗試備用方法
+                        backupPDFGeneration(element, opt);
+                    });
+            }, 500);
         };
         document.head.appendChild(script);
+    }
+
+    // 備用PDF生成方法
+    function backupPDFGeneration(element, opt) {
+        // 嘗試使用不同的設置
+        const backupOpt = {
+            ...opt,
+            html2canvas: {
+                ...opt.html2canvas,
+                scale: 1.5,
+                windowHeight: document.getElementById('timetable').scrollHeight + 500
+            },
+            jsPDF: {
+                ...opt.jsPDF,
+                format: 'a2' // 使用更大的紙張尺寸
+            }
+        };
+        
+        try {
+            html2pdf().set(backupOpt).from(element).save();
+        } catch (err) {
+            console.error('Backup PDF generation failed:', err);
+            alert('PDF生成失敗，請嘗試列印功能或聯繫管理員');
+        }
     }
     
     // 生成時間表HTML (用於PDF和列印)
@@ -475,9 +525,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-	teacherNameInput.addEventListener('click', function() {
-    	this.value = '';
-	});
+    teacherNameInput.addEventListener('click', function() {
+        this.value = '';
+    });
 
     
     // 教師下拉選單選擇
@@ -506,34 +556,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 載入 CSV 文件
-// 修改 loadCSV 函數
-function loadCSV() {
-    // 添加隨機參數防止緩存
-    fetch('tt.csv?' + new Date().getTime())
-        .then(response => {
-            if (!response.ok) throw new Error('網絡響應不正常');
-            return response.text();
-        })
-        .then(data => {
-            allLessons = parseCSV(data);
-            // 提取所有教師名單並去重
-            allTeachers = [...new Set(allLessons.map(item => item.teacher.trim()))].sort();
-            // 提取1-6年級班別名單並去重
-            allClasses = [...new Set(allLessons
-                .filter(item => /^[1-6][A-D]$/i.test(item.class.trim()))
-                .map(item => item.class.trim()))].sort();
-            populateDropdowns();
-            loadingDiv.style.display = 'none';
-            resultDiv.innerHTML = '<p>時間表數據已載入，請輸入教師姓名或班別(如1A)</p>';
-            initExportButtons();
-        })
-        .catch(error => {
-            console.error('載入CSV文件時出錯:', error);
-            loadingDiv.innerHTML = `<p style="color:red">錯誤: ${error.message}</p>`;
-            // 重試機制
-            setTimeout(loadCSV, 1000);
-        });
-}
+    function loadCSV() {
+        // 添加隨機參數防止緩存
+        fetch('tt.csv?' + new Date().getTime())
+            .then(response => {
+                if (!response.ok) throw new Error('網絡響應不正常');
+                return response.text();
+            })
+            .then(data => {
+                allLessons = parseCSV(data);
+                // 提取所有教師名單並去重
+                allTeachers = [...new Set(allLessons.map(item => item.teacher.trim()))].sort();
+                // 提取1-6年級班別名單並去重
+                allClasses = [...new Set(allLessons
+                    .filter(item => /^[1-6][A-D]$/i.test(item.class.trim()))
+                    .map(item => item.class.trim()))].sort();
+                populateDropdowns();
+                loadingDiv.style.display = 'none';
+                resultDiv.innerHTML = '<p>時間表數據已載入，請輸入教師姓名或班別(如1A)</p>';
+                initExportButtons();
+            })
+            .catch(error => {
+                console.error('載入CSV文件時出錯:', error);
+                loadingDiv.innerHTML = `<p style="color:red">錯誤: ${error.message}</p>`;
+                // 重試機制
+                setTimeout(loadCSV, 1000);
+            });
+    }
     
     // 填充下拉選單
     function populateDropdowns() {
