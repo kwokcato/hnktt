@@ -3,10 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" type="text/css" href="hnkstyle.css">
     <title>教師空堂查詢</title>
     <style>
         body {
@@ -79,13 +75,6 @@
         .free-period {
             background-color: #d4edda;
         }
-        .special-free-period {
-            background-color: #e9ecef;
-        }
-        .special-period {
-            color: #6c757d;
-            font-style: italic;
-        }
         .search-results {
             margin-top: 20px;
         }
@@ -134,52 +123,23 @@
             padding: 8px;
             width: 300px;
         }
-
-        .btn {
-            padding: 10px 15px;
-            margin: 0 5px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
     </style>
 </head>
 <body>
-    <div class="refresh-btn" title="重整頁面">
-        <div class="refresh-icon"></div>
-    </div>
-    
-        <script>
-        document.querySelector('.refresh-btn').addEventListener('click', function() {
-            // 添加簡單的動畫效果
-            this.style.transform = 'scale(1.2) rotate(360deg)';
-            this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
-            
-            // 1秒後重整頁面
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        });
-    </script>
     <div class="container">
-        <h1>教師空堂查詢</h1>
+        <h1>教師空堂列表</h1>
         
         <div id="loading">載入時間表數據中...</div>
         
         <div class="input-section">
             <input type="text" id="teacher-search" list="teacher-list" placeholder="輸入教師姓名或從下拉選單選擇">
             <datalist id="teacher-list"></datalist>
-            <button id="generateFreePeriods"  class="btn">空堂列表</button>
-            <div class="checkbox-group" style="margin-top: 0px;">
-                <div class="checkbox-item">
-                    <input type="checkbox" id="s6-finished" name="s6-finished">
-                    <label for="s6-finished">中六已完結</label>
-                </div>
-                <!-- 重新下載 JS 檔案 -->
-                <button id="reloadBtn" class="btn">重新下載資料庫</button>
+            <button id="generateFreePeriods">生成空堂列表</button>
+            <!-- Add this in the input-section div, right after the generate button -->
+            <div class="checkbox-item">
+                <input type="checkbox" id="grade6-finished">
+                <label for="grade6-finished">中六已完結</label>
+                <button id="reloadBtn" class="export-btn">重新下載資料庫</button>
             </div>
         </div>
         <div id="free-periods-result"></div>
@@ -280,17 +240,13 @@
                             <label for="period-and">和 (所有選中節數)</label>
                         </div>
                     </div>
-
-
                 </div>
             </div>
-
             <button id="searchButton">搜尋</button>
             <div id="searchResults" class="search-results"></div>
         </div>
     </div>
 
-    <!-- <script src="free-periods.js"></script> -->
-<script src="free-periods.js?v=${new Date().getTime()}"></script>
+    <script src="free-periods.js"></script>
 </body>
 </html>
