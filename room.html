@@ -2,6 +2,8 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="hnkstyle.css">
+
     <title>房間查詢系統</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
@@ -52,6 +54,22 @@
     </style>
 </head>
 <body>
+    <div class="refresh-btn" title="重整頁面">
+        <div class="refresh-icon"></div>
+    </div>
+    
+    <script>
+        document.querySelector('.refresh-btn').addEventListener('click', function() {
+            // 添加簡單的動畫效果
+            this.style.transform = 'scale(1.2) rotate(360deg)';
+            this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
+            
+            // 1秒後重整頁面
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        });
+    </script>
     <div class="container">
         <h1>房間查詢系統</h1>
         
