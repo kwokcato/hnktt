@@ -51,6 +51,18 @@
         .room-schedule td {
             vertical-align: top;
         }
+        /* 新增的樣式 */
+        .room-name {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .room-name:hover {
+            color: red;
+        }
+        .highlight-room {
+            color: red;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -138,23 +150,23 @@
         document.addEventListener('DOMContentLoaded', async function() {
             await loadCSVData();
             populateRoomSelect();
-	    autoSelectWeekday();
+            autoSelectWeekday();
             findFreeRooms(); // 初始化顯示閒置房間
         });
 
-	// 根據當前日期自動選擇星期
-    	function autoSelectWeekday() {
-        	const today = new Date();
-       	 	let weekday = today.getDay(); // 0=星期日, 1=星期一, ..., 6=星期六
-        
-        	// 如果是週末(6=星期六, 0=星期日)，則顯示星期一
-        	if (weekday === 0 || weekday === 6) {
-            		weekday = 1;
+        // 根據當前日期自動選擇星期
+        function autoSelectWeekday() {
+            const today = new Date();
+            let weekday = today.getDay(); // 0=星期日, 1=星期一, ..., 6=星期六
+            
+            // 如果是週末(6=星期六, 0=星期日)，則顯示星期一
+            if (weekday === 0 || weekday === 6) {
+                weekday = 1;
+            }
+            
+            // 設置選擇框的值 (我們的選項是1=星期一, 2=星期二,...)
+            document.getElementById('weekday').value = weekday;
         }
-        
-        // 設置選擇框的值 (我們的選項是1=星期一, 2=星期二,...)
-        document.getElementById('weekday').value = weekday;
-    }
         
         // 切換標籤頁
         function switchTab(tabId) {
@@ -263,8 +275,7 @@
             });
             
             // 更新UI
-            //document.getElementById('roomScheduleTitle').textContent = `房間 ${room} 的時間表`;
-			 document.getElementById('roomScheduleTitle').innerHTML = `房間 <span style="color: #ff0000;">${room}</span> 的時間表`;
+            document.getElementById('roomScheduleTitle').innerHTML = `房間 <span style="color: #ff0000;">${room}</span> 的時間表`;
             const tableBody = document.getElementById('roomScheduleTable');
             tableBody.innerHTML = '';
             
@@ -281,7 +292,7 @@
                     
                     if (classInfo) {
                         cell.innerHTML = `
-							   <div>${classInfo.className} ${classInfo.subject} ${classInfo.teacher}</div>
+                               <div>${classInfo.className} ${classInfo.subject} ${classInfo.teacher}</div>
                         `;
                     } else {
                         cell.innerHTML = '<div class="free-slot">空閒</div>';
@@ -310,7 +321,7 @@
                     const classInfo = scheduleData[week][10];
                     if (classInfo) {
                         cell.innerHTML = `
-								<div>${classInfo.className} ${classInfo.subject} ${classInfo.teacher}</div>
+                                <div>${classInfo.className} ${classInfo.subject} ${classInfo.teacher}</div>
                         `;
                     } else {
                         cell.innerHTML = '<div class="free-slot"></div>';
@@ -353,8 +364,37 @@
                 if (weekday === '3' && i === 10) continue; // 星期三第10節跳過
                 
                 const row = tableBody.insertRow();
-                row.insertCell(0).textContent = `第 ${i} 節`;
-                row.insertCell(1).textContent = freeRoomsByPeriod[i].join(', ') || '無閒置房間';
+                const periodCell = row.insertCell(0);
+                periodCell.textContent = `第 ${i} 節`;
+                
+                const roomsCell = row.insertCell(1);
+                
+                // 將每個房間名稱包裝在一個span中，並添加事件監聽器
+                freeRoomsByPeriod[i].forEach((room, index) => {
+                    const roomSpan = document.createElement('span');
+                    roomSpan.textContent = room;
+                    roomSpan.className = 'room-name';
+                    
+                    // 添加滑鼠事件
+                    roomSpan.addEventListener('mouseover', function() {
+                        highlightAllRooms(room);
+                    });
+                    
+                    roomSpan.addEventListener('mouseout', function() {
+                        removeAllHighlights();
+                    });
+                    
+                    roomsCell.appendChild(roomSpan);
+                    
+                    // 如果不是最後一個房間，添加逗號分隔
+                    if (index < freeRoomsByPeriod[i].length - 1) {
+                        roomsCell.appendChild(document.createTextNode(', '));
+                    }
+                });
+                
+                if (freeRoomsByPeriod[i].length === 0) {
+                    roomsCell.textContent = '無閒置房間';
+                }
                 
                 if (i === 2 || i === 4 || i === 7) {
                     const separatorRow = tableBody.insertRow();
@@ -364,6 +404,24 @@
             }
             
             showStatus(`成功找到 「${weekdayNames[weekday]}」  的閒置房間資訊`, 'success', 'freeRoomsStatusMessage');
+        }
+        
+        // 高亮顯示所有相同房間名稱
+        function highlightAllRooms(roomName) {
+            const roomSpans = document.querySelectorAll('#freeRoomsTable .room-name');
+            roomSpans.forEach(span => {
+                if (span.textContent === roomName) {
+                    span.classList.add('highlight-room');
+                }
+            });
+        }
+        
+        // 移除所有高亮
+        function removeAllHighlights() {
+            const highlightedSpans = document.querySelectorAll('#freeRoomsTable .highlight-room');
+            highlightedSpans.forEach(span => {
+                span.classList.remove('highlight-room');
+            });
         }
         
         // 顯示狀態訊息
