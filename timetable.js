@@ -212,8 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         // 檢查是否有MAUP科目
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                         // 檢查是否有CHEM或ICT科目
-                        const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
-                        const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
+                        const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
+                        const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
                         
                         if (hasChem) {
                             tableHTML += `<td>
@@ -372,8 +372,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             // 檢查是否有MAUP科目
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             // 檢查是否有CHEM或ICT科目
-                            const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
-                            const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
+                            const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
+                            const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
                             
                             if (hasChem) {
                                 row.push(`X2 (${teachers})`);
@@ -451,8 +451,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatLessonForExport(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
-            if (subject.includes('CHEM')) subject = 'X2';
-            if (subject.includes('ICT')) subject = 'X3';
+            if (subject.includes('!CHEM')) subject = 'X2';
+            if (subject.includes('!ICT')) subject = 'X3';
             return `${subject} (${lesson.teacher})`;
         }
         if (lesson.subject === 'MAUP') {
@@ -679,8 +679,8 @@ function loadCSV() {
                         // 檢查是否有MAUP科目
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                         // 檢查是否有CHEM或ICT科目
-                        const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
-                        const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
+                        const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
+                        const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
                         
                         if (hasChem) {
                             tableHTML += `<td>
@@ -787,8 +787,8 @@ function loadCSV() {
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
-            if (subject.includes('CHEM')) subject = 'X2';
-            if (subject.includes('ICT')) subject = 'X3';
+            if (subject.includes('!CHEM')) subject = 'X2';
+            if (subject.includes('!ICT')) subject = 'X3';
             return `<span class="subject" style="color:blue">${subject}</span> <span class="teacher" style="font-size:0.8em">(${lesson.teacher})</span>`;
         }
         if (lesson.subject === 'MAUP') {
