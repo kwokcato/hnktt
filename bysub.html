@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>共同時間表</title>
-    <link rel="stylesheet" type="text/css" href="hnkstyle.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -107,6 +106,10 @@
             background-color: #f0f0f0;
             padding: 5px 10px;
             border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .teacher-checkbox.highlighted {
+            background-color: #e6f7ff;
         }
         .teacher-checkbox input {
             margin-right: 5px;
@@ -134,14 +137,35 @@
             min-width: 50px;
             background-color: #f9f0eb;
         }
-        /* 新增的摺疊樣式 */
+        .refresh-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(200, 200, 200, 0.7);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        .refresh-icon {
+            width: 24px;
+            height: 24px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333333'%3E%3Cpath d='M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
         .collapsible {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease-out;
         }
         .collapsible.show {
-            max-height: 500px; /* 足夠顯示教師清單的高度 */
+            max-height: 500px;
         }
         .toggle-teachers {
             color: #2196F3;
@@ -156,18 +180,6 @@
     <div class="refresh-btn" title="重整頁面">
         <div class="refresh-icon"></div>
     </div>
-    <script>
-        document.querySelector('.refresh-btn').addEventListener('click', function() {
-            // 添加簡單的動畫效果
-            this.style.transform = 'scale(1.2) rotate(360deg)';
-            this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
-            
-            // 1秒後重整頁面
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        });
-    </script>
 
     <div class="container">
         <h1>科目/教師/組別共同時間表查詢</h1>
@@ -176,14 +188,12 @@
             <label for="subject">選擇科目:</label>
             <select id="subject">
                 <option value="">-- 請選擇科目 --</option>
-                <!-- 科目選項將由JavaScript動態生成 -->
             </select>
             <button id="generateBySubjectBtn">按科目生成時間表</button>
             
             <label for="group">選擇組別:</label>
             <select id="group">
                 <option value="">-- 請選擇組別 --</option>
-                <!-- 組別選項將由JavaScript動態生成 -->
             </select>
             <button id="generateByGroupBtn">按組別生成時間表</button>
             
@@ -244,13 +254,21 @@
                 this.textContent = teachersCollapsible.classList.contains('show') ? '▲ 隱藏教師選擇' : '▼ 選擇教師';
             });
             
+            // 重整按鈕
+            document.querySelector('.refresh-btn').addEventListener('click', function() {
+                this.style.transform = 'scale(1.2) rotate(360deg)';
+                this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            });
+            
             // 載入CSV文件
             function loadCSV() {
                 loading.style.display = 'block';
                 errorMsg.textContent = '';
                 timetableContainer.innerHTML = '';
                 
-                // 使用 Promise.all 同時載入兩個文件
                 Promise.all([
                     fetchCSV('tt.csv'),
                     fetchCSV('agroup.csv')
@@ -266,7 +284,6 @@
                 });
             }
 
-            // 新增的 fetchCSV 函數，處理文件讀取
             function fetchCSV(filename) {
                 return new Promise((resolve, reject) => {
                     const xhr = new XMLHttpRequest();
@@ -297,7 +314,6 @@
                             const initial = parts[0].trim();
                             const duties = [];
                             
-                            // 收集所有職務 (職務1-4)
                             for (let j = 1; j < 5; j++) {
                                 if (parts[j] && parts[j].trim() !== '') {
                                     duties.push(parts[j].trim());
@@ -310,7 +326,6 @@
                     }
                 }
                 
-                // 填充組別選擇框
                 groupSelect.innerHTML = '<option value="">-- 請選擇組別 --</option>';
                 Array.from(allGroups).sort().forEach(group => {
                     const option = document.createElement('option');
@@ -322,9 +337,7 @@
             
             // 處理CSV數據
             function processCSV(csvText) {
-                // 移除可能的BOM字符
                 csvText = csvText.replace(/^\uFEFF/, '');
-                
                 const lines = csvText.split('\n');
                 timetableData = [];
                 
@@ -348,9 +361,7 @@
                     }
                 }
                 
-                // 提取所有科目
                 extractSubjects();
-                // 創建教師複選框
                 createTeacherCheckboxes();
                 loading.style.display = 'none';
             }
@@ -375,8 +386,6 @@
                 });
                 
                 subjects = Array.from(subjectSet).sort();
-                
-                // 填充科目選擇框
                 subjectSelect.innerHTML = '<option value="">-- 請選擇科目 --</option>';
                 subjects.forEach(subject => {
                     const option = document.createElement('option');
@@ -410,13 +419,48 @@
                 });
             }
             
-            // 當科目選擇改變時只展開教師選擇區，但不自動選取教師
+            // 重置教師高亮顯示
+            function resetTeacherHighlights() {
+                document.querySelectorAll('#teachersCheckboxContainer .teacher-checkbox').forEach(el => {
+                    el.classList.remove('highlighted');
+                });
+            }
+            
+            // 科目選擇改變時高亮相關教師
             subjectSelect.addEventListener('change', function() {
                 const selectedSubject = this.value;
-                if (selectedSubject) {
-                    // 展開教師選擇區
-                    // teachersCollapsible.classList.add('show');
-                    // toggleTeachersBtn.textContent = '▲ 隱藏教師選擇';
+                resetTeacherHighlights();
+                
+                if (selectedSubject && subjectTeachersMap[selectedSubject]) {
+                    const subjectTeachers = Array.from(subjectTeachersMap[selectedSubject]);
+                    subjectTeachers.forEach(teacher => {
+                        const checkbox = document.querySelector(`#teachersCheckboxContainer input[value="${teacher}"]`);
+                        if (checkbox) {
+                            checkbox.parentElement.classList.add('highlighted');
+                        }
+                    });
+                }
+            });
+            
+            // 組別選擇改變時高亮相關教師
+            groupSelect.addEventListener('change', function() {
+                const selectedGroup = this.value;
+                resetTeacherHighlights();
+                
+                if (selectedGroup) {
+                    const groupTeachers = [];
+                    for (const [initial, duties] of Object.entries(groupData)) {
+                        if (duties.includes(selectedGroup)) {
+                            groupTeachers.push(initial);
+                        }
+                    }
+                    
+                    groupTeachers.forEach(teacher => {
+                        const checkbox = document.querySelector(`#teachersCheckboxContainer input[value="${teacher}"]`);
+                        if (checkbox) {
+                            checkbox.parentElement.classList.add('highlighted');
+                        }
+                    });
                 }
             });
             
@@ -446,11 +490,9 @@
                 errorMsg.textContent = '';
                 loading.style.display = 'block';
                 
-                // 使用setTimeout讓UI有時間更新
                 setTimeout(() => {
                     generateTimetableBySubject(selectedSubject);
                     loading.style.display = 'none';
-                    // 滾動到時間表位置
                     timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
@@ -467,11 +509,9 @@
                 errorMsg.textContent = '';
                 loading.style.display = 'block';
                 
-                // 使用setTimeout讓UI有時間更新
                 setTimeout(() => {
                     generateTimetableByTeachers(selectedTeachers);
                     loading.style.display = 'none';
-                    // 滾動到時間表位置
                     timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
@@ -489,7 +529,6 @@
                 loading.style.display = 'block';
                 
                 setTimeout(() => {
-                    // 找出屬於該組別的所有教師 initials
                     const groupTeachers = [];
                     for (const [initial, duties] of Object.entries(groupData)) {
                         if (duties.includes(selectedGroup)) {
@@ -503,10 +542,8 @@
                         return;
                     }
                     
-                    // 生成時間表
                     generateTimetableByTeachers(groupTeachers);
                     loading.style.display = 'none';
-                    // 滾動到時間表位置
                     timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
@@ -517,12 +554,11 @@
                 return Array.from(checkboxes).map(checkbox => checkbox.value);
             }
             
-            // 檢查是否為整級班別並轉換為S+年級格式
+            // 簡化班別列表
             function simplifyClassList(classes) {
                 const allClasses = Array.isArray(classes) ? classes : [classes];
                 const uniqueClasses = [...new Set(allClasses)];
                 
-                // 按年級分組
                 const gradeMap = {};
                 uniqueClasses.forEach(cls => {
                     const match = cls.match(/^(\d+)([A-Za-z])$/);
@@ -533,7 +569,6 @@
                     }
                 });
                 
-                // 檢查每個年級是否包含所有班別 (假設A-D)
                 const simplified = [];
                 const processedGrades = new Set();
                 
@@ -542,7 +577,6 @@
                     if (match) {
                         const grade = match[1];
                         if (!processedGrades.has(grade)) {
-                            // 檢查該年級是否包含A-D班
                             const hasAllClasses = ['A','B','C','D'].every(letter => 
                                 uniqueClasses.includes(`${grade}${letter}`)
                             );
@@ -564,41 +598,30 @@
             
             // 按科目生成時間表HTML
             function generateTimetableBySubject(subject) {
-                // 獲取該科目的所有教師
                 const teachers = Array.from(subjectTeachersMap[subject] || []);
-                
-                // 過濾出該科目的所有課程
                 const subjectEntries = timetableData.filter(entry => entry.subject === subject);
                 
-                // 創建時間表HTML
                 let html = `<h2>${subject} 共同時間表</h2>`;
                 html += `<p>教師: ${teachers.join(', ')}</p>`;
                 
                 html += '<div style="overflow-x: auto;"><table>';
-                
-                // 表頭 - 星期
                 html += '<thead><tr><th>節/星期</th>';
                 allWeeks.forEach(week => {
                     html += `<th>星期 ${week}</th>`;
                 });
                 html += '</tr></thead><tbody>';
                 
-                // 表格內容
                 allPeriods.forEach(period => {
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
-                        // 找出這個星期和節數的所有課程
                         const entries = subjectEntries.filter(
                             entry => entry.week === week && entry.period === period
                         );
                         
                         if (entries.length > 0) {
-                            // 獲取班別列表並簡化
                             const allClasses = entries.map(entry => entry.class);
                             const simplifiedClasses = simplifyClassList(allClasses);
-                            
-                            // 獲取所有教師名稱
                             const teachersInSlot = [...new Set(entries.map(entry => entry.teacher))];
                             
                             html += `<td class="timetable-cell">
@@ -612,7 +635,6 @@
                     
                     html += '</tr>';
                     
-                    // 在第二、四、七節後添加空行
                     if (period === 2 || period === 4 || period === 7) {
                         html += '<tr class="break-row"><td colspan="' + (allWeeks.length + 1) + '"></td></tr>';
                     }
@@ -624,33 +646,25 @@
             
             // 按教師生成時間表HTML
             function generateTimetableByTeachers(teachers) {
-                // 過濾出這些教師的所有課程
                 const teacherEntries = timetableData.filter(entry => teachers.includes(entry.teacher));
                 
-                // 創建時間表HTML
                 let html = `<h2>${teachers.join(', ')} 教師組合時間表</h2>`;
-                
                 html += '<div style="overflow-x: auto;"><table>';
-                
-                // 表頭 - 星期
                 html += '<thead><tr><th>節/星期</th>';
                 allWeeks.forEach(week => {
                     html += `<th>星期 ${week}</th>`;
                 });
                 html += '</tr></thead><tbody>';
                 
-                // 表格內容
                 allPeriods.forEach(period => {
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
-                        // 找出這個星期和節數的所有課程
                         const entries = teacherEntries.filter(
                             entry => entry.week === week && entry.period === period
                         );
                         
                         if (entries.length > 0) {
-                            // 按科目分組
                             const subjectsInSlot = [...new Set(entries.map(entry => entry.subject))];
                             
                             let cellContent = '';
@@ -658,7 +672,6 @@
                                 const subjectEntries = entries.filter(entry => entry.subject === subject);
                                 const allClasses = subjectEntries.map(entry => entry.class);
                                 const simplifiedClasses = simplifyClassList(allClasses);
-                                
                                 const teachersInSubject = [...new Set(subjectEntries.map(entry => entry.teacher))];
                                 
                                 cellContent += `<div>
@@ -675,7 +688,6 @@
                     
                     html += '</tr>';
                     
-                    // 在第二、四、七節後添加空行
                     if (period === 2 || period === 4 || period === 7) {
                         html += '<tr class="break-row"><td colspan="' + (allWeeks.length + 1) + '"></td></tr>';
                     }
