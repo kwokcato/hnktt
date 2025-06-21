@@ -419,35 +419,44 @@
                 });
             }
             
-            // 重置教師高亮顯示
-            function resetTeacherHighlights() {
-                document.querySelectorAll('#teachersCheckboxContainer .teacher-checkbox').forEach(el => {
-                    el.classList.remove('highlighted');
-                });
-            }
-            
-            // 科目選擇改變時高亮相關教師
+            // 科目選擇改變時自動選取相關教師
             subjectSelect.addEventListener('change', function() {
                 const selectedSubject = this.value;
-                resetTeacherHighlights();
+                
+                // 先取消所有選擇
+                document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                    checkbox.parentElement.classList.remove('highlighted');
+                });
                 
                 if (selectedSubject && subjectTeachersMap[selectedSubject]) {
                     const subjectTeachers = Array.from(subjectTeachersMap[selectedSubject]);
                     subjectTeachers.forEach(teacher => {
                         const checkbox = document.querySelector(`#teachersCheckboxContainer input[value="${teacher}"]`);
                         if (checkbox) {
+                            checkbox.checked = true;
                             checkbox.parentElement.classList.add('highlighted');
                         }
                     });
+                    
+                    // 自動展開教師選擇區
+                    teachersCollapsible.classList.add('show');
+                    toggleTeachersBtn.textContent = '▲ 隱藏教師選擇';
                 }
             });
             
-            // 組別選擇改變時高亮相關教師
+            // 組別選擇改變時自動選取相關教師
             groupSelect.addEventListener('change', function() {
                 const selectedGroup = this.value;
-                resetTeacherHighlights();
+                
+                // 先取消所有選擇
+                document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                    checkbox.parentElement.classList.remove('highlighted');
+                });
                 
                 if (selectedGroup) {
+                    // 找出屬於該組別的所有教師
                     const groupTeachers = [];
                     for (const [initial, duties] of Object.entries(groupData)) {
                         if (duties.includes(selectedGroup)) {
@@ -458,9 +467,14 @@
                     groupTeachers.forEach(teacher => {
                         const checkbox = document.querySelector(`#teachersCheckboxContainer input[value="${teacher}"]`);
                         if (checkbox) {
+                            checkbox.checked = true;
                             checkbox.parentElement.classList.add('highlighted');
                         }
                     });
+                    
+                    // 自動展開教師選擇區
+                    teachersCollapsible.classList.add('show');
+                    toggleTeachersBtn.textContent = '▲ 隱藏教師選擇';
                 }
             });
             
