@@ -410,24 +410,10 @@
                 });
             }
             
-            // 當科目選擇改變時更新教師複選框
+            // 當科目選擇改變時只展開教師選擇區，但不自動選取教師
             subjectSelect.addEventListener('change', function() {
                 const selectedSubject = this.value;
-                if (selectedSubject && subjectTeachersMap[selectedSubject]) {
-                    // 取消所有選擇
-                    document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(checkbox => {
-                        checkbox.checked = false;
-                    });
-                    
-                    // 選中該科目的教師
-                    const subjectTeachers = Array.from(subjectTeachersMap[selectedSubject]);
-                    subjectTeachers.forEach(teacher => {
-                        const checkbox = document.querySelector(`#teachersCheckboxContainer input[value="${teacher}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                        }
-                    });
-                    
+                if (selectedSubject) {
                     // 展開教師選擇區
                     teachersCollapsible.classList.add('show');
                     toggleTeachersBtn.textContent = '▲ 隱藏教師選擇';
