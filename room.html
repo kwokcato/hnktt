@@ -138,8 +138,23 @@
         document.addEventListener('DOMContentLoaded', async function() {
             await loadCSVData();
             populateRoomSelect();
+	    autoSelectWeekday();
             findFreeRooms(); // 初始化顯示閒置房間
         });
+
+	// 根據當前日期自動選擇星期
+    	function autoSelectWeekday() {
+        	const today = new Date();
+       	 	let weekday = today.getDay(); // 0=星期日, 1=星期一, ..., 6=星期六
+        
+        	// 如果是週末(6=星期六, 0=星期日)，則顯示星期一
+        	if (weekday === 0 || weekday === 6) {
+            		weekday = 1;
+        }
+        
+        // 設置選擇框的值 (我們的選項是1=星期一, 2=星期二,...)
+        document.getElementById('weekday').value = weekday;
+    }
         
         // 切換標籤頁
         function switchTab(tabId) {
