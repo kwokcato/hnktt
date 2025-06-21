@@ -6,29 +6,6 @@
     <link rel="stylesheet" type="text/css" href="hnkstyle.css">
     <title>教師/班別時間表查詢</title>
     <style>
-        /* 確保表格列寬足夠顯示所有內容 */
-        table {
-            width: 100%;
-            table-layout: auto; /* 從 fixed 改為 auto 以適應內容 */
-        }
-        
-        /* 確保所有節數列可見 */
-        th, td {
-            min-width: 60px; /* 確保每列有足夠寬度 */
-            white-space: normal; /* 允許文字換行 */
-            overflow: visible; /* 確保內容不會被隱藏 */
-        }
-        
-        /* 特別為時間列設置足夠寬度 */
-        .time-col {
-            width: 120px !important; /* 增加寬度以確保時間顯示完整 */
-        }
-        
-        /* 為節數列設置足夠寬度 */
-        .period-col {
-            width: 60px !important;
-        }
-        
         body {
             font-family: Arial, sans-serif;
             max-width: 1200px;
@@ -60,7 +37,7 @@
             flex-grow: 1;
             position: relative;
         }
-/*        table {
+        table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
@@ -93,7 +70,7 @@
             background-color: #3498db;
             color: white;
             font-weight: bold;
-        } */
+        }
         tr:nth-child(even) {
             background-color: #ffffff;
         }
