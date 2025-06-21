@@ -91,6 +91,11 @@
             flex-shrink: 0;
         }
     </style>
+
+</head>
+<body>
+    <h1>佛教何南金中學 - 時間表查詢系統</h1>
+    <p id="todayDate"></p>
     <script>
         const today = new Date();
         const options = { 
@@ -102,10 +107,6 @@
         const dateString = today.toLocaleDateString('zh-TW', options);
         document.getElementById("todayDate").textContent = `今天是 ${dateString}`;
     </script>
-</head>
-<body>
-    <h1>佛教何南金中學 - 時間表查詢系統</h1>
-    <p id="todayDate"></p>
     <div class="tab-container">
         <div class="tab-header">
             <button class="tab-button active" onclick="openTab(event, 'teacherTimetable')">教師/班別時間表</button>
