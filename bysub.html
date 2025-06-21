@@ -170,6 +170,19 @@
     <div class="refresh-btn" title="重整頁面">
         <div class="refresh-icon"></div>
     </div>
+    <script>
+        document.querySelector('.refresh-btn').addEventListener('click', function() {
+            // 添加簡單的動畫效果
+            this.style.transform = 'scale(1.2) rotate(360deg)';
+            this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
+            
+            // 1秒後重整頁面
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        });
+    </script>
+
     <!-- <script src="reload.js"></script> -->
     <div class="container">
         <h1>科目/教師/組別共同時間表查詢</h1>
