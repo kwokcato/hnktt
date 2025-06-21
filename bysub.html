@@ -134,6 +134,22 @@
             min-width: 50px;
             background-color: #f9f0eb;
         }
+        /* 新增的摺疊樣式 */
+        .collapsible {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .collapsible.show {
+            max-height: 500px; /* 足夠顯示教師清單的高度 */
+        }
+        .toggle-teachers {
+            color: #2196F3;
+            cursor: pointer;
+            text-decoration: underline;
+            margin: 10px 0;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -153,7 +169,6 @@
         });
     </script>
 
-    <!-- <script src="reload.js"></script> -->
     <div class="container">
         <h1>科目/教師/組別共同時間表查詢</h1>
         
@@ -163,32 +178,28 @@
                 <option value="">-- 請選擇科目 --</option>
                 <!-- 科目選項將由JavaScript動態生成 -->
             </select>
-            <!-- <div class="action-buttons"> -->
-                <button id="generateBySubjectBtn">按科目生成時間表</button>
-            <!-- </div> -->
+            <button id="generateBySubjectBtn">按科目生成時間表</button>
+            
             <label for="group">選擇組別:</label>
             <select id="group">
                 <option value="">-- 請選擇組別 --</option>
                 <!-- 組別選項將由JavaScript動態生成 -->
             </select>
-            <!-- <div class="action-buttons"> -->
-                <button id="generateByGroupBtn">按組別生成時間表</button>
-            <!-- </div> -->
+            <button id="generateByGroupBtn">按組別生成時間表</button>
+            
             <div id="teacherSelection">
-                <label>選擇教師:</label>
-                <div id="teachersCheckboxContainer" class="teachers-container"></div>
-                
-                <div class="action-buttons">
-                    <button id="selectAllBtn" class="select-all">全選</button>
-                    <button id="clearAllBtn" class="clear-all">清除</button>
+                <span id="toggleTeachersBtn" class="toggle-teachers">▼ 選擇教師</span>
+                <div id="teachersCollapsible" class="collapsible">
+                    <label>選擇教師:</label>
+                    <div id="teachersCheckboxContainer" class="teachers-container"></div>
+                    
+                    <div class="action-buttons">
+                        <button id="selectAllBtn" class="select-all">全選</button>
+                        <button id="clearAllBtn" class="clear-all">清除</button>
+                        <button id="generateByTeachersBtn">按教師生成時間表</button>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="action-buttons">
-            <button id="generateBySubjectBtn">按科目生成時間表</button>
-            <button id="generateByTeachersBtn">按教師生成時間表</button>
-            <button id="generateByGroupBtn">按組別生成時間表</button>
         </div>
         
         <div id="errorMsg" class="error"></div>
@@ -213,6 +224,8 @@
             const timetableContainer = document.getElementById('timetableContainer');
             const errorMsg = document.getElementById('errorMsg');
             const loading = document.getElementById('loading');
+            const toggleTeachersBtn = document.getElementById('toggleTeachersBtn');
+            const teachersCollapsible = document.getElementById('teachersCollapsible');
             
             let timetableData = [];
             let subjects = [];
@@ -225,45 +238,51 @@
             const allWeeks = [1, 2, 3, 4, 5]; // 星期一至五
             const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 1-10節
             
+            // 摺疊/展開教師選擇區
+            toggleTeachersBtn.addEventListener('click', function() {
+                teachersCollapsible.classList.toggle('show');
+                this.textContent = teachersCollapsible.classList.contains('show') ? '▲ 隱藏教師選擇' : '▼ 選擇教師';
+            });
+            
             // 載入CSV文件
- function loadCSV() {
-        loading.style.display = 'block';
-        errorMsg.textContent = '';
-        timetableContainer.innerHTML = '';
-        
-        // 使用 Promise.all 同時載入兩個文件
-        Promise.all([
-            fetchCSV('tt.csv'),
-            fetchCSV('agroup.csv')
-        ])
-        .then(([ttData, agroupData]) => {
-            processGroupCSV(agroupData);
-            processCSV(ttData);
-        })
-        .catch(error => {
-            console.error('載入數據失敗:', error);
-            errorMsg.textContent = '無法載入數據';
-            loading.style.display = 'none';
-        });
-    }
+            function loadCSV() {
+                loading.style.display = 'block';
+                errorMsg.textContent = '';
+                timetableContainer.innerHTML = '';
+                
+                // 使用 Promise.all 同時載入兩個文件
+                Promise.all([
+                    fetchCSV('tt.csv'),
+                    fetchCSV('agroup.csv')
+                ])
+                .then(([ttData, agroupData]) => {
+                    processGroupCSV(agroupData);
+                    processCSV(ttData);
+                })
+                .catch(error => {
+                    console.error('載入數據失敗:', error);
+                    errorMsg.textContent = '無法載入數據';
+                    loading.style.display = 'none';
+                });
+            }
 
-    // 新增的 fetchCSV 函數，處理文件讀取
-    function fetchCSV(filename) {
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', filename, true);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        resolve(xhr.responseText);
-                    } else {
-                        reject(new Error(`無法載入 ${filename} (狀態碼: ${xhr.status})`));
-                    }
-                }
-            };
-            xhr.send(null);
-        });
-    }
+            // 新增的 fetchCSV 函數，處理文件讀取
+            function fetchCSV(filename) {
+                return new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', filename, true);
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                resolve(xhr.responseText);
+                            } else {
+                                reject(new Error(`無法載入 ${filename} (狀態碼: ${xhr.status})`));
+                            }
+                        }
+                    };
+                    xhr.send(null);
+                });
+            }
             
             // 處理組別CSV數據
             function processGroupCSV(csvText) {
@@ -408,6 +427,10 @@
                             checkbox.checked = true;
                         }
                     });
+                    
+                    // 展開教師選擇區
+                    teachersCollapsible.classList.add('show');
+                    toggleTeachersBtn.textContent = '▲ 隱藏教師選擇';
                 }
             });
             
@@ -441,6 +464,8 @@
                 setTimeout(() => {
                     generateTimetableBySubject(selectedSubject);
                     loading.style.display = 'none';
+                    // 滾動到時間表位置
+                    timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
             
@@ -460,6 +485,8 @@
                 setTimeout(() => {
                     generateTimetableByTeachers(selectedTeachers);
                     loading.style.display = 'none';
+                    // 滾動到時間表位置
+                    timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
             
@@ -493,6 +520,8 @@
                     // 生成時間表
                     generateTimetableByTeachers(groupTeachers);
                     loading.style.display = 'none';
+                    // 滾動到時間表位置
+                    timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
             
