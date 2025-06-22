@@ -176,12 +176,30 @@
         }
         /* 新增星期三第十節樣式 */
         .wed-period10 {
-            background-color: #666666 !important;
-            color: #cccccc !important;
+            position: relative;
+            background-color: white !important;
+        }
+        .wed-period10::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                #dddddd 10px,
+                #dddddd 20px
+            );
+            pointer-events: none;
         }
         .wed-period10 .class-list,
         .wed-period10 .teacher-names {
-            color: #cccccc !important;
+            position: relative;
+            z-index: 1;
+            color: #999 !important;
         }
     </style>
 </head>
@@ -654,10 +672,9 @@
                             html += `<td class="timetable-cell ${cellClass}">
                                 <div class="class-list">${simplifiedClasses.join(', ')}</div>
                                 <div class="teacher-names">${teachersInSlot.join(', ')}</div>
-                                ${isWedPeriod10 ? '<div>(放學時間 15:30)</div>' : ''}
                             </td>`;
                         } else {
-                            html += `<td class="empty-cell ${cellClass}">${isWedPeriod10 ? '(放學時間 15:30)' : ''}</td>`;
+                            html += `<td class="empty-cell ${cellClass}"></td>`;
                         }
                     });
                     
@@ -712,13 +729,9 @@
                                 </div>`;
                             });
                             
-                            if (isWedPeriod10) {
-                                cellContent += '<div>(放學時間 15:30)</div>';
-                            }
-                            
                             html += `<td class="timetable-cell ${cellClass}">${cellContent}</td>`;
                         } else {
-                            html += `<td class="empty-cell ${cellClass}">${isWedPeriod10 ? '(放學時間 15:30)' : ''}</td>`;
+                            html += `<td class="empty-cell ${cellClass}"></td>`;
                         }
                     });
                     
