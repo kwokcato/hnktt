@@ -2,7 +2,6 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-	<meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>共同時間表</title>
     <style>
@@ -174,9 +173,6 @@
             text-decoration: underline;
             margin: 10px 0;
             display: inline-block;
-        }
-        .wed-9-10 {
-            height: 60px; /* 合併後的儲存格高度 */
         }
     </style>
 </head>
@@ -629,59 +625,25 @@
                 });
                 html += '</tr></thead><tbody>';
                 
-                allPeriods.forEach((period, periodIndex) => {
-                    // 如果是星期三的第10節，則跳過不顯示
-                    if (period === 10) {
-                        // 檢查是否有星期三的第9節，如果有則合併
-                        const hasWed9 = subjectEntries.some(entry => entry.week === 3 && entry.period === 9);
-                        if (hasWed9) {
-                            return; // 跳過第10節的處理
-                        }
-                    }
-                    
+                allPeriods.forEach(period => {
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
-                        // 處理星期三的第9節和第10節合併
-                        if (week === 3 && period === 9) {
-                            const entries9 = subjectEntries.filter(
-                                entry => entry.week === week && entry.period === 9
-                            );
-                            const entries10 = subjectEntries.filter(
-                                entry => entry.week === week && entry.period === 10
-                            );
+                        const entries = subjectEntries.filter(
+                            entry => entry.week === week && entry.period === period
+                        );
+                        
+                        if (entries.length > 0) {
+                            const allClasses = entries.map(entry => entry.class);
+                            const simplifiedClasses = simplifyClassList(allClasses);
+                            const teachersInSlot = [...new Set(entries.map(entry => entry.teacher))];
                             
-                            if (entries9.length > 0 || entries10.length > 0) {
-                                const allClasses = [...entries9, ...entries10].map(entry => entry.class);
-                                const simplifiedClasses = simplifyClassList(allClasses);
-                                const teachersInSlot = [...new Set([...entries9, ...entries10].map(entry => entry.teacher))];
-                                
-                                html += `<td class="timetable-cell wed-9-10">
-                                    <div class="class-list">${simplifiedClasses.join(', ')}</div>
-                                    <div class="teacher-names">${teachersInSlot.join(', ')}</div>
-                                </td>`;
-                            } else {
-                                html += '<td class="empty-cell wed-9-10"></td>';
-                            }
-                        } 
-                        // 其他情況正常處理
-                        else {
-                            const entries = subjectEntries.filter(
-                                entry => entry.week === week && entry.period === period
-                            );
-                            
-                            if (entries.length > 0) {
-                                const allClasses = entries.map(entry => entry.class);
-                                const simplifiedClasses = simplifyClassList(allClasses);
-                                const teachersInSlot = [...new Set(entries.map(entry => entry.teacher))];
-                                
-                                html += `<td class="timetable-cell">
-                                    <div class="class-list">${simplifiedClasses.join(', ')}</div>
-                                    <div class="teacher-names">${teachersInSlot.join(', ')}</div>
-                                </td>`;
-                            } else {
-                                html += '<td class="empty-cell"></td>';
-                            }
+                            html += `<td class="timetable-cell">
+                                <div class="class-list">${simplifiedClasses.join(', ')}</div>
+                                <div class="teacher-names">${teachersInSlot.join(', ')}</div>
+                            </td>`;
+                        } else {
+                            html += '<td class="empty-cell"></td>';
                         }
                     });
                     
@@ -708,76 +670,33 @@
                 });
                 html += '</tr></thead><tbody>';
                 
-                allPeriods.forEach((period, periodIndex) => {
-                    // 如果是星期三的第10節，則跳過不顯示
-                    if (period === 10) {
-                        // 檢查是否有星期三的第9節，如果有則合併
-                        const hasWed9 = teacherEntries.some(entry => entry.week === 3 && entry.period === 9);
-                        if (hasWed9) {
-                            return; // 跳過第10節的處理
-                        }
-                    }
-                    
+                allPeriods.forEach(period => {
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
-                        // 處理星期三的第9節和第10節合併
-                        if (week === 3 && period === 9) {
-                            const entries9 = teacherEntries.filter(
-                                entry => entry.week === week && entry.period === 9
-                            );
-                            const entries10 = teacherEntries.filter(
-                                entry => entry.week === week && entry.period === 10
-                            );
+                        const entries = teacherEntries.filter(
+                            entry => entry.week === week && entry.period === period
+                        );
+                        
+                        if (entries.length > 0) {
+                            const subjectsInSlot = [...new Set(entries.map(entry => entry.subject))];
                             
-                            if (entries9.length > 0 || entries10.length > 0) {
-                                const allEntries = [...entries9, ...entries10];
-                                const subjectsInSlot = [...new Set(allEntries.map(entry => entry.subject))];
+                            let cellContent = '';
+                            subjectsInSlot.forEach(subject => {
+                                const subjectEntries = entries.filter(entry => entry.subject === subject);
+                                const allClasses = subjectEntries.map(entry => entry.class);
+                                const simplifiedClasses = simplifyClassList(allClasses);
+                                const teachersInSubject = [...new Set(subjectEntries.map(entry => entry.teacher))];
                                 
-                                let cellContent = '';
-                                subjectsInSlot.forEach(subject => {
-                                    const subjectEntries = allEntries.filter(entry => entry.subject === subject);
-                                    const allClasses = subjectEntries.map(entry => entry.class);
-                                    const simplifiedClasses = simplifyClassList(allClasses);
-                                    const teachersInSubject = [...new Set(subjectEntries.map(entry => entry.teacher))];
-                                    
-                                    cellContent += `<div>
-                                        <div class="class-list">${subject}: ${simplifiedClasses.join(', ')}</div>
-                                        <div class="teacher-names">${teachersInSubject.join(', ')}</div>
-                                    </div>`;
-                                });
-                                
-                                html += `<td class="timetable-cell wed-9-10">${cellContent}</td>`;
-                            } else {
-                                html += '<td class="empty-cell wed-9-10"></td>';
-                            }
-                        } 
-                        // 其他情況正常處理
-                        else {
-                            const entries = teacherEntries.filter(
-                                entry => entry.week === week && entry.period === period
-                            );
+                                cellContent += `<div>
+                                    <div class="class-list">${subject}: ${simplifiedClasses.join(', ')}</div>
+                                    <div class="teacher-names">${teachersInSubject.join(', ')}</div>
+                                </div>`;
+                            });
                             
-                            if (entries.length > 0) {
-                                const subjectsInSlot = [...new Set(entries.map(entry => entry.subject))];
-                                
-                                let cellContent = '';
-                                subjectsInSlot.forEach(subject => {
-                                    const subjectEntries = entries.filter(entry => entry.subject === subject);
-                                    const allClasses = subjectEntries.map(entry => entry.class);
-                                    const simplifiedClasses = simplifyClassList(allClasses);
-                                    const teachersInSubject = [...new Set(subjectEntries.map(entry => entry.teacher))];
-                                    
-                                    cellContent += `<div>
-                                        <div class="class-list">${subject}: ${simplifiedClasses.join(', ')}</div>
-                                        <div class="teacher-names">${teachersInSubject.join(', ')}</div>
-                                    </div>`;
-                                });
-                                
-                                html += `<td class="timetable-cell">${cellContent}</td>`;
-                            } else {
-                                html += '<td class="empty-cell"></td>';
-                            }
+                            html += `<td class="timetable-cell">${cellContent}</td>`;
+                        } else {
+                            html += '<td class="empty-cell"></td>';
                         }
                     });
                     
