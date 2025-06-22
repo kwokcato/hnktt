@@ -43,34 +43,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the idle timer
     resetIdleTimer();
 
-
     // 載入 CSV 文件
-function loadCSV() {
-    // 添加隨機參數防止緩存
-    fetch('tt.csv?' + new Date().getTime())
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('網絡響應不正常');
-            }
-            return response.text();
-        })
-        .then(data => {
-            allLessons = parseCSV(data);
-            allTeachers = [...new Set(allLessons.map(lesson => lesson.teacher))].sort();
-            
-            // 填充教師下拉列表
-            populateTeacherList();
-            
-            loadingDiv.style.display = 'none';
-            freePeriodsResult.innerHTML = '<p>時間表數據已載入。</p>';
-        })
-        .catch(error => {
-            console.error('載入CSV文件時出錯:', error);
-            loadingDiv.innerHTML = `<p style="color:red">錯誤: ${error.message}</p>`;
-            // 重試機制
-            setTimeout(loadCSV, 1000);
-        });
-}
+    function loadCSV() {
+        // 添加隨機參數防止緩存
+        fetch('tt.csv?' + new Date().getTime())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('網絡響應不正常');
+                }
+                return response.text();
+            })
+            .then(data => {
+                allLessons = parseCSV(data);
+                allTeachers = [...new Set(allLessons.map(lesson => lesson.teacher))].sort();
+                
+                // 填充教師下拉列表
+                populateTeacherList();
+                
+                loadingDiv.style.display = 'none';
+                freePeriodsResult.innerHTML = '<p>時間表數據已載入。</p>';
+            })
+            .catch(error => {
+                console.error('載入CSV文件時出錯:', error);
+                loadingDiv.innerHTML = `<p style="color:red">錯誤: ${error.message}</p>`;
+                // 重試機制
+                setTimeout(loadCSV, 1000);
+            });
+    }
     
     // 填充教師下拉列表
     function populateTeacherList() {
@@ -160,6 +159,11 @@ function loadCSV() {
         return grouped.join(', ');
     }
     
+    // 檢查是否應該顯示這個節數（星期三不顯示第10節）
+    function shouldDisplayPeriod(day, period) {
+        return !(day === 3 && period === 10); // 星期三(3)不顯示第10節
+    }
+    
     // 查詢特定教師的空堂
     function searchTeacherFreePeriods(teacherName) {
         if (!teacherName) return;
@@ -210,7 +214,7 @@ function loadCSV() {
             const specialFreePeriods = [];
             
             for (let period = 1; period <= 10; period++) {
-                if (!busyPeriods.has(period)) {
+                if (!busyPeriods.has(period) && shouldDisplayPeriod(day, period)) {
                     if (s6Finished && s6Periods.has(period)) {
                         specialFreePeriods.push(period);
                     } else {
@@ -292,7 +296,7 @@ function loadCSV() {
                 const specialFreePeriods = [];
                 
                 for (let period = 1; period <= 10; period++) {
-                    if (!busyPeriods.has(period)) {
+                    if (!busyPeriods.has(period) && shouldDisplayPeriod(day, period)) {
                         if (s6Finished && s6Periods.has(period)) {
                             specialFreePeriods.push(period);
                         } else {
@@ -349,7 +353,7 @@ function loadCSV() {
         // 獲取選中的節數
         const selectedPeriods = [];
         document.querySelectorAll('input[type="checkbox"][id^="period"]').forEach(checkbox => {
-            if (checkbox.checked) {
+            if (checkbox.checked && !(selectedDays.includes(3) && parseInt(checkbox.value) === 10)) {
                 selectedPeriods.push(parseInt(checkbox.value));
             }
         });
@@ -398,7 +402,7 @@ function loadCSV() {
                     if (periodOperator === 'or') {
                         // OR 條件: 任一選中節數有空堂
                         for (const period of selectedPeriods) {
-                            if (!busyPeriods.has(period)) {
+                            if (!busyPeriods.has(period) && shouldDisplayPeriod(day, period)) {
                                 periodConditionMet = true;
                                 matchedPeriods.push(period);
                             }
@@ -407,7 +411,7 @@ function loadCSV() {
                         // AND 條件: 所有選中節數都有空堂
                         periodConditionMet = true;
                         for (const period of selectedPeriods) {
-                            if (busyPeriods.has(period)) {
+                            if (busyPeriods.has(period) || !shouldDisplayPeriod(day, period)) {
                                 periodConditionMet = false;
                                 break;
                             }
@@ -425,7 +429,7 @@ function loadCSV() {
                         const allSpecialFreePeriods = [];
                         
                         for (let period = 1; period <= 10; period++) {
-                            if (!busyPeriods.has(period)) {
+                            if (!busyPeriods.has(period) && shouldDisplayPeriod(day, period)) {
                                 if (s6Finished && s6Periods.has(period)) {
                                     allSpecialFreePeriods.push(period);
                                 } else {
@@ -467,7 +471,7 @@ function loadCSV() {
                     if (periodOperator === 'or') {
                         // OR 條件: 任一選中節數有空堂
                         for (const period of selectedPeriods) {
-                            if (!busyPeriods.has(period)) {
+                            if (!busyPeriods.has(period) && shouldDisplayPeriod(day, period)) {
                                 periodConditionMet = true;
                                 matchedPeriods.push(period);
                             }
@@ -476,7 +480,7 @@ function loadCSV() {
                         // AND 條件: 所有選中節數都有空堂
                         periodConditionMet = true;
                         for (const period of selectedPeriods) {
-                            if (busyPeriods.has(period)) {
+                            if (busyPeriods.has(period) || !shouldDisplayPeriod(day, period)) {
                                 periodConditionMet = false;
                                 break;
                             }
@@ -496,7 +500,7 @@ function loadCSV() {
                     const allSpecialFreePeriods = [];
                     
                     for (let period = 1; period <= 10; period++) {
-                        if (!busyPeriods.has(period)) {
+                        if (!busyPeriods.has(period) && shouldDisplayPeriod(day, period)) {
                             if (s6Finished && s6Periods.has(period)) {
                                 allSpecialFreePeriods.push(period);
                             } else {
@@ -583,34 +587,6 @@ function loadCSV() {
         
         let resultHTML = '<h3>搜尋結果</h3>';
         
-        // 教師摘要表格
-        /*
-        resultHTML += `
-            <table class="summary-table">
-                <thead>
-                    <tr>
-                        <th>排名</th>
-                        <th>教師</th>
-                        <th>總空堂數</th>
-                        <th>符合條件的天數</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        currentTeacherMatches.forEach((match, index) => {
-            resultHTML += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${match.teacher}</td>
-                    <td>${match.totalFreePeriods}</td>
-                    <td>${match.matchingDays.length}</td>
-                </tr>
-            `;
-        });
-        
-        resultHTML += `</tbody></table>`;
-        */
         // 詳細的空堂信息
         resultHTML += '<h4>詳細空堂信息</h4>';
         resultHTML += `
