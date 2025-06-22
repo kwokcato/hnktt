@@ -246,7 +246,7 @@
             
             // 固定星期和節數
             const allWeeks = [1, 2, 3, 4, 5]; // 星期一至五
-            const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 1-9節 (第10節合併到第9節)
+            const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 1-10節
             
             // 摺疊/展開教師選擇區
             toggleTeachersBtn.addEventListener('click', function() {
@@ -438,10 +438,6 @@
                             checkbox.parentElement.classList.add('highlighted');
                         }
                     });
-                    
-                    // 自動展開教師選擇區
-                    // teachersCollapsible.classList.add('show');
-                    // toggleTeachersBtn.textContent = '▲ 隱藏教師選擇';
                 }
             });
             
@@ -471,10 +467,6 @@
                             checkbox.parentElement.classList.add('highlighted');
                         }
                     });
-                    
-                    // 自動展開教師選擇區
-                    // teachersCollapsible.classList.add('show');
-                    // toggleTeachersBtn.textContent = '▲ 隱藏教師選擇';
                 }
             });
             
@@ -626,15 +618,18 @@
                 html += '</tr></thead><tbody>';
                 
                 allPeriods.forEach(period => {
+                    // 如果是星期三的第10節，則跳過不顯示
+                    if (period === 10) return;
+                    
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
                         let entries = [];
                         
-                        // 如果是星期三的第9節，要包含第10節的數據
+                        // 如果是星期三的第9節，則顯示第9節的資料（不包含第10節）
                         if (week === 3 && period === 9) {
                             entries = subjectEntries.filter(
-                                entry => entry.week === week && (entry.period === 9 || entry.period === 10)
+                                entry => entry.week === week && entry.period === 9
                             );
                         } else {
                             entries = subjectEntries.filter(
@@ -658,7 +653,7 @@
                     
                     html += '</tr>';
                     
-                    if (period === 2 || period === 4 || period === 7) {
+                    if (period === 2 || period === 4 || period === 7 || period === 9) {
                         html += '<tr class="break-row"><td colspan="' + (allWeeks.length + 1) + '"></td></tr>';
                     }
                 });
@@ -680,15 +675,18 @@
                 html += '</tr></thead><tbody>';
                 
                 allPeriods.forEach(period => {
+                    // 如果是星期三的第10節，則跳過不顯示
+                    if (period === 10) return;
+                    
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
                         let entries = [];
                         
-                        // 如果是星期三的第9節，要包含第10節的數據
+                        // 如果是星期三的第9節，則顯示第9節的資料（不包含第10節）
                         if (week === 3 && period === 9) {
                             entries = teacherEntries.filter(
-                                entry => entry.week === week && (entry.period === 9 || entry.period === 10)
+                                entry => entry.week === week && entry.period === 9
                             );
                         } else {
                             entries = teacherEntries.filter(
@@ -720,7 +718,7 @@
                     
                     html += '</tr>';
                     
-                    if (period === 2 || period === 4 || period === 7) {
+                    if (period === 2 || period === 4 || period === 7 || period === 9) {
                         html += '<tr class="break-row"><td colspan="' + (allWeeks.length + 1) + '"></td></tr>';
                     }
                 });
