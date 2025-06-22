@@ -246,7 +246,7 @@
             
             // 固定星期和節數
             const allWeeks = [1, 2, 3, 4, 5]; // 星期一至五
-            const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 1-10節
+            const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 1-9節 (第10節合併到第9節)
             
             // 摺疊/展開教師選擇區
             toggleTeachersBtn.addEventListener('click', function() {
@@ -629,9 +629,18 @@
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
-                        const entries = subjectEntries.filter(
-                            entry => entry.week === week && entry.period === period
-                        );
+                        let entries = [];
+                        
+                        // 如果是星期三的第9節，要包含第10節的數據
+                        if (week === 3 && period === 9) {
+                            entries = subjectEntries.filter(
+                                entry => entry.week === week && (entry.period === 9 || entry.period === 10)
+                            );
+                        } else {
+                            entries = subjectEntries.filter(
+                                entry => entry.week === week && entry.period === period
+                            );
+                        }
                         
                         if (entries.length > 0) {
                             const allClasses = entries.map(entry => entry.class);
@@ -674,9 +683,18 @@
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
-                        const entries = teacherEntries.filter(
-                            entry => entry.week === week && entry.period === period
-                        );
+                        let entries = [];
+                        
+                        // 如果是星期三的第9節，要包含第10節的數據
+                        if (week === 3 && period === 9) {
+                            entries = teacherEntries.filter(
+                                entry => entry.week === week && (entry.period === 9 || entry.period === 10)
+                            );
+                        } else {
+                            entries = teacherEntries.filter(
+                                entry => entry.week === week && entry.period === period
+                            );
+                        }
                         
                         if (entries.length > 0) {
                             const subjectsInSlot = [...new Set(entries.map(entry => entry.subject))];
