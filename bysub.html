@@ -227,10 +227,10 @@
             const groupSelect = document.getElementById('group');
             const teachersCheckboxContainer = document.getElementById('teachersCheckboxContainer');
             const generateBySubjectBtn = document.getElementById('generateBySubjectBtn');
-            const generateByTeachersBtn = document.getElementById('generateByTeachersBtn");
-            const generateByGroupBtn = document.getElementById('generateByGroupBtn");
+            const generateByTeachersBtn = document.getElementById('generateByTeachersBtn');
+            const generateByGroupBtn = document.getElementById('generateByGroupBtn');
             const selectAllBtn = document.getElementById('selectAllBtn');
-            const clearAllBtn = document.getElementById('clearAllBtn");
+            const clearAllBtn = document.getElementById('clearAllBtn');
             const timetableContainer = document.getElementById('timetableContainer');
             const errorMsg = document.getElementById('errorMsg');
             const loading = document.getElementById('loading');
@@ -246,7 +246,7 @@
             
             // 固定星期和節數
             const allWeeks = [1, 2, 3, 4, 5]; // 星期一至五
-            const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 1-9節 (10th merged into 9th)
+            const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 1-10節
             
             // 摺疊/展開教師選擇區
             toggleTeachersBtn.addEventListener('click', function() {
@@ -629,11 +629,8 @@
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
-                        // For Wednesday's 9th period, include 10th period data as well
-                        const periodsToCheck = (week === 3 && period === 9) ? [9, 10] : [period];
-                        
                         const entries = subjectEntries.filter(
-                            entry => entry.week === week && periodsToCheck.includes(entry.period)
+                            entry => entry.week === week && entry.period === period
                         );
                         
                         if (entries.length > 0) {
@@ -677,11 +674,8 @@
                     html += `<tr><td>第 ${period} 節</td>`;
                     
                     allWeeks.forEach(week => {
-                        // For Wednesday's 9th period, include 10th period data as well
-                        const periodsToCheck = (week === 3 && period === 9) ? [9, 10] : [period];
-                        
                         const entries = teacherEntries.filter(
-                            entry => entry.week === week && periodsToCheck.includes(entry.period)
+                            entry => entry.week === week && entry.period === period
                         );
                         
                         if (entries.length > 0) {
