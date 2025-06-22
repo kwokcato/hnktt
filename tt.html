@@ -194,6 +194,9 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- <script src="timetable.js"></script> -->
-<script src="timetable.js?v=${new Date().getTime()}"></script>
+    <!-- <script src="timetable.js?v=${new Date().getTime()}"></script> -->
+    <script>
+        document.write('<script src="timetable.js?t=' + new Date().getTime() + '"><\/script>');
+    </script>
 </body>
 </html>
