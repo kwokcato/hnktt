@@ -64,6 +64,32 @@
             color: red;
             font-weight: bold;
         }
+        /* 星期三第十節樣式 */
+        .wed-period10 {
+            position: relative;
+            background-color: white !important;
+        }
+        .wed-period10::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                #dddddd 10px,
+                #dddddd 20px
+            );
+            pointer-events: none;
+        }
+        .wed-period10 div {
+            position: relative;
+            z-index: 1;
+            color: #999 !important;
+        }
     </style>
 </head>
 <body>
@@ -255,7 +281,6 @@
             for (let week = 1; week <= 5; week++) {
                 scheduleData[week] = {};
                 for (let period = 1; period <= 10; period++) {
-                    if (week === 3 && period === 10) continue; // 星期三第10節跳過
                     scheduleData[week][period] = null; // 初始化為空
                 }
             }
@@ -265,13 +290,11 @@
                 const week = parseInt(item.week);
                 const period = parseInt(item.period);
                 if (week >= 1 && week <= 5 && period >= 1 && period <= 10) {
-                    if (!(week === 3 && period === 10)) { // 排除星期三第10節
-                        scheduleData[week][period] = {
-                            className: item.className,
-                            subject: item.subject,
-                            teacher: item.teacher
-                        };
-                    }
+                    scheduleData[week][period] = {
+                        className: item.className,
+                        subject: item.subject,
+                        teacher: item.teacher
+                    };
                 }
             });
             
@@ -282,8 +305,6 @@
             
             // 建立時間表 (每行一個節次，每列一個星期)
             for (let period = 1; period <= 10; period++) {
-                if (period === 10) continue; // 第10節單獨處理
-                
                 const row = tableBody.insertRow();
                 row.insertCell(0).textContent = `第 ${period} 節`;
                 
@@ -291,9 +312,14 @@
                     const cell = row.insertCell(week);
                     const classInfo = scheduleData[week][period];
                     
-                    if (classInfo) {
+                    // 判斷是否為星期三第十節
+                    const isWedPeriod10 = (week === 3 && period === 10);
+                    if (isWedPeriod10) {
+                        cell.className = 'wed-period10';
+                        cell.innerHTML = '<div>無此節</div>';
+                    } else if (classInfo) {
                         cell.innerHTML = `
-                               <div>${classInfo.className} ${classInfo.subject} ${classInfo.teacher}</div>
+                            <div>${classInfo.className} ${classInfo.subject} ${classInfo.teacher}</div>
                         `;
                     } else {
                         cell.innerHTML = '<div class="free-slot">空閒</div>';
@@ -306,26 +332,6 @@
                     emptyRow.style.backgroundColor = '#f0f0f0'; // 灰色底色
                     for (let i = 0; i <= 5; i++) {
                         emptyRow.insertCell(i);
-                    }
-                }
-            }
-            
-            // 特別處理第10節 (只有星期一、二、四、五)
-            const row10 = tableBody.insertRow();
-            row10.insertCell(0).textContent = '第 10 節';
-            
-            for (let week = 1; week <= 5; week++) {
-                const cell = row10.insertCell(week);
-                if (week === 3) { // 星期三
-                    cell.innerHTML = '<div style="color:gray;">無此節</div>';
-                } else {
-                    const classInfo = scheduleData[week][10];
-                    if (classInfo) {
-                        cell.innerHTML = `
-                                <div>${classInfo.className} ${classInfo.subject} ${classInfo.teacher}</div>
-                        `;
-                    } else {
-                        cell.innerHTML = '<div class="free-slot"></div>';
                     }
                 }
             }
