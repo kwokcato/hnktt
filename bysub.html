@@ -174,6 +174,15 @@
             margin: 10px 0;
             display: inline-block;
         }
+        /* 新增星期三第十節樣式 */
+        .wed-period10 {
+            background-color: #666666 !important;
+            color: #cccccc !important;
+        }
+        .wed-period10 .class-list,
+        .wed-period10 .teacher-names {
+            color: #cccccc !important;
+        }
     </style>
 </head>
 <body>
@@ -633,17 +642,22 @@
                             entry => entry.week === week && entry.period === period
                         );
                         
+                        // 判斷是否為星期三第十節
+                        const isWedPeriod10 = (week === 3 && period === 10);
+                        const cellClass = isWedPeriod10 ? 'wed-period10' : '';
+                        
                         if (entries.length > 0) {
                             const allClasses = entries.map(entry => entry.class);
                             const simplifiedClasses = simplifyClassList(allClasses);
                             const teachersInSlot = [...new Set(entries.map(entry => entry.teacher))];
                             
-                            html += `<td class="timetable-cell">
+                            html += `<td class="timetable-cell ${cellClass}">
                                 <div class="class-list">${simplifiedClasses.join(', ')}</div>
                                 <div class="teacher-names">${teachersInSlot.join(', ')}</div>
+                                ${isWedPeriod10 ? '<div>(放學時間 15:30)</div>' : ''}
                             </td>`;
                         } else {
-                            html += '<td class="empty-cell"></td>';
+                            html += `<td class="empty-cell ${cellClass}">${isWedPeriod10 ? '(放學時間 15:30)' : ''}</td>`;
                         }
                     });
                     
@@ -678,6 +692,10 @@
                             entry => entry.week === week && entry.period === period
                         );
                         
+                        // 判斷是否為星期三第十節
+                        const isWedPeriod10 = (week === 3 && period === 10);
+                        const cellClass = isWedPeriod10 ? 'wed-period10' : '';
+                        
                         if (entries.length > 0) {
                             const subjectsInSlot = [...new Set(entries.map(entry => entry.subject))];
                             
@@ -694,9 +712,13 @@
                                 </div>`;
                             });
                             
-                            html += `<td class="timetable-cell">${cellContent}</td>`;
+                            if (isWedPeriod10) {
+                                cellContent += '<div>(放學時間 15:30)</div>';
+                            }
+                            
+                            html += `<td class="timetable-cell ${cellClass}">${cellContent}</td>`;
                         } else {
-                            html += '<td class="empty-cell"></td>';
+                            html += `<td class="empty-cell ${cellClass}">${isWedPeriod10 ? '(放學時間 15:30)' : ''}</td>`;
                         }
                     });
                     
