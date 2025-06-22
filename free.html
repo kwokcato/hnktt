@@ -331,6 +331,9 @@
     </div>
 
     <!-- <script src="free-periods.js"></script> -->
-<script src="free-periods.js?v=${new Date().getTime()}"></script>
+    <!-- <script src="free-periods.js?v=${new Date().getTime()}"></script> -->
+    <script>
+        document.write('<script src="free-periods.js?t=' + new Date().getTime() + '"><\/script>');
+    </script>
 </body>
 </html>
