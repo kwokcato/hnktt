@@ -347,16 +347,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // 獲取星期運算符 (OR/AND)
-        const dayOperator = document.querySelector('input[name="day-operator"]:checked').value;
-        
         // 獲取選中的節數
         const selectedPeriods = [];
         document.querySelectorAll('input[type="checkbox"][id^="period"]').forEach(checkbox => {
-            if (checkbox.checked && !(selectedDays.includes(3) && parseInt(checkbox.value) === 10)) {
+            if (checkbox.checked) {
                 selectedPeriods.push(parseInt(checkbox.value));
             }
         });
+        
+        // 檢查是否只選擇了星期三和第十節
+        const isOnlyWednesdayAndPeriod10 = selectedDays.length === 1 && 
+                                         selectedDays[0] === 3 && 
+                                         selectedPeriods.length === 1 && 
+                                         selectedPeriods[0] === 10;
+        
+        // 如果是只選擇了星期三和第十節，顯示錯誤訊息
+        if (isOnlyWednesdayAndPeriod10) {
+            searchResults.innerHTML = '<p style="color:red">星期三沒有第十節，請重新選擇</p>';
+            return;
+        }
+        
+        // 獲取星期運算符 (OR/AND)
+        const dayOperator = document.querySelector('input[name="day-operator"]:checked').value;
         
         // 獲取節數運算符 (OR/AND)
         const periodOperator = document.querySelector('input[name="period-operator"]:checked').value;
@@ -402,7 +414,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (periodOperator === 'or') {
                         // OR 條件: 任一選中節數有空堂
                         for (const period of selectedPeriods) {
-                            if (!busyPeriods.has(period) && shouldDisplayPeriod(day, period)) {
+                            // 如果是星期三的第10節，跳過不檢查
+                            if (day === 3 && period === 10) continue;
+                            
+                            if (!busyPeriods.has(period)) {
                                 periodConditionMet = true;
                                 matchedPeriods.push(period);
                             }
@@ -411,13 +426,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         // AND 條件: 所有選中節數都有空堂
                         periodConditionMet = true;
                         for (const period of selectedPeriods) {
-                            if (busyPeriods.has(period) || !shouldDisplayPeriod(day, period)) {
+                            // 如果是星期三的第10節，跳過不檢查
+                            if (day === 3 && period === 10) continue;
+                            
+                            if (busyPeriods.has(period)) {
                                 periodConditionMet = false;
                                 break;
                             }
                         }
                         if (periodConditionMet) {
-                            matchedPeriods = selectedPeriods.slice();
+                            matchedPeriods = selectedPeriods.filter(p => !(day === 3 && p === 10));
                         }
                     }
                     
@@ -471,7 +489,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (periodOperator === 'or') {
                         // OR 條件: 任一選中節數有空堂
                         for (const period of selectedPeriods) {
-                            if (!busyPeriods.has(period) && shouldDisplayPeriod(day, period)) {
+                            // 如果是星期三的第10節，跳過不檢查
+                            if (day === 3 && period === 10) continue;
+                            
+                            if (!busyPeriods.has(period)) {
                                 periodConditionMet = true;
                                 matchedPeriods.push(period);
                             }
@@ -480,13 +501,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         // AND 條件: 所有選中節數都有空堂
                         periodConditionMet = true;
                         for (const period of selectedPeriods) {
-                            if (busyPeriods.has(period) || !shouldDisplayPeriod(day, period)) {
+                            // 如果是星期三的第10節，跳過不檢查
+                            if (day === 3 && period === 10) continue;
+                            
+                            if (busyPeriods.has(period)) {
                                 periodConditionMet = false;
                                 break;
                             }
                         }
                         if (periodConditionMet) {
-                            matchedPeriods = selectedPeriods.slice();
+                            matchedPeriods = selectedPeriods.filter(p => !(day === 3 && p === 10));
                         }
                     }
                     
