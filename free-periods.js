@@ -21,27 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentSort = { by: 'freePeriodsCount', order: 'desc' }; // 當前排序狀態
     let s6Finished = false; // 中六已完結狀態
 
-    // Auto Refresh (Add this at the beginning of the DOMContentLoaded event listener)
-    let idleTimer;
-    const IDLE_TIMEOUT = 60 * 60 * 1000; // 1 hour in milliseconds
-
-    function resetIdleTimer() {
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(hardReload, IDLE_TIMEOUT);
-    }
-
-    function hardReload() {
-        // Force a hard reload from the server
-        window.location.reload(true);
-    }
-
-    // Add event listeners for user activity
-    ['mousemove', 'keydown', 'click', 'scroll'].forEach(event => {
-        document.addEventListener(event, resetIdleTimer, { passive: true });
-    });
-
-    // Initialize the idle timer
-    resetIdleTimer();
 
     // 載入 CSV 文件
     function loadCSV() {
