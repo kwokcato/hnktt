@@ -6,10 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>佛教何南金中學 - 時間表查詢系統</title>
     <style>
-        :root {
-            --font-size-base: 100%; /* 預設字型大小 */
-        }
-        
         html, body {
             height: 100%;
             margin: 0;
@@ -17,7 +13,6 @@
             overflow: hidden; /* 禁用滾動條 */
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
-            font-size: var(--font-size-base);
         }
         body {
             display: flex;
@@ -50,7 +45,7 @@
             background-color: #f1f1f1;
             border: none;
             cursor: pointer;
-            font-size: 1em;
+            font-size: 14px;
             transition: 0.3s;
             border-radius: 5px 5px 0 0;
             margin-right: 5px;
@@ -93,74 +88,13 @@
             padding-top: 5px;
             border-top: 1px solid #ddd;
             color: #666;
-            font-size: 0.8em;
+            font-size: 10px;
             flex-shrink: 0;
         }
-        
-        /* 無障礙控制面板 */
-        .accessibility-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            padding: 10px;
-            z-index: 1000;
-        }
-        .accessibility-title {
-            font-weight: bold;
-            margin-bottom: 8px;
-            font-size: 1em;
-        }
-        .font-size-controls {
-            display: flex;
-            gap: 5px;
-        }
-        .font-size-btn {
-            padding: 5px 10px;
-            background-color: #f1f1f1;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-        .font-size-btn.active {
-            background-color: #3498db;
-            color: white;
-            border-color: #2980b9;
-        }
-        
-        /* 響應式設計 */
-        @media (max-width: 768px) {
-            .tab-header {
-                flex-wrap: wrap;
-            }
-            .tab-button {
-                font-size: 0.9em;
-                padding: 8px 12px;
-                margin-bottom: 5px;
-            }
-            .accessibility-panel {
-                bottom: 10px;
-                right: 10px;
-                padding: 8px;
-            }
-        }
-        
-        /* 字型大小設定 */
-        body.font-small {
-            --font-size-base: 80%;
-        }
-        body.font-normal {
-            --font-size-base: 100%;
-        }
-        body.font-large {
-            --font-size-base: 150%;
-        }
     </style>
+
 </head>
-<body oncontextmenu="return false;" class="font-normal">
+<body oncontextmenu="return false;">
     <script>
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
@@ -179,7 +113,7 @@
             }
         });
     </script>
-    <h2>佛教何南金中學 - 時間表查詢系統 <div style="text-align: right; font-size: 0.8em;" id="todayDate"></div></h2>
+    <h2>佛教何南金中學 - 時間表查詢系統 <div style="text-align: right; font-size: 12px;" id="todayDate"></div></h2>
     
     <script>
         const today = new Date();
@@ -205,9 +139,9 @@
             <iframe id="ttFrame" src="tt.html" onload="hideLoading('teacherTimetable')"></iframe>
         </div>
         
-        <div id="rooms" class="tab-content">
+        <div id="rooms"" class="tab-content">
             <div class="loading">載入房間時間表查詢功能...</div>
-            <iframe id="roomFrame" src="room.html" onload="hideLoading('rooms')"></iframe>
+            <iframe id="ttFrame" src="room.html" onload="hideLoading('rooms')"></iframe>
         </div>
 
         <div id="freePeriods" class="tab-content">
@@ -223,16 +157,6 @@
     
     <div class="footer">
         <p>© 2025 佛教何南金中學 - 時間表查詢系統 | 版本 1.0</p>
-    </div>
-
-    <!-- 無障礙控制面板 -->
-    <div class="accessibility-panel">
-        <div class="accessibility-title">字型大小</div>
-        <div class="font-size-controls">
-            <button class="font-size-btn" onclick="setFontSize('small')">小 (80%)</button>
-            <button class="font-size-btn active" onclick="setFontSize('normal')">標準 (100%)</button>
-            <button class="font-size-btn" onclick="setFontSize('large')">大 (150%)</button>
-        </div>
     </div>
 
     <script>
@@ -268,36 +192,6 @@
             document.getElementById('freeFrame').src = "free.html";
             document.getElementById('meetingFrame').src = "bysub.html";
         };
-        
-        // 字型大小調整功能
-        function setFontSize(size) {
-            document.body.className = ''; // 清除所有字型類別
-            document.body.classList.add(`font-${size}`);
-            
-            // 更新按鈕狀態
-            const buttons = document.querySelectorAll('.font-size-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // 將選擇存入localStorage
-            localStorage.setItem('fontSizePreference', size);
-        }
-        
-        // 頁面載入時檢查儲存的字型偏好
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedSize = localStorage.getItem('fontSizePreference') || 'normal';
-            setFontSize(savedSize);
-            
-            // 設定正確的按鈕狀態
-            const buttons = document.querySelectorAll('.font-size-btn');
-            buttons.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent.includes(savedSize === 'small' ? '80%' : 
-                                              savedSize === 'large' ? '150%' : '100%')) {
-                    btn.classList.add('active');
-                }
-            });
-        });
     </script>
 </body>
 </html>
