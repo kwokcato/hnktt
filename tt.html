@@ -7,6 +7,57 @@
     <link rel="stylesheet" type="text/css" href="hnkstyle.css">
     <title>教師/班別時間表查詢</title>
     <style>
+	    /* 縮放控制面板樣式 */
+        .zoom-controls {
+            position: flex;
+            /*bottom: 20px;*/
+			top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .zoom-level {
+            font-size: 14px;
+            min-width: 40px;
+            text-align: center;
+        }
+        .zoom-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            user-select: none;
+        }
+        .zoom-btn:hover {
+            background: #e0e0e0;
+        }
+        .zoom-reset {
+            margin-left: 5px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .zoom-reset:hover {
+            background: #e0e0e0;
+        }
+		
+		
         body {
             font-family: Arial, sans-serif;
             max-width: 1200px;
@@ -164,6 +215,15 @@
             }, 1000);
         });
     </script>
+
+    <!-- 縮放控制面板 -->
+    <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-out">-</button>
+        <span id="zoom-level" class="zoom-level">100%</span>
+        <button class="zoom-btn" id="zoom-in">+</button>
+        <button class="zoom-reset" id="reset-zoom">重置</button>
+    </div>
+
     <div class="container">
         <h3>教師/班別時間表查詢</h3>
         
@@ -197,7 +257,52 @@
         <!-- <div id="exportBtnGroup"></div> -->
         
     </div>
-
+	<script>
+        // 縮放功能
+        let currentZoom = 1;
+        const zoomStep = 0.1;
+        const minZoom = 0.5;
+        const maxZoom = 2;
+        
+        const body = document.body;
+        const zoomLevelElement = document.getElementById('zoom-level');
+        const zoomInButton = document.getElementById('zoom-in');
+        const zoomOutButton = document.getElementById('zoom-out');
+        const resetZoomButton = document.getElementById('reset-zoom');
+        
+        function updateZoom() {
+            body.style.transform = `scale(${currentZoom})`;
+            body.style.width = `${100 / currentZoom}%`;
+            zoomLevelElement.textContent = `${Math.round(currentZoom * 100)}%`;
+            
+            // 調整body的margin以保持居中
+            const remainingWidth = 100 - (100 / currentZoom);
+            body.style.marginLeft = `${remainingWidth / 2}%`;
+            body.style.marginRight = `${remainingWidth / 2}%`;
+        }
+        
+        zoomInButton.addEventListener('click', () => {
+            if (currentZoom + zoomStep <= maxZoom) {
+                currentZoom += zoomStep;
+                updateZoom();
+            }
+        });
+        
+        zoomOutButton.addEventListener('click', () => {
+            if (currentZoom - zoomStep >= minZoom) {
+                currentZoom -= zoomStep;
+                updateZoom();
+            }
+        });
+        
+        resetZoomButton.addEventListener('click', () => {
+            currentZoom = 1;
+            updateZoom();
+        });
+        
+        // 初始化縮放控制
+        updateZoom();
+		</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- <script src="timetable.js"></script> -->
     <!-- <script src="timetable.js?v=${new Date().getTime()}"></script> -->
