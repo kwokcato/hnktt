@@ -9,9 +9,8 @@
     <style>
 	    /* 縮放控制面板樣式 */
         .zoom-controls {
-            position: flex;
-            /*bottom: 20px;*/
-			top: 20px;
+            position: fixed;
+            top: 20px;
             right: 20px;
             background: rgba(255, 255, 255, 0.9);
             padding: 8px 12px;
@@ -57,12 +56,13 @@
             background: #e0e0e0;
         }
 		
-		
         body {
             font-family: Arial, sans-serif;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            transform-origin: top center;
+            transition: transform 0.2s ease;
         }
         h1 {
             color: #2c3e50;
@@ -257,7 +257,7 @@
         <!-- <div id="exportBtnGroup"></div> -->
         
     </div>
-	<script>
+    <script>
         // 縮放功能
         let currentZoom = 1;
         const zoomStep = 0.1;
@@ -272,13 +272,7 @@
         
         function updateZoom() {
             body.style.transform = `scale(${currentZoom})`;
-            body.style.width = `${100 / currentZoom}%`;
             zoomLevelElement.textContent = `${Math.round(currentZoom * 100)}%`;
-            
-            // 調整body的margin以保持居中
-            const remainingWidth = 100 - (100 / currentZoom);
-            body.style.marginLeft = `${remainingWidth / 2}%`;
-            body.style.marginRight = `${remainingWidth / 2}%`;
         }
         
         zoomInButton.addEventListener('click', () => {
@@ -302,10 +296,8 @@
         
         // 初始化縮放控制
         updateZoom();
-		</script>
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- <script src="timetable.js"></script> -->
-    <!-- <script src="timetable.js?v=${new Date().getTime()}"></script> -->
     <script>
         document.write('<script src="timetable.js?t=' + new Date().getTime() + '"><\/script>');
     </script>
