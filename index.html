@@ -94,7 +94,12 @@
     </style>
 
 </head>
-<body>
+<body oncontextmenu="return false;">
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
     <h1>佛教何南金中學 - 時間表查詢系統</h1>
     <p id="todayDate"></p>
     <script>
