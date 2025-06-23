@@ -2,6 +2,11 @@
 let currentFontSize = 100; // 預設100%
 const fontSizeOptions = [60, 100, 150]; // 可選的字體大小
 
+// 替換顯示時間表的標題
+function updateTimetableTitle(title) {
+    document.getElementById('timetableTitle').innerText = title;
+}
+
 // 添加無障礙控制按鈕
 function addAccessibilityControls() {
     const resultDiv = document.getElementById('result');
@@ -78,7 +83,8 @@ function displayTimetable(teacherName) {
     currentLessons = allLessons.filter(item => 
         item.teacher.toUpperCase() === teacherName.toUpperCase()
     );
-    
+    currentTitle = `${teacherName} 的時間表`;
+    updateTimetableTitle(currentTitle);
     if (currentLessons.length === 0) {
         resultDiv.innerHTML = `<p>找不到教師 ${teacherName} 的時間表</p>`;
         timetableTable.innerHTML = '';
@@ -97,7 +103,8 @@ function displayClassTimetable(className) {
     currentLessons = allLessons.filter(item => 
         item.class.toUpperCase() === className.toUpperCase()
     );
-    
+    currentTitle = `班別 ${className} 的時間表`;
+    updateTimetableTitle(currentTitle);
     if (currentLessons.length === 0) {
         resultDiv.innerHTML = `<p>找不到班別 ${className} 的時間表</p>`;
         timetableTable.innerHTML = '';
