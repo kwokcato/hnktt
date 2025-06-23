@@ -142,7 +142,12 @@
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
     <div class="refresh-btn" title="重整頁面">
         <div class="refresh-icon"></div>
     </div>
