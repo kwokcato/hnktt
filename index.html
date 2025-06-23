@@ -35,13 +35,10 @@
             flex: 1;
             gap: 20px;
             overflow: hidden;
-            width: 100%; /* 新增這行，控制容器寬度為90% */
-            margin: 0 auto; /* 新增這行，讓容器居中 */
         }
         .tab-header {
             display: flex;
             border-bottom: 1px solid #ddd;
-            width: 100%; /* 確保標題欄寬度與內容一致 */
         }
         .tab-button {
             padding: 10px 15px;
@@ -68,7 +65,6 @@
             border-radius: 0 0 5px 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             overflow: hidden;
-            width: 100%; /* 確保內容區域寬度為100% */
         }
         .tab-content.active {
             display: flex;
@@ -79,7 +75,6 @@
             width: 100%;
             border: none;
             border-radius: 0 0 5px 5px;
-            min-height: 600px; /* 增加最小高度以提供更多空間 */
         }
         .loading {
             text-align: center;
@@ -95,10 +90,9 @@
             color: #666;
             font-size: 10px;
             flex-shrink: 0;
-            width: 90%; /* 讓頁腳寬度與內容一致 */
-            margin: 0 auto; /* 讓頁腳居中 */
         }
     </style>
+
 </head>
 <body oncontextmenu="return false;">
     <script>
@@ -145,9 +139,9 @@
             <iframe id="ttFrame" src="tt.html" onload="hideLoading('teacherTimetable')"></iframe>
         </div>
         
-        <div id="rooms" class="tab-content">
+        <div id="rooms"" class="tab-content">
             <div class="loading">載入房間時間表查詢功能...</div>
-            <iframe id="roomFrame" src="room.html" onload="hideLoading('rooms')"></iframe>
+            <iframe id="ttFrame" src="room.html" onload="hideLoading('rooms')"></iframe>
         </div>
 
         <div id="freePeriods" class="tab-content">
@@ -194,7 +188,7 @@
         
         // 預載入所有iframe以加快切換速度
         window.onload = function() {
-            document.getElementById('roomFrame').src = "room.html";
+            document.getElementById('roomFrame').src = "free.html";
             document.getElementById('freeFrame').src = "free.html";
             document.getElementById('meetingFrame').src = "bysub.html";
         };
