@@ -67,15 +67,15 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            table-layout: fixed;
+            table-layout: auto; /* 改為auto以適應內容 */
         }
         
         th, td {
             border: 1px solid var(--border-color);
             padding: 8px;
             text-align: center;
-            width: 18ch;
-            max-width: 18ch;
+            min-width: 60px; /* 最小寬度 */
+            max-width: 180px; /* 最大寬度 */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -87,16 +87,14 @@
         }
         
         .period-col {
-            width: 4ch !important;
-            max-width: 4ch;
+            width: 40px !important;
             background-color: var(--table-header-bg);
             color: var(--table-header-color);
             font-weight: bold;
         }
         
         .time-col {
-            width: 10ch !important;
-            max-width: 10ch;
+            width: 80px !important;
             background-color: var(--table-header-bg);
             color: var(--table-header-color);
             font-weight: bold;
@@ -184,28 +182,17 @@
             margin-top: 20px;
         }
         
-        /* 無障礙控制面板 */
-        .accessibility-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            padding: 10px;
-            z-index: 1000;
-        }
-        
-        .accessibility-title {
-            font-weight: bold;
-            margin-bottom: 8px;
-            font-size: 1em;
+        /* 無障礙控制面板 - 整合到標題行 */
+        .title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
         
         .accessibility-controls {
             display: flex;
             gap: 5px;
-            flex-wrap: wrap;
         }
         
         .accessibility-btn {
@@ -317,15 +304,18 @@
                 width: 100%;
             }
             
-            .accessibility-panel {
-                bottom: 80px;
-                right: 10px;
-                left: 10px;
-                width: auto;
+            .title-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .accessibility-controls {
+                justify-content: flex-end;
             }
             
             .refresh-btn {
-                bottom: 80px;
+                bottom: 20px;
                 left: 10px;
             }
         }
@@ -370,7 +360,15 @@
     </script>
     
     <div class="container">
-        <h1>教師/班別時間表查詢</h1>
+        <div class="title-row">
+            <h1>教師/班別時間表查詢</h1>
+            <div class="accessibility-controls">
+                <button class="accessibility-btn" onclick="setFontSize('small')" aria-label="小字型 (80%)">小</button>
+                <button class="accessibility-btn active" onclick="setFontSize('normal')" aria-label="標準字型 (100%)">標準</button>
+                <button class="accessibility-btn" onclick="setFontSize('large')" aria-label="大字型 (150%)">大</button>
+                <button class="accessibility-btn" onclick="toggleHighContrast()" aria-label="切換高對比度模式">高對比</button>
+            </div>
+        </div>
         
         <div id="loading" role="status" aria-live="polite">載入時間表數據中...</div>
         
@@ -404,17 +402,6 @@
         </div>
     </div>
 
-    <!-- 無障礙控制面板 -->
-    <div class="accessibility-panel">
-        <div class="accessibility-title">無障礙設定</div>
-        <div class="accessibility-controls">
-            <button class="accessibility-btn" onclick="setFontSize('small')" aria-label="小字型 (80%)">小字</button>
-            <button class="accessibility-btn active" onclick="setFontSize('normal')" aria-label="標準字型 (100%)">標準</button>
-            <button class="accessibility-btn" onclick="setFontSize('large')" aria-label="大字型 (150%)">大字</button>
-            <button class="accessibility-btn" onclick="toggleHighContrast()" aria-label="切換高對比度模式">高對比度</button>
-        </div>
-    </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         document.write('<script src="timetable.js?t=' + new Date().getTime() + '"><\/script>');
@@ -431,6 +418,9 @@
             
             // 將選擇存入localStorage
             localStorage.setItem('fontSizePreference', size);
+            
+            // 調整表格大小
+            adjustTableSize();
         }
         
         function toggleHighContrast() {
@@ -438,6 +428,27 @@
             const isHighContrast = document.body.classList.contains('high-contrast');
             event.target.classList.toggle('active', isHighContrast);
             localStorage.setItem('highContrastPreference', isHighContrast);
+        }
+        
+        function adjustTableSize() {
+            const table = document.getElementById('timetable');
+            if (!table) return;
+            
+            // 根據字型大小調整表格列寬
+            const fontSize = getComputedStyle(document.body).fontSize;
+            const baseSize = parseFloat(fontSize);
+            
+            // 調整週期和時間列的寬度
+            const periodCols = table.querySelectorAll('.period-col');
+            const timeCols = table.querySelectorAll('.time-col');
+            
+            periodCols.forEach(col => {
+                col.style.width = `${baseSize * 2.5}px`;
+            });
+            
+            timeCols.forEach(col => {
+                col.style.width = `${baseSize * 5}px`;
+            });
         }
         
         // 頁面載入時檢查儲存的無障礙偏好
@@ -452,6 +463,9 @@
                 document.body.classList.add('high-contrast');
                 document.querySelector('.accessibility-btn[onclick="toggleHighContrast()"]').classList.add('active');
             }
+            
+            // 初始調整表格大小
+            adjustTableSize();
         });
         
         // 確保表格內容對屏幕閱讀器友好
@@ -472,6 +486,9 @@
                         firstCell.setAttribute('scope', 'row');
                     }
                 });
+                
+                // 再次調整表格大小以確保正確
+                adjustTableSize();
             }
         }
         
