@@ -21,6 +21,8 @@
             margin: 0 auto;
             padding: 10px; /* 減少內邊距 */
             box-sizing: border-box;
+            transform-origin: top left;
+            transition: transform 0.3s ease;
         }
         h2 {
             color: #2c3e50;
@@ -97,6 +99,54 @@
             font-size: 10px;
             flex-shrink: 0;
         }
+        /* 縮放控制面板樣式 */
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .zoom-level {
+            font-size: 14px;
+            min-width: 40px;
+            text-align: center;
+        }
+        .zoom-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            user-select: none;
+        }
+        .zoom-btn:hover {
+            background: #e0e0e0;
+        }
+        .zoom-reset {
+            margin-left: 5px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .zoom-reset:hover {
+            background: #e0e0e0;
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -118,6 +168,15 @@
             }
         });
     </script>
+    
+    <!-- 縮放控制面板 -->
+    <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-out">-</button>
+        <span id="zoom-level" class="zoom-level">100%</span>
+        <button class="zoom-btn" id="zoom-in">+</button>
+        <button class="zoom-reset" id="reset-zoom">重置</button>
+    </div>
+
     <h2>佛教何南金中學 - 時間表查詢系統 <div style="text-align: right; font-size: 12px;" id="todayDate"></div></h2>
     
     <script>
@@ -197,6 +256,51 @@
             document.getElementById('freeFrame').src = "free.html";
             document.getElementById('meetingFrame').src = "bysub.html";
         };
+
+        // 縮放功能
+        let currentZoom = 1;
+        const zoomStep = 0.1;
+        const minZoom = 0.5;
+        const maxZoom = 2;
+        
+        const body = document.body;
+        const zoomLevelElement = document.getElementById('zoom-level');
+        const zoomInButton = document.getElementById('zoom-in');
+        const zoomOutButton = document.getElementById('zoom-out');
+        const resetZoomButton = document.getElementById('reset-zoom');
+        
+        function updateZoom() {
+            body.style.transform = `scale(${currentZoom})`;
+            body.style.width = `${100 / currentZoom}%`;
+            zoomLevelElement.textContent = `${Math.round(currentZoom * 100)}%`;
+            
+            // 調整body的margin以保持居中
+            const remainingWidth = 100 - (100 / currentZoom);
+            body.style.marginLeft = `${remainingWidth / 2}%`;
+            body.style.marginRight = `${remainingWidth / 2}%`;
+        }
+        
+        zoomInButton.addEventListener('click', () => {
+            if (currentZoom + zoomStep <= maxZoom) {
+                currentZoom += zoomStep;
+                updateZoom();
+            }
+        });
+        
+        zoomOutButton.addEventListener('click', () => {
+            if (currentZoom - zoomStep >= minZoom) {
+                currentZoom -= zoomStep;
+                updateZoom();
+            }
+        });
+        
+        resetZoomButton.addEventListener('click', () => {
+            currentZoom = 1;
+            updateZoom();
+        });
+        
+        // 初始化縮放控制
+        updateZoom();
     </script>
 </body>
 </html>
