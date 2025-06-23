@@ -10,22 +10,22 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* 禁用滾動條 */
+            overflow: hidden;
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
         }
         body {
             display: flex;
             flex-direction: column;
-            max-width: 1200px;
+            max-width: 900px; /* 減少最大寬度 */
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px; /* 減少內邊距 */
             box-sizing: border-box;
         }
         h2 {
             color: #2c3e50;
             text-align: center;
-            margin: 0 0 10px 0; /* 減少底部邊距 */
+            margin: 0 0 10px 0;
             padding: 0;
             font-size: 1.5em;
         }
@@ -33,17 +33,17 @@
             display: flex;
             flex-direction: column;
             flex: 1;
-            gap: 10px; /* 減少間距 */
+            gap: 10px;
             overflow: hidden;
-            height: calc(100vh - 120px); /* 計算高度以佔用更多空間 */
+            height: calc(100vh - 110px); /* 調整高度計算 */
         }
         .tab-header {
             display: flex;
             border-bottom: 1px solid #ddd;
-            padding-bottom: 5px; /* 減少內邊距 */
+            padding-bottom: 5px;
         }
         .tab-button {
-            padding: 8px 12px; /* 減少按鈕內邊距 */
+            padding: 8px 12px;
             background-color: #f1f1f1;
             border: none;
             cursor: pointer;
@@ -51,6 +51,7 @@
             transition: 0.3s;
             border-radius: 5px 5px 0 0;
             margin-right: 5px;
+            white-space: nowrap; /* 防止按鈕文字換行 */
         }
         .tab-button:hover {
             background-color: #ddd;
@@ -67,23 +68,23 @@
             border-radius: 0 0 5px 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             overflow: hidden;
-            height: 100%; /* 確保內容高度填滿 */
+            height: 100%;
         }
         .tab-content.active {
             display: flex;
             flex-direction: column;
-            height: 100%; /* 確保內容高度填滿 */
+            height: 100%;
         }
         iframe {
             flex: 1;
             width: 100%;
             border: none;
             border-radius: 0 0 5px 5px;
-            min-height: 70vh; /* 設置最小高度 */
+            min-height: 70vh;
         }
         .loading {
             text-align: center;
-            padding: 10px; /* 減少內邊距 */
+            padding: 10px;
             font-style: italic;
             color: #666;
         }
