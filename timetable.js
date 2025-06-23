@@ -45,8 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
     }
 
-    // Add this at the end of the DOMContentLoaded event listener, after initExportButtons()
-    document.getElementById('reloadBtn').addEventListener('click', hardReload);
+   
     
     // 列印時間表
     function printTimetable() {
