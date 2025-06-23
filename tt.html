@@ -7,30 +7,54 @@
     <link rel="stylesheet" type="text/css" href="hnkstyle.css">
     <title>教師/班別時間表查詢</title>
     <style>
+        :root {
+            --font-size-base: 100%;
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --secondary-hover: #2980b9;
+            --background-light: #f5f5f5;
+            --text-color: #333;
+            --text-light: #666;
+            --border-color: #ddd;
+            --table-header-bg: #3498db;
+            --table-header-color: white;
+            --table-row-even: #ffffff;
+            --table-row-odd: #f9f9f9;
+            --break-cell-bg: #e6e6e6;
+            --focus-outline: 2px solid #0056b3;
+        }
+        
         body {
             font-family: Arial, sans-serif;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            font-size: var(--font-size-base);
+            color: var(--text-color);
+            line-height: 1.5;
         }
-        h1 {
-            color: #2c3e50;
+        
+        h1, h3 {
+            color: var(--primary-color);
             text-align: center;
         }
+        
         .container {
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
+        
         .input-section {
             display: flex;
             gap: 10px;
             align-items: center;
-            background-color: #f5f5f5;
+            background-color: var(--background-light);
             padding: 15px;
             border-radius: 5px;
             flex-wrap: wrap;
         }
+        
         .dropdown-group {
             display: flex;
             gap: 10px;
@@ -38,14 +62,16 @@
             flex-grow: 1;
             position: relative;
         }
+        
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             table-layout: fixed;
         }
+        
         th, td {
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
             padding: 8px;
             text-align: center;
             width: 18ch;
@@ -54,35 +80,46 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        
         th {
-            background-color: #3498db;
-            color: white;
+            background-color: var(--table-header-bg);
+            color: var(--table-header-color);
         }
+        
         .period-col {
             width: 4ch !important;
             max-width: 4ch;
-            background-color: #3498db;
-            color: white;
+            background-color: var(--table-header-bg);
+            color: var(--table-header-color);
             font-weight: bold;
         }
+        
         .time-col {
             width: 10ch !important;
             max-width: 10ch;
-            background-color: #3498db;
-            color: white;
+            background-color: var(--table-header-bg);
+            color: var(--table-header-color);
             font-weight: bold;
         }
+        
         tr:nth-child(even) {
-            background-color: #ffffff;
+            background-color: var(--table-row-even);
         }
+        
+        tr:nth-child(odd) {
+            background-color: var(--table-row-odd);
+        }
+        
         .empty-cell {
-            background-color: #ffffff;
+            background-color: var(--table-row-even);
         }
+        
         .break-cell {
-            background-color: #e6e6e6;
-            color: #777;
+            background-color: var(--break-cell-bg);
+            color: var(--text-light);
             font-style: italic;
         }
+        
         .main-lesson {
             font-weight: bold;
             white-space: normal;
@@ -91,41 +128,47 @@
             max-width: 100%;
             text-align: center;
         }
+        
         .co-teachers {
             font-size: 0.9em;
-            color: #666;
+            color: var(--text-light);
         }
+        
         .dismissal-time {
             font-size: 0.9em;
-            color: #666;
+            color: var(--text-light);
             font-style: italic;
         }
-        select {
+        
+        select, input {
             padding: 8px;
             border-radius: 4px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
+            font-size: inherit;
         }
+        
         input {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
             width: 200px;
         }
+        
         .hidden {
             display: none;
         }
+        
         .export-btn {
             padding: 10px 15px;
             margin: 0 5px;
-            background-color: #3498db;
+            background-color: var(--secondary-color);
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 1em;
         }
-        .export-btn:hover {
-            background-color: #2980b9;
+        
+        .export-btn:hover, .export-btn:focus {
+            background-color: var(--secondary-hover);
+            outline: var(--focus-outline);
         }
         
         /* 上方按鈕組靠右對齊 */
@@ -140,23 +183,184 @@
             text-align: center;
             margin-top: 20px;
         }
+        
+        /* 無障礙控制面板 */
+        .accessibility-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            padding: 10px;
+            z-index: 1000;
+        }
+        
+        .accessibility-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        
+        .accessibility-controls {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .accessibility-btn {
+            padding: 5px 10px;
+            background-color: var(--background-light);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .accessibility-btn:hover, .accessibility-btn:focus {
+            background-color: var(--secondary-color);
+            color: white;
+            outline: var(--focus-outline);
+        }
+        
+        .accessibility-btn.active {
+            background-color: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-hover);
+        }
+        
+        /* 刷新按鈕 */
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: none;
+        }
+        
+        .refresh-btn:hover, .refresh-btn:focus {
+            background-color: var(--secondary-hover);
+            outline: var(--focus-outline);
+        }
+        
+        .refresh-icon {
+            width: 24px;
+            height: 24px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        /* 高對比度模式 */
+        body.high-contrast {
+            --primary-color: #000;
+            --secondary-color: #000;
+            --secondary-hover: #333;
+            --background-light: #fff;
+            --text-color: #000;
+            --text-light: #333;
+            --border-color: #000;
+            --table-header-bg: #000;
+            --table-header-color: #fff;
+            --table-row-even: #fff;
+            --table-row-odd: #eee;
+            --break-cell-bg: #ddd;
+        }
+        
+        body.high-contrast a {
+            color: #00f;
+            text-decoration: underline;
+        }
+        
+        /* 字型大小設定 */
+        body.font-small {
+            --font-size-base: 80%;
+        }
+        
+        body.font-normal {
+            --font-size-base: 100%;
+        }
+        
+        body.font-large {
+            --font-size-base: 150%;
+        }
+        
+        /* 鍵盤導航焦點樣式 */
+        a:focus, button:focus, select:focus, input:focus {
+            outline: var(--focus-outline);
+            outline-offset: 2px;
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .input-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .dropdown-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            input, select {
+                width: 100%;
+            }
+            
+            .accessibility-panel {
+                bottom: 80px;
+                right: 10px;
+                left: 10px;
+                width: auto;
+            }
+            
+            .refresh-btn {
+                bottom: 80px;
+                left: 10px;
+            }
+        }
+        
+        /* 屏幕閱讀器專用類 */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;" class="font-normal">
     <script>
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
         });
     </script>
-    <div class="refresh-btn" title="重整頁面">
-        <div class="refresh-icon"></div>
-    </div>
+    
+    <!-- 刷新按鈕 -->
+    <button class="refresh-btn" title="重整頁面" aria-label="重新整理頁面">
+        <span class="refresh-icon"></span>
+    </button>
     
     <script>
         document.querySelector('.refresh-btn').addEventListener('click', function() {
             // 添加簡單的動畫效果
             this.style.transform = 'scale(1.2) rotate(360deg)';
-            this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
+            this.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
             
             // 1秒後重整頁面
             setTimeout(() => {
@@ -164,45 +368,117 @@
             }, 1000);
         });
     </script>
+    
     <div class="container">
-        <h3>教師/班別時間表查詢</h3>
+        <h1>教師/班別時間表查詢</h1>
         
-        <div id="loading">載入時間表數據中...</div>
+        <div id="loading" role="status" aria-live="polite">載入時間表數據中...</div>
         
         <div class="input-section">
-            <input type="text" id="teacherName" placeholder="輸入教師姓名或班別 (如 1A)">
+            <label for="teacherName" class="sr-only">輸入教師姓名或班別</label>
+            <input type="text" id="teacherName" placeholder="輸入教師姓名或班別 (如 1A)" aria-label="輸入教師姓名或班別">
             
             <div class="dropdown-group">
                 <span>或</span>
-                <select id="teacherDropdown">
+                <label for="teacherDropdown" class="sr-only">選擇教師</label>
+                <select id="teacherDropdown" aria-label="選擇教師">
                     <option value="">選擇教師...</option>
                 </select>
                 <span>或</span>
-                <select id="classDropdown">
+                <label for="classDropdown" class="sr-only">選擇班別</label>
+                <select id="classDropdown" aria-label="選擇班別">
                     <option value="">選擇班別...</option>
                 </select>
                 <!-- 上方按鈕組 (靠右對齊) -->
                 <div id="exportBtnGroup"></div>
-                <!-- 重新下載 JS 檔案 -->
-                <!-- <button id="reloadBtn" class="export-btn">重新下載資料庫</button> -->
             </div>
         </div>
         
-        <div id="result"></div>
-        <table id="timetable">
-            <!-- 時間表將在這裡動態生成 -->
-        </table>
-
-        <!-- 下方按鈕組 (置中對齊) -->
-        <!-- <div id="exportBtnGroup"></div> -->
+        <div id="result" role="region" aria-live="polite"></div>
         
+        <div role="region" aria-labelledby="timetable-title">
+            <h2 id="timetable-title" class="sr-only">時間表</h2>
+            <table id="timetable" aria-describedby="timetable-title">
+                <!-- 時間表將在這裡動態生成 -->
+            </table>
+        </div>
+    </div>
+
+    <!-- 無障礙控制面板 -->
+    <div class="accessibility-panel">
+        <div class="accessibility-title">無障礙設定</div>
+        <div class="accessibility-controls">
+            <button class="accessibility-btn" onclick="setFontSize('small')" aria-label="小字型 (80%)">小字</button>
+            <button class="accessibility-btn active" onclick="setFontSize('normal')" aria-label="標準字型 (100%)">標準</button>
+            <button class="accessibility-btn" onclick="setFontSize('large')" aria-label="大字型 (150%)">大字</button>
+            <button class="accessibility-btn" onclick="toggleHighContrast()" aria-label="切換高對比度模式">高對比度</button>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- <script src="timetable.js"></script> -->
-    <!-- <script src="timetable.js?v=${new Date().getTime()}"></script> -->
     <script>
         document.write('<script src="timetable.js?t=' + new Date().getTime() + '"><\/script>');
+        
+        // 無障礙功能
+        function setFontSize(size) {
+            document.body.className = document.body.className.replace(/\bfont-\w+\b/g, '');
+            document.body.classList.add(`font-${size}`);
+            
+            // 更新按鈕狀態
+            const buttons = document.querySelectorAll('.accessibility-btn[onclick^="setFontSize"]');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 將選擇存入localStorage
+            localStorage.setItem('fontSizePreference', size);
+        }
+        
+        function toggleHighContrast() {
+            document.body.classList.toggle('high-contrast');
+            const isHighContrast = document.body.classList.contains('high-contrast');
+            event.target.classList.toggle('active', isHighContrast);
+            localStorage.setItem('highContrastPreference', isHighContrast);
+        }
+        
+        // 頁面載入時檢查儲存的無障礙偏好
+        document.addEventListener('DOMContentLoaded', function() {
+            // 字型大小
+            const savedSize = localStorage.getItem('fontSizePreference') || 'normal';
+            setFontSize(savedSize);
+            
+            // 高對比度
+            const highContrast = localStorage.getItem('highContrastPreference') === 'true';
+            if (highContrast) {
+                document.body.classList.add('high-contrast');
+                document.querySelector('.accessibility-btn[onclick="toggleHighContrast()"]').classList.add('active');
+            }
+        });
+        
+        // 確保表格內容對屏幕閱讀器友好
+        function enhanceTableAccessibility() {
+            const table = document.getElementById('timetable');
+            if (table) {
+                table.setAttribute('role', 'grid');
+                const headers = table.querySelectorAll('th');
+                headers.forEach(header => {
+                    header.setAttribute('scope', 'col');
+                });
+                
+                const rows = table.querySelectorAll('tr');
+                rows.forEach((row, rowIndex) => {
+                    if (rowIndex === 0) return; // 跳過表頭
+                    const firstCell = row.querySelector('td:first-child');
+                    if (firstCell) {
+                        firstCell.setAttribute('scope', 'row');
+                    }
+                });
+            }
+        }
+        
+        // 假設這是時間表載入完成後的回調
+        function onTimetableLoaded() {
+            enhanceTableAccessibility();
+        }
     </script>
 </body>
 </html>
