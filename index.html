@@ -25,7 +25,7 @@
         h2 {
             color: #2c3e50;
             text-align: center;
-            margin: 0 0 20px 0;
+            margin: 0 0 10px 0; /* 減少底部邊距 */
             padding: 0;
             font-size: 1.5em;
         }
@@ -33,15 +33,17 @@
             display: flex;
             flex-direction: column;
             flex: 1;
-            gap: 20px;
+            gap: 10px; /* 減少間距 */
             overflow: hidden;
+            height: calc(100vh - 120px); /* 計算高度以佔用更多空間 */
         }
         .tab-header {
             display: flex;
             border-bottom: 1px solid #ddd;
+            padding-bottom: 5px; /* 減少內邊距 */
         }
         .tab-button {
-            padding: 10px 15px;
+            padding: 8px 12px; /* 減少按鈕內邊距 */
             background-color: #f1f1f1;
             border: none;
             cursor: pointer;
@@ -65,20 +67,23 @@
             border-radius: 0 0 5px 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             overflow: hidden;
+            height: 100%; /* 確保內容高度填滿 */
         }
         .tab-content.active {
             display: flex;
             flex-direction: column;
+            height: 100%; /* 確保內容高度填滿 */
         }
         iframe {
             flex: 1;
             width: 100%;
             border: none;
             border-radius: 0 0 5px 5px;
+            min-height: 70vh; /* 設置最小高度 */
         }
         .loading {
             text-align: center;
-            padding: 20px;
+            padding: 10px; /* 減少內邊距 */
             font-style: italic;
             color: #666;
         }
@@ -92,7 +97,6 @@
             flex-shrink: 0;
         }
     </style>
-
 </head>
 <body oncontextmenu="return false;">
     <script>
@@ -139,9 +143,9 @@
             <iframe id="ttFrame" src="tt.html" onload="hideLoading('teacherTimetable')"></iframe>
         </div>
         
-        <div id="rooms"" class="tab-content">
+        <div id="rooms" class="tab-content">
             <div class="loading">載入房間時間表查詢功能...</div>
-            <iframe id="ttFrame" src="room.html" onload="hideLoading('rooms')"></iframe>
+            <iframe id="roomFrame" src="room.html" onload="hideLoading('rooms')"></iframe>
         </div>
 
         <div id="freePeriods" class="tab-content">
@@ -188,7 +192,7 @@
         
         // 預載入所有iframe以加快切換速度
         window.onload = function() {
-            document.getElementById('roomFrame').src = "free.html";
+            document.getElementById('roomFrame').src = "room.html";
             document.getElementById('freeFrame').src = "free.html";
             document.getElementById('meetingFrame').src = "bysub.html";
         };
