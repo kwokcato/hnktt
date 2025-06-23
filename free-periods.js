@@ -86,8 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
     
-    document.getElementById('reloadBtn').addEventListener('click', hardReload);
-
+    
     // 獲取教師課程（排除中六課程如果已完結）
     function getTeacherLessons(teacherName) {
         const teacher = allTeachers.find(t => t.toUpperCase() === teacherName.toUpperCase());
