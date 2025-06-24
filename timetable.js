@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentTitle = `${teacherName} 的時間表`;
-        resultDiv.innerHTML = `<h2>${currentTitle}</h2>`;
+        resultDiv.innerHTML = `<h3>${currentTitle}</h3>`;
         renderTimetable(currentLessons);
     }
     
@@ -636,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentTitle = `班別 ${className} 的時間表`;
-        resultDiv.innerHTML = `<h2>${currentTitle}</h2>`;
+        resultDiv.innerHTML = `<h3>${currentTitle}</h3>`;
         renderTimetable(currentLessons, true); // 傳入true表示是班別查詢
     }
     
