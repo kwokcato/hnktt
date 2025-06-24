@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentTitle = `${teacherName} 的時間表`;
-        resultDiv.innerHTML = `<h3>${currentTitle}</h3>`;
+        resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons);
     }
     
@@ -636,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentTitle = `班別 ${className} 的時間表`;
-        resultDiv.innerHTML = `<h3>${currentTitle}</h3>`;
+        resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons, true); // 傳入true表示是班別查詢
     }
     
@@ -645,13 +645,13 @@ document.addEventListener('DOMContentLoaded', function() {
         let tableHTML = `
             <thead>
                 <tr>
-                    <th class="time-col">時間</th>
-                    <th class="period-col">節數</th>
-                    <th>星期一</th>
-                    <th>星期二</th>
-                    <th>星期三</th>
-                    <th>星期四</th>
-                    <th>星期五</th>
+                    <th class="time-col" style="padding: 4px;">時間</th>
+                    <th class="time-col" style="padding: 4px;">節數</th>
+                    <th style="padding: 4px;">星期一</th>
+                    <th style="padding: 4px;">星期二</th>
+                    <th style="padding: 4px;">星期三</th>
+                    <th style="padding: 4px;">星期四</th>
+                    <th style="padding: 4px;">星期五</th>
                 </tr>
             </thead>
             <tbody>
