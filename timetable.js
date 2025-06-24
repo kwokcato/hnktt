@@ -646,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <thead>
                 <tr>
                     <th class="time-col" style="padding: 4px;">時間</th>
-                    <th class="time-col" style="padding: 4px;">節數</th>
+                    <th class="period-col" style="padding: 4px;">節數</th>
                     <th style="padding: 4px;">星期一</th>
                     <th style="padding: 4px;">星期二</th>
                     <th style="padding: 4px;">星期三</th>
