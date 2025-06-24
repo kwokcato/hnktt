@@ -193,8 +193,12 @@
             document.getElementById('meetingFrame').src = "bysub.html";
         };
     </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-      $('#spanYear').html(new Date().getFullYear());
+        // Wait for DOM to be fully loaded before manipulating it
+        $(document).ready(function() {
+            $('#spanYear').html(new Date().getFullYear());
+        });
     </script>
 </body>
 </html>
