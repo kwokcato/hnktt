@@ -83,6 +83,10 @@
             font-size: 0.9em;
             color: #666;
         }
+        .warning {
+            color: #f39c12;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -275,9 +279,12 @@
             // 獲取每位教師當天的課程安排
             const teacherSchedules = {};
             availableTeachers.forEach(teacher => {
-                teacherSchedules[teacher] = timetableData
-                    .filter(item => item.teacher === teacher && item.day === day)
-                    .map(item => item.period);
+                const periods = [...new Set( // 使用Set去除重複節數
+                    timetableData
+                        .filter(item => item.teacher === teacher && item.day === day)
+                        .map(item => item.period)
+                )].sort((a, b) => a - b);
+                teacherSchedules[teacher] = periods;
             });
             
             // 找出每位教師教授過的班級
@@ -300,10 +307,11 @@
                 const classes = lessons.map(l => l.class);
                 const sampleLesson = lessons[0]; // 使用第一節課作為代表（科目和教室可能不同）
                 
-                // 找出在該節數有空堂的教師
+                // 找出在該節數有空堂且當天不超過3節課的教師
                 const freeTeachers = availableTeachers.filter(teacher => 
                     !assignedTeachers.has(teacher) && 
-                    !teacherSchedules[teacher].includes(period) // 確保該節數是空堂
+                    !teacherSchedules[teacher].includes(period) && // 確保該節數是空堂
+                    teacherSchedules[teacher].length < 4 // 當天不超過3節課
                 );
                 
                 if (freeTeachers.length === 0) {
@@ -313,7 +321,7 @@
                         subject: sampleLesson.subject,
                         room: sampleLesson.room,
                         substitute: null,
-                        error: "找不到有空堂的代課教師"
+                        error: "找不到合適的代課教師（需有空堂且當天不超過3節課）"
                     });
                     continue;
                 }
@@ -369,8 +377,15 @@
             const resultDiv = document.getElementById('result');
             let html = `<h3>代課安排結果 (${absentTeacher} 星期${day})</h3>`;
             
-            if (substitutes.some(item => item.error)) {
+            // 檢查是否有未能安排的課程
+            const hasErrors = substitutes.some(item => item.error);
+            const hasWarnings = substitutes.some(item => item.substitute && item.teacherPeriods.length >= 3);
+            
+            if (hasErrors) {
                 html += '<div class="error">注意：部分課程未能找到合適的代課教師</div>';
+            }
+            if (hasWarnings) {
+                html += '<div class="warning">注意：部分代課教師當天已有3節課</div>';
             }
             
             substitutes.forEach(item => {
@@ -386,8 +401,9 @@
                     const periodsText = item.teacherPeriods.length > 0 
                         ? ` (${item.teacherPeriods.join(',')})` 
                         : ' (當天無課)';
+                    const warningClass = item.teacherPeriods.length >= 3 ? 'warning' : '';
                     html += `代課教師: <strong>${item.substitute}</strong>
-                            <span class="teacher-periods">${periodsText}</span>`;
+                            <span class="teacher-periods ${warningClass}">${periodsText}</span>`;
                     html += '<div class="class-list">負責班別: ';
                     html += item.classes.map(c => `<span class="class-item">${c}</span>`).join(', ');
                     html += '</div>';
