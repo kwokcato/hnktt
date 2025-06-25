@@ -72,6 +72,13 @@
             color: #e74c3c;
             font-weight: bold;
         }
+        .class-list {
+            margin-top: 5px;
+            padding-left: 15px;
+        }
+        .class-item {
+            margin-bottom: 3px;
+        }
     </style>
 </head>
 <body>
@@ -231,19 +238,24 @@
             const excludedTeachers = Array.from(excludeCheckboxes).map(cb => cb.value);
             excludedTeachers.push(teacherInput); // 自動排除請假教師
             
-            // 獲取請假教師當天的課程
-            const absentLessons = timetableData.filter(item => 
-                item.teacher === teacherInput && item.day === day
-            );
+            // 獲取請假教師當天的課程，按節次分組
+            const absentLessonsByPeriod = {};
+            timetableData
+                .filter(item => item.teacher === teacherInput && item.day === day)
+                .forEach(lesson => {
+                    if (!absentLessonsByPeriod[lesson.period]) {
+                        absentLessonsByPeriod[lesson.period] = [];
+                    }
+                    absentLessonsByPeriod[lesson.period].push(lesson);
+                });
             
-            if (absentLessons.length === 0) {
+            const periods = Object.keys(absentLessonsByPeriod).map(Number).sort((a, b) => a - b);
+            
+            if (periods.length === 0) {
                 document.getElementById('result').innerHTML = 
                     `<div class="error">教師 ${teacherInput} 在星期${day}沒有課程。</div>`;
                 return;
             }
-            
-            // 按節次排序
-            absentLessons.sort((a, b) => a.period - b.period);
             
             // 找出所有可能的代課教師 (不包含排除名單)
             const availableTeachers = allTeachers.filter(teacher => 
@@ -276,27 +288,38 @@
                 teacherClasses[teacher] = classes;
             });
             
-            // 嘗試為每節課安排代課教師
+            // 嘗試為每個節次安排代課教師
             const substitutes = [];
             const assignedTeachers = new Set();
             
-            for (const lesson of absentLessons) {
-                // 優先選擇: 1. 教過該班 2. 當天空堂多
+            for (const period of periods) {
+                const lessons = absentLessonsByPeriod[period];
+                const classes = lessons.map(l => l.class);
+                const sampleLesson = lessons[0]; // 使用第一節課作為代表（科目和教室可能不同）
+                
+                // 優先選擇: 1. 教過這些班級 2. 當天空堂多
                 const candidates = availableTeachers
                     .filter(teacher => 
                         !assignedTeachers.has(teacher) && 
                         teacherLoad[teacher] < 6 // 每天最多6節
                     )
-                    .map(teacher => ({
-                        teacher,
-                        hasTaughtClass: teacherClasses[teacher].includes(lesson.class),
-                        load: teacherLoad[teacher],
-                        random: Math.random() // 用於隨機排序相同條件的候選人
-                    }))
+                    .map(teacher => {
+                        // 計算該教師教過多少個這些班級
+                        const taughtClasses = teacherClasses[teacher].filter(c => 
+                            classes.includes(c)
+                        ).length;
+                        
+                        return {
+                            teacher,
+                            taughtClasses, // 教過的班級數量
+                            load: teacherLoad[teacher],
+                            random: Math.random() // 用於隨機排序相同條件的候選人
+                        };
+                    })
                     .sort((a, b) => {
-                        // 先按是否教過該班排序，然後按負載排序，最後隨機
-                        if (a.hasTaughtClass !== b.hasTaughtClass) {
-                            return b.hasTaughtClass - a.hasTaughtClass;
+                        // 先按教過的班級數量排序，然後按負載排序，最後隨機
+                        if (a.taughtClasses !== b.taughtClasses) {
+                            return b.taughtClasses - a.taughtClasses;
                         }
                         if (a.load !== b.load) {
                             return a.load - b.load;
@@ -306,10 +329,10 @@
                 
                 if (candidates.length === 0) {
                     substitutes.push({
-                        period: lesson.period,
-                        class: lesson.class,
-                        subject: lesson.subject,
-                        room: lesson.room,
+                        period: period,
+                        classes: classes,
+                        subject: sampleLesson.subject,
+                        room: sampleLesson.room,
                         substitute: null,
                         error: "找不到合適的代課教師"
                     });
@@ -321,10 +344,10 @@
                 teacherLoad[selectedTeacher]++;
                 
                 substitutes.push({
-                    period: lesson.period,
-                    class: lesson.class,
-                    subject: lesson.subject,
-                    room: lesson.room,
+                    period: period,
+                    classes: classes,
+                    subject: sampleLesson.subject,
+                    room: sampleLesson.room,
                     substitute: selectedTeacher
                 });
             }
@@ -345,7 +368,6 @@
             substitutes.forEach(item => {
                 html += `<div class="substitute-item">
                     <strong>第 ${item.period} 節</strong> | 
-                    班別: ${item.class} | 
                     科目: ${item.subject} | 
                     教室: ${item.room}<br>`;
                 
@@ -353,6 +375,9 @@
                     html += `<span class="error">${item.error}</span>`;
                 } else {
                     html += `代課教師: <strong>${item.substitute}</strong>`;
+                    html += '<div class="class-list">負責班別: ';
+                    html += item.classes.map(c => `<span class="class-item">${c}</span>`).join(', ');
+                    html += '</div>';
                 }
                 
                 html += '</div>';
