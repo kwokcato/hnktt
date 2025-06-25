@@ -84,6 +84,15 @@
             color: #7f8c8d;
             margin-top: 3px;
         }
+        .backup-teachers {
+            margin-top: 5px;
+            padding-left: 15px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .backup-teacher {
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -310,13 +319,13 @@
             availableTeachers.forEach(teacher => {
                 const busyPeriods = timetableData
                     .filter(item => item.teacher === teacher && item.day === day)
-                    .map(item => item.period);
+                    .map(item => item.period)
+                    .sort((a, b) => a - b);
                 teacherBusyPeriods[teacher] = busyPeriods;
             });
             
             // 嘗試為每個節次安排代課教師
             const substitutes = [];
-            const assignedTeachers = new Set();
             
             for (const period of periods) {
                 const lessons = absentLessonsByPeriod[period];
@@ -329,7 +338,6 @@
                 // 3. 當天空堂多
                 const candidates = availableTeachers
                     .filter(teacher => 
-                        !assignedTeachers.has(teacher) && 
                         !teacherBusyPeriods[teacher].includes(period) && // 該節次沒有課
                         teacherLoad[teacher] < maxLoad // 使用用戶選擇的上限
                     )
@@ -343,6 +351,7 @@
                             teacher,
                             taughtClasses, // 教過的班級數量
                             load: teacherLoad[teacher],
+                            busyPeriods: teacherBusyPeriods[teacher],
                             random: Math.random() // 用於隨機排序相同條件的候選人
                         };
                     })
@@ -357,73 +366,83 @@
                         return a.random - b.random;
                     });
                 
-                if (candidates.length === 0) {
-                    // 如果找不到完全空堂的教師，考慮已經有課但負載較輕的教師
-                    const fallbackCandidates = availableTeachers
-                        .filter(teacher => 
-                            !assignedTeachers.has(teacher) && 
-                            teacherLoad[teacher] < maxLoad
-                        )
-                        .map(teacher => ({
-                            teacher,
-                            taughtClasses: teacherClasses[teacher].filter(c => classes.includes(c)).length,
-                            load: teacherLoad[teacher],
-                            isBusy: teacherBusyPeriods[teacher].includes(period),
-                            random: Math.random()
-                        }))
-                        .sort((a, b) => {
-                            if (a.taughtClasses !== b.taughtClasses) {
-                                return b.taughtClasses - a.taughtClasses;
-                            }
-                            if (a.isBusy !== b.isBusy) {
-                                return a.isBusy - b.isBusy; // 優先選擇不忙的
-                            }
-                            if (a.load !== b.load) {
-                                return a.load - b.load;
-                            }
-                            return a.random - b.random;
-                        });
-                    
-                    if (fallbackCandidates.length > 0) {
-                        const selectedTeacher = fallbackCandidates[0].teacher;
-                        assignedTeachers.add(selectedTeacher);
-                        teacherLoad[selectedTeacher]++;
-                        
-                        substitutes.push({
-                            period: period,
-                            classes: classes,
-                            subject: sampleLesson.subject,
-                            room: sampleLesson.room,
-                            substitute: selectedTeacher,
-                            isBusy: fallbackCandidates[0].isBusy,
-                            currentLoad: teacherLoad[selectedTeacher]
-                        });
-                        continue;
+                // 備選教師 (在該節次有課但負載較輕的教師)
+                const backupCandidates = availableTeachers
+                    .filter(teacher => 
+                        teacherBusyPeriods[teacher].includes(period) && // 該節次有課
+                        teacherLoad[teacher] < maxLoad
+                    )
+                    .map(teacher => ({
+                        teacher,
+                        taughtClasses: teacherClasses[teacher].filter(c => classes.includes(c)).length,
+                        load: teacherLoad[teacher],
+                        busyPeriods: teacherBusyPeriods[teacher],
+                        random: Math.random()
+                    }))
+                    .sort((a, b) => {
+                        if (a.taughtClasses !== b.taughtClasses) {
+                            return b.taughtClasses - a.taughtClasses;
+                        }
+                        if (a.load !== b.load) {
+                            return a.load - b.load;
+                        }
+                        return a.random - b.random;
+                    });
+                
+                // 選擇首選教師和最多兩位備選教師
+                const primary = candidates.length > 0 ? candidates[0] : null;
+                const backups = [];
+                
+                // 添加首選教師的備選 (從候選中排除首選)
+                if (candidates.length > 1) {
+                    backups.push(candidates[1]);
+                }
+                if (candidates.length > 2) {
+                    backups.push(candidates[2]);
+                }
+                
+                // 如果備選不足，從備選候選中添加
+                while (backups.length < 2 && backupCandidates.length > 0) {
+                    const candidate = backupCandidates.shift();
+                    if (candidate && (!primary || candidate.teacher !== primary.teacher) {
+                        backups.push(candidate);
                     }
-                    
+                }
+                
+                if (!primary && backups.length === 0) {
                     substitutes.push({
                         period: period,
                         classes: classes,
                         subject: sampleLesson.subject,
                         room: sampleLesson.room,
-                        substitute: null,
+                        primary: null,
+                        backups: [],
                         error: "找不到合適的代課教師"
                     });
                     continue;
                 }
                 
-                const selectedTeacher = candidates[0].teacher;
-                assignedTeachers.add(selectedTeacher);
-                teacherLoad[selectedTeacher]++;
+                // 更新教師負載
+                if (primary) {
+                    teacherLoad[primary.teacher]++;
+                }
                 
                 substitutes.push({
                     period: period,
                     classes: classes,
                     subject: sampleLesson.subject,
                     room: sampleLesson.room,
-                    substitute: selectedTeacher,
-                    isBusy: false,
-                    currentLoad: teacherLoad[selectedTeacher]
+                    primary: primary ? {
+                        teacher: primary.teacher,
+                        busyPeriods: primary.busyPeriods,
+                        currentLoad: teacherLoad[primary.teacher]
+                    } : null,
+                    backups: backups.map(b => ({
+                        teacher: b.teacher,
+                        busyPeriods: b.busyPeriods,
+                        currentLoad: teacherLoad[b.teacher],
+                        isBusy: b.busyPeriods.includes(period)
+                    }))
                 });
             }
             
@@ -449,12 +468,37 @@
                 if (item.error) {
                     html += `<span class="error">${item.error}</span>`;
                 } else {
-                    let statusText = item.isBusy ? 
-                        `<span class="error">(注意: 該教師本節已有課)</span>` : 
-                        `(空堂)`;
+                    // 顯示首選教師
+                    if (item.primary) {
+                        const periodsText = item.primary.busyPeriods.length > 0 ? 
+                            `(${item.primary.busyPeriods.join(',')})` : 
+                            '(空堂)';
+                        
+                        html += `代課教師: <strong>${item.primary.teacher}</strong> ${periodsText}<br>`;
+                        html += `<div class="teacher-load">當天已排課: ${item.primary.currentLoad} 節</div>`;
+                    } else {
+                        html += `<span class="error">無首選代課教師</span><br>`;
+                    }
                     
-                    html += `代課教師: <strong>${item.substitute}</strong> ${statusText}<br>`;
-                    html += `<div class="teacher-load">當天已排課: ${item.currentLoad} 節</div>`;
+                    // 顯示備選教師
+                    if (item.backups.length > 0) {
+                        html += '<div class="backup-teachers">備選教師: ';
+                        item.backups.forEach((backup, index) => {
+                            const periodsText = backup.busyPeriods.length > 0 ? 
+                                `(${backup.busyPeriods.join(',')})` : 
+                                '(空堂)';
+                            
+                            const busyText = backup.isBusy ? 
+                                `<span class="error">(注意: 該教師本節已有課)</span>` : 
+                                '';
+                            
+                            html += `<span class="backup-teacher">
+                                ${backup.teacher} ${periodsText} ${busyText}
+                            </span>`;
+                        });
+                        html += '</div>';
+                    }
+                    
                     html += '<div class="class-list">負責班別: ';
                     html += item.classes.map(c => `<span class="class-item">${c}</span>`).join(', ');
                     html += '</div>';
