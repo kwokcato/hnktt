@@ -211,36 +211,13 @@
                 <select id="classDropdown">
                     <option value="">選擇班別...</option>
                 </select>
-				<span id="substituteSection" style="display:none;">
-					<label><input type="checkbox" id="substituteCheckbox"> 代堂</label>
-				</span>
                 <!-- 上方按鈕組 (靠右對齊) -->
                 <div id="exportBtnGroup"></div>
                 <!-- 重新下載 JS 檔案 -->
                 <!-- <button id="reloadBtn" class="export-btn">重新下載資料庫</button> -->
             </div>
         </div>
- <div id="substitutePanel" style="display:none; margin-top:20px; background:#f5f5f5; padding:15px; border-radius:5px;">
-    <h4>代堂安排</h4>
-    <div>
-        <strong>请假日:</strong>
-        <label><input type="checkbox" name="substituteDay" value="1"> 星期一</label>
-        <label><input type="checkbox" name="substituteDay" value="2"> 星期二</label>
-        <label><input type="checkbox" name="substituteDay" value="3"> 星期三</label>
-        <label><input type="checkbox" name="substituteDay" value="4"> 星期四</label>
-        <label><input type="checkbox" name="substituteDay" value="5"> 星期五</label>
-    </div>
-    <div style="margin-top:10px;">
-        <strong>代堂教师候选名单 (可多选):</strong><br>
-        <select id="substituteTeachers" multiple size="5" style="width:100%; margin-top:5px;"></select>
-    </div>
-    <div style="margin-top:10px;">
-        <strong>排除教师:</strong><br>
-        <select id="excludedTeachers" multiple size="3" style="width:100%; margin-top:5px;"></select>
-    </div>
-    <button id="arrangeSubstituteBtn" class="export-btn" style="margin-top:10px;">编排队堂</button>
-    <div id="substituteResult" style="margin-top:10px;"></div>
-</div>
+        
         <div id="result"></div>
         <table id="timetable">
             <!-- 時間表將在這裡動態生成 -->
