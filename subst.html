@@ -79,6 +79,10 @@
         .class-item {
             margin-bottom: 3px;
         }
+        .teacher-periods {
+            font-size: 0.9em;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -288,6 +292,16 @@
                 teacherClasses[teacher] = classes;
             });
             
+            // 獲取每位教師當天的上課節數
+            const teacherPeriods = {};
+            availableTeachers.forEach(teacher => {
+                const periods = timetableData
+                    .filter(item => item.teacher === teacher && item.day === day)
+                    .map(item => item.period)
+                    .sort((a, b) => a - b);
+                teacherPeriods[teacher] = periods;
+            });
+            
             // 嘗試為每個節次安排代課教師
             const substitutes = [];
             const assignedTeachers = new Set();
@@ -348,7 +362,8 @@
                     classes: classes,
                     subject: sampleLesson.subject,
                     room: sampleLesson.room,
-                    substitute: selectedTeacher
+                    substitute: selectedTeacher,
+                    teacherPeriods: teacherPeriods[selectedTeacher] // 添加教師的上課節數
                 });
             }
             
@@ -374,7 +389,12 @@
                 if (item.error) {
                     html += `<span class="error">${item.error}</span>`;
                 } else {
-                    html += `代課教師: <strong>${item.substitute}</strong>`;
+                    // 顯示代課教師名稱和當天上課節數
+                    const periodsText = item.teacherPeriods.length > 0 
+                        ? ` (${item.teacherPeriods.join(',')})` 
+                        : ' (當天無課)';
+                    html += `代課教師: <strong>${item.substitute}</strong>
+                            <span class="teacher-periods">${periodsText}</span>`;
                     html += '<div class="class-list">負責班別: ';
                     html += item.classes.map(c => `<span class="class-item">${c}</span>`).join(', ');
                     html += '</div>';
