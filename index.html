@@ -2,6 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>佛教何南金中學 - 時間表查詢系統</title>
     <style>
@@ -9,50 +10,24 @@
             height: 100%;
             margin: 0;
             padding: 0;
+            overflow: hidden; /* 禁用滾動條 */
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
         }
         body {
             display: flex;
             flex-direction: column;
-            max-width: 1200px;
+            max-width: 95%; /*1200px;*/
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
             box-sizing: border-box;
         }
-        h1 {
+        h2 {
             color: #2c3e50;
             text-align: center;
-            margin: 20px 0;
+            margin: 0 0 20px 0;
             padding: 0;
             font-size: 1.5em;
-        }
-        /* --- 登入畫面樣式 --- */
-        #login-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            flex-grow: 1;
-        }
-        #login-screen p {
-            font-size: 1.2em;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        #login-error {
-            color: red;
-            margin-top: 15px;
-            font-weight: bold;
-        }
-        /* --- 將主要應用程式內容預設隱藏 --- */
-        #app-content {
-            display: none; /* 預設隱藏，由 JS 控制顯示 */
-            flex-direction: column;
-            flex: 1;
-            overflow: hidden;
-            height: 100%;
         }
         .tab-container {
             display: flex;
@@ -109,159 +84,287 @@
         }
         .footer {
             text-align: center;
-            margin-top: 20px;
-            padding-top: 10px;
+            margin-top: 2px;
+            padding-top: 2px;
             border-top: 1px solid #ddd;
             color: #666;
-            font-size: 12px;
+            font-size: 10px;
             flex-shrink: 0;
         }
+        /* 登入相關樣式 */
+        .auth-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        .auth-button {
+            padding: 8px 15px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .auth-button:hover {
+            background-color: #3367d6;
+        }
+        .auth-button.logout {
+            background-color: #ea4335;
+        }
+        .auth-button.logout:hover {
+            background-color: #d33426;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 15px;
+        }
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+        .login-message {
+            text-align: center;
+            padding: 20px;
+            font-size: 16px;
+            color: #666;
+        }
     </style>
+    <!-- 載入 Google Platform Library -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
-
-    <h1>佛教何南金中學 - 時間表查詢系統</h1>
-
-    <div id="login-screen">
-        <p>請使用學校 Google 帳戶登入</p>
+<body oncontextmenu="return false;">
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+    <script>
+        document.addEventListener('keydown', (e) => {
+            // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.key === 'u') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'J')
+            ) {
+                e.preventDefault();
+            }
+        });
+    </script>
+    
+    <!-- 登入/登出按鈕容器 -->
+    <div class="auth-container" id="authContainer">
+        <div id="userInfo" class="user-info" style="display: none;">
+            <img id="userAvatar" class="user-avatar" src="" alt="用戶頭像">
+            <span id="userName"></span>
+        </div>
         <div id="g_id_onload"
-             data-client_id="920942611875-eikfedkn3rno9am41fi08sbqniml566c.apps.googleusercontent.com"
-             data-context="signin"
-             data-ux_mode="popup"
-             data-callback="handleCredentialResponse"
-             data-auto_prompt="true">
+            data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+            data-login_uri="https://yourdomain.com/login"
+            data-auto_prompt="false">
         </div>
-
         <div class="g_id_signin"
-             data-type="standard"
-             data-shape="rectangular"
-             data-theme="outline"
-             data-text="signin_with"
-             data-size="large"
-             data-logo_alignment="left">
+            data-type="standard"
+            data-size="medium"
+            data-theme="outline"
+            data-text="sign_in_with"
+            data-shape="rectangular"
+            data-logo_alignment="left"
+            id="googleSignInBtn">
         </div>
-        <div id="login-error"></div>
+        <button id="logoutBtn" class="auth-button logout" style="display: none;" onclick="handleSignOut()">登出</button>
     </div>
-
-    <div id="app-content">
-        <div class="tab-container">
-            <div class="tab-header">
-                <button class="tab-button active" onclick="openTab(event, 'teacherTimetable')">教師/班別時間表</button>
-                <button class="tab-button" onclick="openTab(event, 'rooms')">房間時間表</button>
-                <button class="tab-button" onclick="openTab(event, 'freePeriods')">教師空堂查詢</button>
-                <button class="tab-button" onclick="openTab(event, 'commonFreePeriods')">共同空堂搜尋</button>
-            </div>
-            
-            <div id="teacherTimetable" class="tab-content active">
-                <div class="loading">載入教師/班別時間表查詢功能...</div>
-                <iframe id="ttFrame" onload="hideLoading('teacherTimetable')"></iframe>
-            </div>
-            
-            <div id="rooms" class="tab-content">
-                <div class="loading">載入房間時間表查詢功能...</div>
-                <iframe id="roomFrame" onload="hideLoading('rooms')"></iframe>
-            </div>
-
-            <div id="freePeriods" class="tab-content">
-                <div class="loading">載入教師空堂查詢功能...</div>
-                <iframe id="freeFrame" onload="hideLoading('freePeriods')"></iframe>
-            </div>
-            
-            <div id="commonFreePeriods" class="tab-content">
-                <div class="loading">載入共同空堂搜尋功能...</div>
-                <iframe id="meetingFrame" onload="hideLoading('commonFreePeriods')"></iframe>
-            </div>
+    
+    <h2>佛教何南金中學 - 時間表查詢系統 <div style="text-align: right; font-size: 12px;" id="todayDate"></div></h2>
+    
+    <script>
+        const today = new Date();
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric', 
+            weekday: 'long' 
+        };
+        const dateString = today.toLocaleDateString('zh-TW', options);
+        document.getElementById("todayDate").textContent = `${dateString}`;
+    </script>
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-button active" onclick="openTab(event, 'teacherTimetable')">教師/班別時間表</button>
+            <button class="tab-button" onclick="openTab(event, 'rooms')">房間時間表</button>
+            <button class="tab-button" onclick="openTab(event, 'freePeriods')">教師空堂查詢</button>
+            <button class="tab-button" onclick="openTab(event, 'commonFreePeriods')">共同空堂搜尋</button>
         </div>
         
-        <div class="footer">
-            <p>© 2025 佛教何南金中學 - 時間表查詢系統 | 版本 1.0</p>
+        <div id="teacherTimetable" class="tab-content active">
+            <div class="loading">載入教師/班別時間表查詢功能...</div>
+            <iframe id="ttFrame" src="tt.html" onload="hideLoading('teacherTimetable')"></iframe>
+        </div>
+        
+        <div id="rooms" class="tab-content">
+            <div class="loading">載入房間時間表查詢功能...</div>
+            <iframe id="roomFrame" src="room.html" onload="hideLoading('rooms')"></iframe>
+        </div>
+
+        <div id="freePeriods" class="tab-content">
+            <div class="loading">載入教師空堂查詢功能...</div>
+            <iframe id="freeFrame" src="free.html" onload="hideLoading('freePeriods')"></iframe>
+        </div>
+        
+        <div id="commonFreePeriods" class="tab-content">
+            <div class="loading">載入共同空堂搜尋功能...</div>
+            <iframe id="meetingFrame" src="bysub.html" onload="hideLoading('commonFreePeriods')"></iframe>
         </div>
     </div>
     
+    <div class="footer">
+        <p>© <span id="spanYear"></span> 佛教何南金中學 - 時間表查詢系統 | 版本 1.0</p>
+    </div>
+
     <script>
-        // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
-        const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 請務必修改成你學校的真實網域
+        // 登入狀態管理
+        let isLoggedIn = false;
+        let userProfile = null;
 
-        // 一個專門用來載入所有 iframe 內容的函式
-        function loadIframes() {
-            // 檢查 src 是否已存在，避免重複載入
-            if (!document.getElementById('ttFrame').src) {
-                document.getElementById('ttFrame').src = "tt.html";
-                document.getElementById('roomFrame').src = "room.html";
-                document.getElementById('freeFrame').src = "free.html";
-                document.getElementById('meetingFrame').src = "bysub.html";
-            }
-        }
-
-        // 解碼 JWT (Google 回傳的憑證)
-        function decodeJwtResponse(token) {
-            try {
-                var base64Url = token.split('.')[1];
-                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            } catch (e) {
-                return null;
-            }
-        }
-
-        // Google 登入後的回呼函式
+        // 處理Google登入回調
         function handleCredentialResponse(response) {
-            const responsePayload = decodeJwtResponse(response.credential);
+            // 這裡應該向你的後端發送ID token進行驗證
+            // 這只是一個前端示例，實際應用中應該有後端驗證
             
-            // 檢查 payload 是否成功解碼以及 'hd' (hosted domain) 是否存在
-            if (responsePayload && responsePayload.hd === SCHOOL_DOMAIN) {
-                console.log("登入成功，網域符合:", responsePayload.hd);
-                sessionStorage.setItem('google_id_token', response.credential);
+            console.log("ID Token: " + response.credential);
+            
+            // 解析JWT token獲取用戶信息 (僅用於演示，實際應用中應該由後端處理)
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            
+            userProfile = {
+                name: payload.name,
+                email: payload.email,
+                picture: payload.picture
+            };
+            
+            updateUIAfterLogin();
+        }
 
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('app-content').style.display = 'flex';
+        // 更新登入後的UI
+        function updateUIAfterLogin() {
+            isLoggedIn = true;
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('userName').textContent = userProfile.name;
+            document.getElementById('userAvatar').src = userProfile.picture;
+            document.getElementById('googleSignInBtn').style.display = 'none';
+            document.getElementById('logoutBtn').style.display = 'block';
+            
+            // 顯示所有內容
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'flex';
+            });
+        }
 
-                // 登入成功後才載入 iframe
-                loadIframes();
-            } else {
-                const userDomain = responsePayload ? responsePayload.hd : "未知";
-                console.warn("登入失敗，網域不符:", userDomain);
-                document.getElementById('login-error').innerText = `登入失敗！\n請使用 @${SCHOOL_DOMAIN} 的學校帳戶登入。`;
-                
-                // (可選) 自動登出非機構帳戶
-                google.accounts.id.disableAutoSelect();
+        // 處理登出
+        function handleSignOut() {
+            // 清除前端登入狀態
+            isLoggedIn = false;
+            userProfile = null;
+            
+            // 重置UI
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('googleSignInBtn').style.display = 'block';
+            document.getElementById('logoutBtn').style.display = 'none';
+            
+            // 這裡應該調用Google登出API
+            google.accounts.id.disableAutoSelect();
+            
+            // 重新渲染登入按鈕
+            google.accounts.id.renderButton(
+                document.getElementById("googleSignInBtn"),
+                { theme: "outline", size: "medium" }
+            );
+            
+            // 隱藏內容直到登入
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                if (!tab.classList.contains('active')) {
+                    tab.style.display = 'none';
+                }
+            });
+            
+            // 顯示登入提示
+            alert('您已成功登出');
+        }
+
+        // 初始化Google登入
+        function initGoogleSignIn() {
+            google.accounts.id.initialize({
+                client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+                callback: handleCredentialResponse
+            });
+            
+            google.accounts.id.renderButton(
+                document.getElementById("googleSignInBtn"),
+                { theme: "outline", size: "medium" }
+            );
+            
+            // 檢查用戶是否已登入 (這只是一個示例，實際應用中應該檢查cookie或session)
+            if (localStorage.getItem('googleAuthToken')) {
+                // 這裡應該驗證token的有效性
+                updateUIAfterLogin();
             }
         }
 
-        // 頁面載入時檢查是否已經登入
+        // 頁面載入時初始化
         window.onload = function() {
-            const id_token = sessionStorage.getItem('google_id_token');
-            if (id_token) {
-                const payload = decodeJwtResponse(id_token);
-                // 檢查憑證是否存在、網域是否正確，以及憑證是否已過期
-                if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp * 1000 > Date.now()) {
-                     console.log("已登入，直接顯示內容。");
-                     document.getElementById('login-screen').style.display = 'none';
-                     document.getElementById('app-content').style.display = 'flex';
-
-                     // 已登入狀態下也要載入 iframe
-                     loadIframes();
-                } else {
-                    // Token 無效或過期，清除舊 token
-                    sessionStorage.removeItem('google_id_token');
-                }
+            // 預載入所有iframe以加快切換速度
+            document.getElementById('roomFrame').src = "free.html";
+            document.getElementById('freeFrame').src = "free.html";
+            document.getElementById('meetingFrame').src = "bysub.html";
+            
+            // 初始化Google登入
+            if (typeof google !== 'undefined') {
+                initGoogleSignIn();
+            }
+            
+            // 初始時隱藏所有非活動選項卡內容 (除非已登入)
+            if (!isLoggedIn) {
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    if (!tab.classList.contains('active')) {
+                        tab.style.display = 'none';
+                    }
+                });
             }
         };
 
         function openTab(evt, tabName) {
+            if (!isLoggedIn && tabName !== 'teacherTimetable') {
+                alert('請先登入以使用此功能');
+                return;
+            }
+            
+            // 隱藏所有選項卡內容
             const tabContents = document.getElementsByClassName("tab-content");
             for (let i = 0; i < tabContents.length; i++) {
                 tabContents[i].classList.remove("active");
+                if (!isLoggedIn) {
+                    tabContents[i].style.display = 'none';
+                }
             }
+            
+            // 移除所有按鈕的active類
             const tabButtons = document.getElementsByClassName("tab-button");
             for (let i = 0; i < tabButtons.length; i++) {
                 tabButtons[i].classList.remove("active");
             }
+            
+            // 顯示當前選項卡並添加active類到按鈕
             document.getElementById(tabName).classList.add("active");
+            if (isLoggedIn) {
+                document.getElementById(tabName).style.display = 'flex';
+            }
             evt.currentTarget.classList.add("active");
         }
         
@@ -272,6 +375,13 @@
                 loading.style.display = 'none';
             }
         }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Wait for DOM to be fully loaded before manipulating it
+        $(document).ready(function() {
+            $('#spanYear').html(new Date().getFullYear());
+        });
     </script>
 </body>
 </html>
