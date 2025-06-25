@@ -187,9 +187,23 @@
     </style>
 </head>
 <body oncontextmenu="return false;">
+    
     <script>
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
+        });
+    </script>
+    <script>
+        document.addEventListener('keydown', (e) => {
+            // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.key === 'u') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'J')
+            ) {
+                e.preventDefault();
+            }
         });
     </script>
     <div class="refresh-btn" title="重整頁面">
