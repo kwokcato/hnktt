@@ -272,13 +272,12 @@
                 return;
             }
             
-            // 計算每位教師當天的課程數量
-            const teacherLoad = {};
+            // 獲取每位教師當天的課程安排
+            const teacherSchedules = {};
             availableTeachers.forEach(teacher => {
-                const lessons = timetableData.filter(item => 
-                    item.teacher === teacher && item.day === day
-                );
-                teacherLoad[teacher] = lessons.length;
+                teacherSchedules[teacher] = timetableData
+                    .filter(item => item.teacher === teacher && item.day === day)
+                    .map(item => item.period);
             });
             
             // 找出每位教師教授過的班級
@@ -292,16 +291,6 @@
                 teacherClasses[teacher] = classes;
             });
             
-            // 獲取每位教師當天的上課節數
-            const teacherPeriods = {};
-            availableTeachers.forEach(teacher => {
-                const periods = timetableData
-                    .filter(item => item.teacher === teacher && item.day === day)
-                    .map(item => item.period)
-                    .sort((a, b) => a - b);
-                teacherPeriods[teacher] = periods;
-            });
-            
             // 嘗試為每個節次安排代課教師
             const substitutes = [];
             const assignedTeachers = new Set();
@@ -311,22 +300,39 @@
                 const classes = lessons.map(l => l.class);
                 const sampleLesson = lessons[0]; // 使用第一節課作為代表（科目和教室可能不同）
                 
-                // 優先選擇: 1. 教過這些班級 2. 當天空堂多
-                const candidates = availableTeachers
-                    .filter(teacher => 
-                        !assignedTeachers.has(teacher) && 
-                        teacherLoad[teacher] < 6 // 每天最多6節
-                    )
+                // 找出在該節數有空堂的教師
+                const freeTeachers = availableTeachers.filter(teacher => 
+                    !assignedTeachers.has(teacher) && 
+                    !teacherSchedules[teacher].includes(period) // 確保該節數是空堂
+                );
+                
+                if (freeTeachers.length === 0) {
+                    substitutes.push({
+                        period: period,
+                        classes: classes,
+                        subject: sampleLesson.subject,
+                        room: sampleLesson.room,
+                        substitute: null,
+                        error: "找不到有空堂的代課教師"
+                    });
+                    continue;
+                }
+                
+                // 從有空堂的教師中選擇最佳人選
+                const candidates = freeTeachers
                     .map(teacher => {
                         // 計算該教師教過多少個這些班級
                         const taughtClasses = teacherClasses[teacher].filter(c => 
                             classes.includes(c)
                         ).length;
                         
+                        // 計算教師當天的課程負擔
+                        const load = teacherSchedules[teacher].length;
+                        
                         return {
                             teacher,
                             taughtClasses, // 教過的班級數量
-                            load: teacherLoad[teacher],
+                            load, // 當天已有課程數量
                             random: Math.random() // 用於隨機排序相同條件的候選人
                         };
                     })
@@ -341,21 +347,8 @@
                         return a.random - b.random;
                     });
                 
-                if (candidates.length === 0) {
-                    substitutes.push({
-                        period: period,
-                        classes: classes,
-                        subject: sampleLesson.subject,
-                        room: sampleLesson.room,
-                        substitute: null,
-                        error: "找不到合適的代課教師"
-                    });
-                    continue;
-                }
-                
                 const selectedTeacher = candidates[0].teacher;
                 assignedTeachers.add(selectedTeacher);
-                teacherLoad[selectedTeacher]++;
                 
                 substitutes.push({
                     period: period,
@@ -363,7 +356,7 @@
                     subject: sampleLesson.subject,
                     room: sampleLesson.room,
                     substitute: selectedTeacher,
-                    teacherPeriods: teacherPeriods[selectedTeacher] // 添加教師的上課節數
+                    teacherPeriods: teacherSchedules[selectedTeacher] // 添加教師的上課節數
                 });
             }
             
