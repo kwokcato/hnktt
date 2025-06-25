@@ -156,6 +156,56 @@
             text-align: center;
             margin-top: 20px;
         }
+
+        /* 代堂安排樣式 */
+        .substitute-section {
+            border: 1px solid #ddd;
+            margin-top: 20px;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .substitute-section h4 {
+            margin-top: 0;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .substitute-section select[multiple] {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background-color: white;
+            width: 150px;
+        }
+
+        .substitute-section label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        #substituteResult ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        #substituteResult li {
+            margin-bottom: 5px;
+        }
+
+        .substitute-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .substitute-control-group {
+            display: flex;
+            flex-direction: column;
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -217,14 +267,36 @@
                 <!-- <button id="reloadBtn" class="export-btn">重新下載資料庫</button> -->
             </div>
         </div>
+
+        <div class="substitute-section">
+            <h4>代堂安排</h4>
+            <div class="substitute-controls">
+                <div class="substitute-control-group">
+                    <label for="substituteDay">選擇星期:</label>
+                    <select id="substituteDay" multiple size="5">
+                        <option value="1">星期一</option>
+                        <option value="2">星期二</option>
+                        <option value="3">星期三</option>
+                        <option value="4">星期四</option>
+                        <option value="5">星期五</option>
+                    </select>
+                </div>
+                <div class="substitute-control-group">
+                    <label for="excludeTeachers">排除教師:</label>
+                    <select id="excludeTeachers" multiple size="5"></select>
+                </div>
+                <div style="align-self: flex-end; margin-bottom: 5px;">
+                    <button id="findSubstituteBtn" class="export-btn" style="background-color: #27ae60;">尋找代堂教師</button>
+                    <button id="clearSubstituteBtn" class="export-btn" style="background-color: #e74c3c; margin-top: 5px;">清除</button>
+                </div>
+            </div>
+            <div id="substituteResult" style="margin-top: 15px;"></div>
+        </div>
         
         <div id="result"></div>
         <table id="timetable">
             <!-- 時間表將在這裡動態生成 -->
         </table>
-
-        <!-- 下方按鈕組 (置中對齊) -->
-        <!-- <div id="exportBtnGroup"></div> -->
         
     </div>
 

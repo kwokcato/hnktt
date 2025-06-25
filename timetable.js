@@ -45,7 +45,85 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
     }
 
-   
+    // 初始化代堂功能
+    function initSubstituteFeature() {
+        // 填充排除教師下拉選單
+        const excludeTeachersDropdown = document.getElementById('excludeTeachers');
+        excludeTeachersDropdown.innerHTML = '';
+        allTeachers.forEach(teacher => {
+            excludeTeachersDropdown.innerHTML += `<option value="${teacher}">${teacher}</option>`;
+        });
+
+        // 尋找代堂教師按鈕事件
+        document.getElementById('findSubstituteBtn').addEventListener('click', findSubstituteTeachers);
+        
+        // 清除按鈕事件
+        document.getElementById('clearSubstituteBtn').addEventListener('click', () => {
+            document.getElementById('substituteDay').selectedIndex = -1;
+            document.getElementById('excludeTeachers').selectedIndex = -1;
+            document.getElementById('substituteResult').innerHTML = '';
+        });
+    }
+
+    // 尋找代堂教師
+    function findSubstituteTeachers() {
+        const selectedDays = Array.from(document.getElementById('substituteDay').selectedOptions)
+            .map(option => parseInt(option.value));
+        
+        if (selectedDays.length === 0) {
+            alert('請選擇至少一個星期天');
+            return;
+        }
+
+        const excludedTeachers = Array.from(document.getElementById('excludeTeachers').selectedOptions)
+            .map(option => option.value);
+        
+        let resultHTML = '<h4>代堂安排結果:</h4><ul>';
+        
+        selectedDays.forEach(day => {
+            // 找出當天所有課程
+            const dayLessons = allLessons.filter(lesson => lesson.day === day);
+            
+            // 計算每位教師當天的節數
+            const teacherLessonCount = {};
+            allTeachers.forEach(teacher => {
+                if (!excludedTeachers.includes(teacher)) {
+                    teacherLessonCount[teacher] = dayLessons.filter(lesson => 
+                        lesson.teacher === teacher
+                    ).length;
+                }
+            });
+            
+            // 過濾出節數不超過5的教師
+            const availableTeachers = Object.entries(teacherLessonCount)
+                .filter(([teacher, count]) => count <= 5 && !excludedTeachers.includes(teacher))
+                .sort((a, b) => a[1] - b[1]); // 按節數升序排序
+            
+            // 找出空堂最多的教師 (節數最少的)
+            if (availableTeachers.length > 0) {
+                const minLessons = availableTeachers[0][1];
+                const bestTeachers = availableTeachers
+                    .filter(([_, count]) => count === minLessons)
+                    .map(([teacher]) => teacher);
+                
+                resultHTML += `<li><strong>星期${['一','二','三','四','五'][day-1]}:</strong> `;
+                resultHTML += `可安排 ${bestTeachers.join('、')} 代堂 (當天有 ${minLessons} 節課)`;
+                
+                // 自動將這些教師添加到排除列表
+                bestTeachers.forEach(teacher => {
+                    const options = Array.from(document.getElementById('excludeTeachers').options);
+                    const option = options.find(opt => opt.value === teacher);
+                    if (option) option.selected = true;
+                });
+            } else {
+                resultHTML += `<li><strong>星期${['一','二','三','四','五'][day-1]}:</strong> `;
+                resultHTML += `沒有合適的代堂教師 (所有教師當天都有超過5節課或已被排除)`;
+            }
+        });
+        
+        resultHTML += '</ul>';
+        document.getElementById('substituteResult').innerHTML = resultHTML;
+    }
     
     // 列印時間表
     function printTimetable() {
@@ -549,6 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .filter(item => /^[1-6][A-D]$/i.test(item.class.trim()))
                     .map(item => item.class.trim()))].sort();
                 populateDropdowns();
+                initSubstituteFeature();
                 loadingDiv.style.display = 'none';
                 resultDiv.innerHTML = '<p>時間表數據已載入，請輸入教師姓名或班別(如1A)</p>';
                 initExportButtons();
