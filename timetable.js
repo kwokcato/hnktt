@@ -902,6 +902,136 @@ document.addEventListener('DOMContentLoaded', function() {
         return `<span class="subject" style="color:blue">${lesson.class} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:0.7em">${lesson.room}</span>`;
     }
 
+function arrangeSubstitution() {
+    const selectedDays = [];
+    
+    // 獲取選中的星期
+    for (let i = 1; i <= 5; i++) {
+        if (document.getElementById(`day${i}`).checked) {
+            selectedDays.push(i);
+        }
+    }
+    
+    // 驗證輸入
+    if (!absentTeacher) {
+        alert('請選擇請假教師');
+        return;
+    }
+    
+    if (selectedDays.length === 0) {
+        alert('請選擇至少一個代堂日期');
+        return;
+    }
+    
+    // 更新排除教師列表
+    updateExcludedTeachers();
+    
+    // 找出請假教師的所有課程
+    const absentLessons = scheduleData.filter(item => 
+        item.teacher === absentTeacher && selectedDays.includes(item.day)
+    );
+    
+    if (absentLessons.length === 0) {
+        document.getElementById('results').innerHTML = `<p>${absentTeacher} 在選定的日期沒有課程。</p>`;
+        return;
+    }
+    
+    // 按星期和節次分組請假課程
+    const lessonsByDay = {};
+    absentLessons.forEach(lesson => {
+        if (!lessonsByDay[lesson.day]) {
+            lessonsByDay[lesson.day] = [];
+        }
+        lessonsByDay[lesson.day].push(lesson);
+    });
+    
+    // 為每一天安排代堂
+    const substitutionResults = {};
+    const usedSubstituteTeachers = new Set();
+    
+    for (const day in lessonsByDay) {
+        const dayInt = parseInt(day);
+        const dayLessons = lessonsByDay[day];
+        
+        // 按節次排序
+        dayLessons.sort((a, b) => a.period - b.period);
+        
+        // 找出這天所有教師的課程安排
+        const daySchedule = scheduleData.filter(item => item.day === dayInt);
+        
+        // 計算每位教師這天的授課節數
+        const teacherLessonCount = {};
+        daySchedule.forEach(lesson => {
+            teacherLessonCount[lesson.teacher] = (teacherLessonCount[lesson.teacher] || 0) + 1;
+        });
+        
+        // 為每節課安排代堂教師
+        const daySubstitutions = [];
+        let failed = false;
+        
+        for (const lesson of dayLessons) {
+            // 找出可用的代堂教師
+            const availableTeachers = allTeachers.filter(teacher => {
+                // 基本條件
+                if (teacher === absentTeacher || 
+                    excludedTeachers.includes(teacher) ||
+                    usedSubstituteTeachers.has(teacher) ||
+                    (teacherLessonCount[teacher] || 0) >= 5) {
+                    return false;
+                }
+                
+                // 檢查該教師在代堂節次是否空堂
+                const hasLessonAtPeriod = daySchedule.some(l => 
+                    l.teacher === teacher && l.period === lesson.period
+                );
+                
+                if (hasLessonAtPeriod) return false;
+                
+                // 檢查代堂後一節是否空堂
+                const hasLessonAtNextPeriod = daySchedule.some(l => 
+                    l.teacher === teacher && l.period === lesson.period + 1
+                );
+                
+                if (hasLessonAtNextPeriod) return false;
+                
+                return true;
+            });
+            
+            if (availableTeachers.length === 0) {
+                substitutionResults[dayInt] = {
+                    success: false,
+                    message: `星期${dayInt}第${lesson.period}節：找不到合適的代堂教師`
+                };
+                failed = true;
+                break;
+            }
+            
+            // 隨機選擇代堂教師
+            const substituteTeacher = availableTeachers[Math.floor(Math.random() * availableTeachers.length)];
+            usedSubstituteTeachers.add(substituteTeacher);
+            
+            // 更新教師授課節數
+            teacherLessonCount[substituteTeacher] = (teacherLessonCount[substituteTeacher] || 0) + 1;
+            
+            // 記錄代堂安排
+            daySubstitutions.push({
+                ...lesson,
+                substituteTeacher: substituteTeacher
+            });
+        }
+        
+        if (!failed) {
+            substitutionResults[dayInt] = {
+                success: true,
+                substitutions: daySubstitutions
+            };
+        }
+    }
+    
+    // 顯示結果
+    displayResults(substitutionResults);
+}
+
     // 自動載入 CSV 文件
     loadCSV();
 });
