@@ -936,7 +936,7 @@ function arrangeSubstitution() {
         return;
     }
     
-    // 按星期和節次分組請假課程
+    // 按星期分組請假課程
     const lessonsByDay = {};
     absentLessons.forEach(lesson => {
         if (!lessonsByDay[lesson.day]) {
@@ -969,35 +969,50 @@ function arrangeSubstitution() {
         const daySubstitutions = [];
         let failed = false;
         
+        // 先收集所有可能的代堂教師及其課堂數
+        const potentialSubstitutes = allTeachers
+            .filter(teacher => 
+                teacher !== absentTeacher && 
+                !excludedTeachers.includes(teacher)
+            )
+            .map(teacher => ({
+                name: teacher,
+                count: teacherLessonCount[teacher] || 0
+            }))
+            .sort((a, b) => a.count - b.count); // 按課堂數由少到多排序
+        
+        // 為每節課選擇代堂教師
         for (const lesson of dayLessons) {
-            // 找出可用的代堂教師
-            const availableTeachers = allTeachers.filter(teacher => {
-                // 基本條件
-                if (teacher === absentTeacher || 
-                    excludedTeachers.includes(teacher) ||
-                    usedSubstituteTeachers.has(teacher) ||
-                    (teacherLessonCount[teacher] || 0) >= 5) {
-                    return false;
-                }
+            // 找出可用的代堂教師 (按課堂數由少到多排序)
+            let substituteTeacher = null;
+            
+            for (const teacher of potentialSubstitutes) {
+                // 檢查是否已被選為代堂教師
+                if (usedSubstituteTeachers.has(teacher.name)) continue;
+                
+                // 檢查總課堂數是否超過限制
+                if ((teacherLessonCount[teacher.name] || 0) >= 5) continue;
                 
                 // 檢查該教師在代堂節次是否空堂
                 const hasLessonAtPeriod = daySchedule.some(l => 
-                    l.teacher === teacher && l.period === lesson.period
+                    l.teacher === teacher.name && l.period === lesson.period
                 );
                 
-                if (hasLessonAtPeriod) return false;
+                if (hasLessonAtPeriod) continue;
                 
                 // 檢查代堂後一節是否空堂
                 const hasLessonAtNextPeriod = daySchedule.some(l => 
-                    l.teacher === teacher && l.period === lesson.period + 1
+                    l.teacher === teacher.name && l.period === lesson.period + 1
                 );
                 
-                if (hasLessonAtNextPeriod) return false;
+                if (hasLessonAtNextPeriod) continue;
                 
-                return true;
-            });
+                // 找到合適的代堂教師
+                substituteTeacher = teacher.name;
+                break;
+            }
             
-            if (availableTeachers.length === 0) {
+            if (!substituteTeacher) {
                 substitutionResults[dayInt] = {
                     success: false,
                     message: `星期${dayInt}第${lesson.period}節：找不到合適的代堂教師`
@@ -1006,8 +1021,7 @@ function arrangeSubstitution() {
                 break;
             }
             
-            // 隨機選擇代堂教師
-            const substituteTeacher = availableTeachers[Math.floor(Math.random() * availableTeachers.length)];
+            // 標記該教師已被選為代堂教師
             usedSubstituteTeachers.add(substituteTeacher);
             
             // 更新教師授課節數
@@ -1016,7 +1030,8 @@ function arrangeSubstitution() {
             // 記錄代堂安排
             daySubstitutions.push({
                 ...lesson,
-                substituteTeacher: substituteTeacher
+                substituteTeacher: substituteTeacher,
+                substituteCount: teacherLessonCount[substituteTeacher] || 0
             });
         }
         
@@ -1030,6 +1045,52 @@ function arrangeSubstitution() {
     
     // 顯示結果
     displayResults(substitutionResults);
+}
+
+// 顯示代堂安排結果 (修改後的顯示函數)
+function displayResults(results) {
+    const resultsDiv = document.getElementById('results');
+    let html = `<h2>${absentTeacher} 的代堂安排</h2>`;
+    
+    // 按星期順序顯示結果
+    for (let day = 1; day <= 5; day++) {
+        if (!results[day]) continue;
+        
+        const result = results[day];
+        
+        if (result.success) {
+            html += `<div class="day-header">星期${day}</div>`;
+            html += `<div class="table-container" style="overflow-x: auto;">`;
+            html += `<table>`;
+            
+            // 表頭
+            html += `<thead><tr>
+                <th>節數</th>
+                <th>班別</th>
+                <th>科目</th>
+                <th>教室</th>
+                <th>代堂教師 (當天課堂數)</th>
+            </tr></thead>`;
+            html += `<tbody>`;
+            
+            // 顯示代堂安排
+            result.substitutions.forEach(sub => {
+                html += `<tr>
+                    <td>第${sub.period}節</td>
+                    <td>${sub.class}</td>
+                    <td>${sub.subject}</td>
+                    <td>${sub.room}</td>
+                    <td class="substitute">${sub.substituteTeacher} (${sub.substituteCount}堂)</td>
+                </tr>`;
+            });
+            
+            html += `</tbody></table></div>`;
+        } else {
+            html += `<p style="color:red;">${result.message}</p>`;
+        }
+    }
+    
+    resultsDiv.innerHTML = html;
 }
 
     // 自動載入 CSV 文件
