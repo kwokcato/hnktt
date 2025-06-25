@@ -3,27 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>佛教何南金中學 - 時間表查詢系統</title>
     <style>
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
+            overflow: hidden; /* 禁用滾動條 */
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
         }
         body {
             display: flex;
             flex-direction: column;
-            max-width: 1200px;
+            max-width: 95%;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
             box-sizing: border-box;
         }
-        h1 {
+        h2 {
             color: #2c3e50;
             text-align: center;
-            margin: 20px 0;
+            margin: 0 0 20px 0;
             padding: 0;
             font-size: 1.5em;
         }
@@ -129,11 +131,12 @@
         }
         .footer {
             text-align: center;
-            margin-top: 20px;
-            padding-top: 10px;
+            margin-top: 2px;
+            padding-top: 2px;
             border-top: 1px solid #ddd;
             color: #666;
-            font-size: 12px;
+            font-size: 10px;
+            flex-shrink: 0;
         }
         #google-signin-button {
             margin: 10px 0;
@@ -141,9 +144,21 @@
     </style>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-    <h1>佛教何南金中學 - 時間表查詢系統</h1>
+    <h2>佛教何南金中學 - 時間表查詢系統 <div style="text-align: right; font-size: 12px;" id="todayDate"></div></h2>
+    
+    <script>
+        const today = new Date();
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric', 
+            weekday: 'long' 
+        };
+        const dateString = today.toLocaleDateString('zh-TW', options);
+        document.getElementById("todayDate").textContent = `${dateString}`;
+    </script>
 
     <div id="login-screen">
         <p>請使用學校 Google 帳戶登入</p>
@@ -185,7 +200,7 @@
         </div>
         
         <div class="footer">
-            <p>© 2025 佛教何南金中學 - 時間表查詢系統 | 版本 1.4</p>
+            <p>© <span id="spanYear"></span> 佛教何南金中學 - 時間表查詢系統 | 版本 1.0</p>
         </div>
     </div>
     
@@ -361,6 +376,14 @@
                 loading.style.display = 'none';
             }
         }
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Wait for DOM to be fully loaded before manipulating it
+        $(document).ready(function() {
+            $('#spanYear').html(new Date().getFullYear());
+        });
     </script>
 </body>
 </html>
