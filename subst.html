@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教師代課系統</title>
     <style>
-        /* 保持原有樣式不變 */
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
@@ -13,11 +12,92 @@
             padding: 20px;
             line-height: 1.6;
         }
-        /* 其他樣式... */
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input[type="text"], button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #excludeTeachers {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .teacher-checkbox {
+            display: flex;
+            align-items: center;
+        }
+        .teacher-checkbox input {
+            margin-right: 8px;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .loading {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <!-- 保持原有HTML結構 -->
+    <h1>教師代課系統</h1>
+    
+    <div class="form-group">
+        <label for="teacherInput">請假教師:</label>
+        <input type="text" id="teacherInput" placeholder="輸入教師姓名">
+        <select id="teacherSelect">
+            <option value="">-- 選擇教師 --</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="daySelect">請假星期:</label>
+        <select id="daySelect">
+            <option value="1">星期一</option>
+            <option value="2">星期二</option>
+            <option value="3">星期三</option>
+            <option value="4">星期四</option>
+            <option value="5">星期五</option>
+        </select>
+    </div>
+    
+    <button id="generateBtn">編排代課</button>
+    
+    <div id="result">準備載入數據...</div>
+
     <script>
         // 全局變量
         let timetableData = [];
