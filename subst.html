@@ -166,7 +166,7 @@
     </style>
 </head>
 <body>
-    <h1>教師代課系統</h1>
+    <h1>教師代課系統 V2</h1>
     
     <div class="priority-info">
         <strong>代課教師選擇優先級：</strong><br>
@@ -209,7 +209,6 @@
                 <option value="5" selected>5堂</option>
                 <option value="6">6堂</option>
             </select>
-            <button id="generateBtn">編排代課</button>
         </div>
         
         <div class="form-group">
@@ -456,20 +455,12 @@
         }
         
         // 檢查是否為班級科任教師
-        function checkIfRegularTeacher(teacher, classes, subject) {
-            for (const cls of classes) {
-                // 檢查該教師是否在該班級教授該科目
-                const isRegular = timetableData.some(item => 
-                    item.teacher === teacher && 
-                    item.class === cls && 
-                    item.subject === subject
-                );
-                
-                if (isRegular) {
-                    return true;
-                }
-            }
-            return false;
+        function checkIfRegularTeacher(teacher, classToCheck, subject) {
+            return timetableData.some(item => 
+                item.teacher === teacher && 
+                item.class === classToCheck && 
+                item.subject === subject
+            );
         }
         
         // 生成代課安排
@@ -601,16 +592,24 @@
                             classes.includes(c)
                         ).length;
                         
-                        // 檢查是否為科任教師
-                        const isRegular = checkIfRegularTeacher(teacher, classes, subject);
+                        // 檢查是否為任一班的科任教師
+                        const isRegularForAnyClass = classes.some(cls => 
+                            checkIfRegularTeacher(teacher, cls, subject)
+                        );
+                        
+                        // 找出具體是哪些班的科任教師
+                        const regularClasses = classes.filter(cls => 
+                            checkIfRegularTeacher(teacher, cls, subject)
+                        );
                         
                         return {
                             teacher,
                             taughtClasses,
                             load: teacherOriginalLoad[teacher],
                             busyPeriods: teacherBusyPeriods[teacher],
-                            substValue: substData[teacher] || 0, // 默認值為0
-                            isRegular,
+                            substValue: substData[teacher] || 0,
+                            isRegular: isRegularForAnyClass,
+                            regularClasses: regularClasses,
                             random: Math.random()
                         };
                     })
@@ -678,6 +677,7 @@
                         originalLoad: primary.load,
                         substValue: primary.substValue,
                         isRegular: primary.isRegular,
+                        regularClasses: primary.regularClasses,
                         isBusy: false, // 空堂教師不會有課
                         isPrimaryElsewhere: false // 初始化為false
                     } : null,
@@ -731,7 +731,15 @@
                         html += ` <span class="subst-value">[代堂值: ${item.primary.substValue}]</span>`;
                         html += `<div class="teacher-load">原有課堂: ${item.primary.originalLoad} 節</div>`;
                         html += `<div class="teacher-status ${item.primary.isRegular ? 'regular-teacher' : 'not-regular-teacher'}">`;
-                        html += item.primary.isRegular ? '該班科任教師' : '非該班科任教師';
+                        
+                        if (item.primary.isRegular) {
+                            // 顯示具體是哪些班的科任教師
+                            const regularClassesText = item.primary.regularClasses.join(', ');
+                            html += `該班科任教師 (負責班別: ${regularClassesText})`;
+                        } else {
+                            html += '非該班科任教師';
+                        }
+                        
                         html += `</div>`;
                     } else {
                         html += `<span class="error">無首選代課教師</span><br>`;
