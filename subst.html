@@ -483,15 +483,11 @@
                 const subject = lessons[0].subject;
                 const sampleLesson = lessons[0];
                 
-                // 優先選擇: 
-                // 1. 在該節次沒有課的教師
-                // 2. 符合代堂數值優先級
-                // 3. 教過這些班級
-                // 4. 當天空堂多
+                // 只選擇在該節次沒有課的教師
                 const candidates = availableTeachers
                     .filter(teacher => 
-                        !teacherBusyPeriods[teacher].includes(period) &&
-                        teacherOriginalLoad[teacher] < maxLoad &&
+                        !teacherBusyPeriods[teacher].includes(period) && // 必須是空堂
+                        teacherOriginalLoad[teacher] < maxLoad && // 不超過負載
                         !primaryTeachers.has(teacher) // 尚未被選為其他節首選
                     )
                     .map(teacher => {
@@ -535,64 +531,14 @@
                 
                 console.log('空堂候選人:', candidates);
                 
-                // 備選教師 (在該節次有課但負載較輕的教師)
-                const backupCandidates = availableTeachers
-                    .filter(teacher => 
-                        teacherBusyPeriods[teacher].includes(period) &&
-                        teacherOriginalLoad[teacher] < maxLoad - 1 // 確保代課後不會超過上限
-                    )
-                    .map(teacher => {
-                        // 檢查是否為科任教師
-                        const isRegular = checkIfRegularTeacher(teacher, classes, subject);
-                        
-                        return {
-                            teacher,
-                            taughtClasses: teacherClasses[teacher].filter(c => classes.includes(c)).length,
-                            load: teacherOriginalLoad[teacher],
-                            busyPeriods: teacherBusyPeriods[teacher],
-                            substValue: substData[teacher] || 0,
-                            isRegular,
-                            random: Math.random()
-                        };
-                    })
-                    .sort((a, b) => {
-                        // 同樣按代堂數值優先
-                        if (a.substValue !== b.substValue) {
-                            return a.substValue - b.substValue;
-                        }
-                        if (a.isRegular !== b.isRegular) {
-                            return b.isRegular - a.isRegular;
-                        }
-                        if (a.taughtClasses !== b.taughtClasses) {
-                            return b.taughtClasses - a.taughtClasses;
-                        }
-                        if (a.load !== b.load) {
-                            return a.load - b.load;
-                        }
-                        return a.random - b.random;
-                    });
-                
-                console.log('有課候選人:', backupCandidates);
-                
-                // 選擇首選教師和最多四位候選教師
+                // 選擇首選教師和最多四位候選教師（全部必須是空堂）
                 const primary = candidates.length > 0 ? candidates[0] : null;
                 let backups = [];
                 
                 // 添加候選教師（可以包含已被選為其他節首選的教師）
                 if (candidates.length > 1) {
-                    backups = backups.concat(candidates.slice(1, 3)); // 取2位空堂候選
+                    backups = backups.concat(candidates.slice(1, 5)); // 最多取4位空堂候選
                 }
-                
-                // 從有課教師中補充候選
-                const neededBackups = 4 - backups.length;
-                if (neededBackups > 0 && backupCandidates.length > 0) {
-                    backups = backups.concat(backupCandidates.slice(0, neededBackups));
-                }
-                
-                // 確保候選不重複
-                backups = backups.filter((value, index, self) => 
-                    index === self.findIndex(t => t.teacher === value.teacher)
-                );
                 
                 console.log('最終候選人:', backups);
                 
@@ -634,7 +580,7 @@
                         busyPeriods: b.busyPeriods,
                         originalLoad: b.load,
                         substValue: b.substValue,
-                        isBusy: b.busyPeriods.includes(period),
+                        isBusy: false, // 空堂教師不會有課
                         isRegular: b.isRegular,
                         isPrimaryElsewhere: primaryTeachers.has(b.teacher) // 檢查是否在其他節是首選
                     }))
@@ -689,9 +635,6 @@
                                 `(${backup.busyPeriods.join(',')})` : 
                                 '(空堂)';
                             
-                            const busyText = backup.isBusy ? 
-                                `<span class="busy-warning">(本節有課)</span>` : '';
-                            
                             // 如果該候選教師在其他節是首選，用綠色標示
                             const primaryElsewhereClass = backup.isPrimaryElsewhere ? 'primary-elsewhere' : '';
                             const primaryElsewhereText = backup.isPrimaryElsewhere ? '(其他節首選)' : '';
@@ -704,7 +647,6 @@
                             if (backup.isPrimaryElsewhere) {
                                 html += ` <span class="${primaryElsewhereClass}">${primaryElsewhereText}</span>`;
                             }
-                            html += ` ${busyText}`;
                             html += `</span>`;
                         });
                         html += '</div>';
