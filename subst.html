@@ -133,27 +133,6 @@
             background-color: #f0f0f0;
             border-radius: 4px;
         }
-        .form-row {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .form-row label {
-            margin-bottom: 0;
-            min-width: 100px;
-        }
-        .form-row select {
-            flex: 1;
-        }
-        .form-row .checkbox-container {
-            display: flex;
-            align-items: center;
-            white-space: nowrap;
-        }
-        .file-input {
-            margin-bottom: 15px;
-        }
     </style>
 </head>
 <body>
@@ -167,26 +146,16 @@
         4. 教過相關班級的教師優先<br>
         5. 當天授課節數較少的教師優先
     </div>
-
-    <div class="file-input">
-        <label for="timetableFile">課程表CSV檔案:</label>
-        <input type="file" id="timetableFile" accept=".csv">
-    </div>
-
-    <div class="file-input">
-        <label for="substFile">代堂數值CSV檔案:</label>
-        <input type="file" id="substFile" accept=".csv">
-    </div>
     
     <div class="form-group">
         <label for="teacherInput">請假教師:</label>
-        <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇（按Enter生成代課）">
+        <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇">
         <select id="teacherSelect">
             <option value="">-- 選擇教師 --</option>
         </select>
     </div>
     
-    <div class="form-row">
+    <div class="form-group">
         <label for="daySelect">請假星期:</label>
         <select id="daySelect">
             <option value="1">星期一</option>
@@ -195,10 +164,6 @@
             <option value="4">星期四</option>
             <option value="5">星期五</option>
         </select>
-        <div class="checkbox-container">
-            <input type="checkbox" id="s6Finished">
-            <label for="s6Finished">中六課程已完結</label>
-        </div>
     </div>
     
     <div class="form-group">
@@ -231,73 +196,53 @@
         let allTeachers = [];
         let substData = {}; // 存儲代堂數據
         
-        // 頁面加載時初始化
+        // 頁面加載時讀取CSV數據
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('頁面加載完成');
-            document.getElementById('result').innerHTML = '<div class="loading">請上傳課程表和代堂數值CSV檔案</div>';
+            console.log('頁面加載完成，開始讀取數據');
+            document.getElementById('result').innerHTML = '<div class="loading">正在加載數據...</div>';
             
-            // 綁定文件上傳事件
-            document.getElementById('timetableFile').addEventListener('change', handleTimetableFile);
-            document.getElementById('substFile').addEventListener('change', handleSubstFile);
-            
-            // 設置排序選項事件監聽
-            document.getElementById('sortBySubstValue').addEventListener('change', function() {
-                const sortByValue = this.checked;
-                renderExcludeTeachers(sortByValue);
-            });
-            
-            // 設置輸入框和下拉選單的聯動
-            const teacherInput = document.getElementById('teacherInput');
-            const teacherSelect = document.getElementById('teacherSelect');
-            
-            teacherSelect.addEventListener('change', function() {
-                teacherInput.value = this.value;
-            });
-            
-            teacherInput.addEventListener('input', function() {
-                const inputValue = this.value.toUpperCase();
-                const options = teacherSelect.options;
-                
-                for (let i = 0; i < options.length; i++) {
-                    if (options[i].text.toUpperCase().includes(inputValue)) {
-                        teacherSelect.selectedIndex = i;
-                        break;
+            // 先讀取代堂數據
+            fetch('subst.csv')
+                .then(response => {
+                    console.log('獲取代堂數據響應:', response);
+                    if (!response.ok) {
+                        throw new Error('代堂數據讀取失敗: ' + response.status);
                     }
-                }
-            });
-            
-            // 設置Enter鍵觸發代課生成
-            teacherInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    document.getElementById('generateBtn').click();
-                }
-            });
-            
-            // 綁定生成按鈕事件
-            document.getElementById('generateBtn').addEventListener('click', function() {
-                console.log('點擊生成按鈕');
-                try {
-                    if (timetableData.length === 0) {
-                        throw new Error('請先上傳課程表CSV檔案');
+                    return response.text();
+                })
+                .then(csvData => {
+                    console.log('獲取代堂CSV數據:', csvData);
+                    // 解析代堂CSV數據
+                    const lines = csvData.split(/\r?\n/);
+                    console.log('代堂數據行數:', lines.length);
+                    
+                    lines.forEach((line, index) => {
+                        if (line.trim()) {
+                            const parts = line.split(',');
+                            if (parts.length >= 2) {
+                                const teacher = parts[0].trim();
+                                const value = parts[1].trim();
+                                if (teacher && teacher !== 'Initial' && !isNaN(parseInt(value))) {
+                                    substData[teacher] = parseInt(value);
+                                }
+                            }
+                        }
+                    });
+                    console.log('解析後的代堂數據:', substData);
+                    
+                    // 然後讀取課程數據
+                    return fetch('tt.csv');
+                })
+                .then(response => {
+                    console.log('獲取課程數據響應:', response);
+                    if (!response.ok) {
+                        throw new Error('課程數據讀取失敗: ' + response.status);
                     }
-                    generateSubstitutes();
-                } catch (e) {
-                    console.error('生成代課時出錯:', e);
-                    document.getElementById('result').innerHTML = 
-                        `<div class="error">系統錯誤: ${e.message}</div>`;
-                }
-            });
-        });
-        
-        // 處理課程表文件上傳
-        function handleTimetableFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const csvData = e.target.result;
+                    return response.text();
+                })
+                .then(csvData => {
+                    console.log('獲取課程CSV數據:', csvData);
+                    // 解析課程CSV數據
                     timetableData = parseCSV(csvData);
                     console.log('解析後的課程數據:', timetableData);
                     
@@ -322,56 +267,50 @@
                     // 填充排除教師複選框
                     renderExcludeTeachers(false);
                     
-                    document.getElementById('result').innerHTML = '<div class="loading">課程表已載入，請輸入查詢條件</div>';
-                } catch (error) {
-                    console.error('讀取課程表時出錯:', error);
-                    document.getElementById('result').innerHTML = 
-                        `<div class="error">錯誤: ${error.message}</div>`;
-                }
-            };
-            reader.readAsText(file);
-        }
-        
-        // 處理代堂數值文件上傳
-        function handleSubstFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const csvData = e.target.result;
-                    // 解析代堂CSV數據
-                    const lines = csvData.split(/\r?\n/);
-                    console.log('代堂數據行數:', lines.length);
+                    // 設置排序選項事件監聽
+                    document.getElementById('sortBySubstValue').addEventListener('change', function() {
+                        const sortByValue = this.checked;
+                        renderExcludeTeachers(sortByValue);
+                    });
                     
-                    substData = {};
-                    lines.forEach((line, index) => {
-                        if (line.trim()) {
-                            const parts = line.split(',');
-                            if (parts.length >= 2) {
-                                const teacher = parts[0].trim();
-                                const value = parts[1].trim();
-                                if (teacher && teacher !== 'Initial' && !isNaN(parseInt(value))) {
-                                    substData[teacher] = parseInt(value);
-                                }
+                    // 設置輸入框和下拉選單的聯動
+                    const teacherInput = document.getElementById('teacherInput');
+                    teacherSelect.addEventListener('change', function() {
+                        teacherInput.value = this.value;
+                    });
+                    
+                    teacherInput.addEventListener('input', function() {
+                        const inputValue = this.value.toUpperCase();
+                        const options = teacherSelect.options;
+                        
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].text.toUpperCase().includes(inputValue)) {
+                                teacherSelect.selectedIndex = i;
+                                break;
                             }
                         }
                     });
-                    console.log('解析後的代堂數據:', substData);
                     
-                    // 重新渲染排除教師列表以顯示代堂值
-                    renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
-                    
-                    document.getElementById('result').innerHTML = '<div class="loading">代堂數值已載入，請輸入查詢條件</div>';
-                } catch (error) {
-                    console.error('讀取代堂數據時出錯:', error);
+                    document.getElementById('result').innerHTML = '<div class="loading">數據加載完成，請輸入查詢條件</div>';
+                })
+                .catch(error => {
+                    console.error('讀取數據時出錯:', error);
                     document.getElementById('result').innerHTML = 
-                        `<div class="error">錯誤: ${error.message}</div>`;
+                        `<div class="error">錯誤: ${error.message}<br>請確保tt.csv和subst.csv文件存在且格式正確。</div>`;
+                });
+                
+            // 綁定生成按鈕事件
+            document.getElementById('generateBtn').addEventListener('click', function() {
+                console.log('點擊生成按鈕');
+                try {
+                    generateSubstitutes();
+                } catch (e) {
+                    console.error('生成代課時出錯:', e);
+                    document.getElementById('result').innerHTML = 
+                        `<div class="error">系統錯誤: ${e.message}</div>`;
                 }
-            };
-            reader.readAsText(file);
-        }
+            });
+        });
         
         // 渲染排除教師列表
         function renderExcludeTeachers(sortByValue) {
@@ -443,7 +382,7 @@
                 const line = lines[i].trim();
                 if (line) {
                     // 處理可能包含逗號的字段
-                    const fields = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+                    const fields = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
                     const cleanedFields = fields.map(field => 
                         field.replace(/^"(.*)"$/, '$1').trim()
                     );
@@ -485,11 +424,6 @@
             return false;
         }
         
-        // 檢查是否為中六班級
-        function isS6Class(className) {
-            return className.includes('6') || className.includes('六');
-        }
-        
         // 生成代課安排
         function generateSubstitutes() {
             console.log('開始生成代課安排');
@@ -498,7 +432,6 @@
             const day = parseInt(daySelect.value);
             const maxLoadSelect = document.getElementById('maxLoadSelect');
             const maxLoad = parseInt(maxLoadSelect.value);
-            const s6Finished = document.getElementById('s6Finished').checked;
             
             document.getElementById('result').innerHTML = '<div class="loading">正在計算代課安排...</div>';
             
@@ -555,10 +488,7 @@
             const teacherOriginalLoad = {};
             availableTeachers.forEach(teacher => {
                 const lessons = timetableData.filter(item => 
-                    item.teacher === teacher && 
-                    item.day === day &&
-                    // 如果中六課程已完結，則忽略中六課程
-                    !(s6Finished && isS6Class(item.class))
+                    item.teacher === teacher && item.day === day
                 );
                 teacherOriginalLoad[teacher] = lessons.length;
             });
@@ -579,11 +509,7 @@
             const teacherBusyPeriods = {};
             availableTeachers.forEach(teacher => {
                 const busyPeriods = timetableData
-                    .filter(item => 
-                        item.teacher === teacher && 
-                        item.day === day &&
-                        // 如果中六課程已完結，則忽略中六課程
-                        !(s6Finished && isS6Class(item.class))
+                    .filter(item => item.teacher === teacher && item.day === day)
                     .map(item => item.period)
                     .sort((a, b) => a - b);
                 teacherBusyPeriods[teacher] = busyPeriods;
@@ -707,18 +633,14 @@
             
             console.log('最終代課安排:', substitutes);
             // 顯示結果
-            displayResults(teacherInput, day, substitutes, s6Finished);
+            displayResults(teacherInput, day, substitutes);
         }
 
         // 顯示代課結果
-        function displayResults(absentTeacher, day, substitutes, s6Finished) {
+        function displayResults(absentTeacher, day, substitutes) {
             console.log('顯示結果');
             const resultDiv = document.getElementById('result');
             let html = `<h3>代課安排結果 (${absentTeacher} 星期${day})</h3>`;
-            
-            if (s6Finished) {
-                html += '<div class="priority-info" style="margin-top:10px;">中六課程已完結（中六課程視為空堂）</div>';
-            }
             
             if (substitutes.some(item => item.error)) {
                 html += '<div class="error">注意：部分課程未能找到合適的代課教師</div>';
