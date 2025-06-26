@@ -247,10 +247,28 @@
         let substData = {}; // 存儲代堂數據
         let excludedTeachersSet = new Set(); // 存儲已排除的教師
         
+        // 根據當前日期設置預設星期
+        function setDefaultDay() {
+            const daySelect = document.getElementById('daySelect');
+            const today = new Date();
+            let dayOfWeek = today.getDay(); // 0=星期日, 1=星期一,...,6=星期六
+            
+            // 如果是週末(6=星期六, 0=星期日)，則設置為星期一
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                dayOfWeek = 1; // 星期一
+            }
+            
+            // 設置選中的星期
+            daySelect.selectedIndex = dayOfWeek - 1; // 選項索引從0開始
+        }
+        
         // 頁面加載時讀取CSV數據
         document.addEventListener('DOMContentLoaded', function() {
             console.log('頁面加載完成，開始讀取數據');
             document.getElementById('result').innerHTML = '<div class="loading">正在加載數據...</div>';
+            
+            // 設置預設星期
+            setDefaultDay();
             
             // 先讀取代堂數據
             fetch('subst.csv')
