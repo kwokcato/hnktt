@@ -314,11 +314,11 @@
                     });
                     
                     teacherInput.addEventListener('input', function() {
-                        const inputValue = this.value.toLowerCase();
+                        const inputValue = this.value.toUpperCase();
                         const options = teacherSelect.options;
                         
                         for (let i = 0; i < options.length; i++) {
-                            if (options[i].text.toLowerCase().includes(inputValue)) {
+                            if (options[i].text.toUpperCase().includes(inputValue)) {
                                 teacherSelect.selectedIndex = i;
                                 break;
                             }
