@@ -539,7 +539,7 @@
                 const backupCandidates = availableTeachers
                     .filter(teacher => 
                         teacherBusyPeriods[teacher].includes(period) &&
-                        teacherOriginalLoad[teacher] < maxLoad
+                        teacherOriginalLoad[teacher] < maxLoad - 1 // 確保代課後不會超過上限
                     )
                     .map(teacher => {
                         // 檢查是否為科任教師
@@ -626,7 +626,7 @@
                         originalLoad: primary.load,
                         substValue: primary.substValue,
                         isRegular: primary.isRegular,
-                        isBusy: primary.busyPeriods.includes(period),
+                        isBusy: false, // 空堂教師不會有課
                         isPrimaryElsewhere: false // 初始化為false
                     } : null,
                     backups: backups.map(b => ({
@@ -671,11 +671,8 @@
                             `(${item.primary.busyPeriods.join(',')})` : 
                             '(空堂)';
                         
-                        const busyText = item.primary.isBusy ? 
-                            `<span class="busy-warning">(本節有課)</span>` : '';
-                        
                         html += `首選教師: <strong>${item.primary.teacher}</strong> ${periodsText}`;
-                        html += ` <span class="subst-value">[代堂值: ${item.primary.substValue}]</span> ${busyText}`;
+                        html += ` <span class="subst-value">[代堂值: ${item.primary.substValue}]</span>`;
                         html += `<div class="teacher-load">原有課堂: ${item.primary.originalLoad} 節</div>`;
                         html += `<div class="teacher-status ${item.primary.isRegular ? 'regular-teacher' : 'not-regular-teacher'}">`;
                         html += item.primary.isRegular ? '該班科任教師' : '非該班科任教師';
