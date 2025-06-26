@@ -133,6 +133,24 @@
             background-color: #f0f0f0;
             border-radius: 4px;
         }
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-row label {
+            margin-bottom: 0;
+            min-width: 100px;
+        }
+        .form-row select {
+            flex: 1;
+        }
+        .form-row .checkbox-container {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -149,13 +167,13 @@
     
     <div class="form-group">
         <label for="teacherInput">請假教師:</label>
-        <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇">
+        <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇（按Enter生成代課）">
         <select id="teacherSelect">
             <option value="">-- 選擇教師 --</option>
         </select>
     </div>
     
-    <div class="form-group">
+    <div class="form-row">
         <label for="daySelect">請假星期:</label>
         <select id="daySelect">
             <option value="1">星期一</option>
@@ -164,6 +182,10 @@
             <option value="4">星期四</option>
             <option value="5">星期五</option>
         </select>
+        <div class="checkbox-container">
+            <input type="checkbox" id="s6Finished">
+            <label for="s6Finished">中六課程已完結</label>
+        </div>
     </div>
     
     <div class="form-group">
@@ -288,6 +310,13 @@
                                 teacherSelect.selectedIndex = i;
                                 break;
                             }
+                        }
+                    });
+                    
+                    // 設置Enter鍵觸發代課生成
+                    teacherInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            document.getElementById('generateBtn').click();
                         }
                     });
                     
@@ -424,6 +453,11 @@
             return false;
         }
         
+        // 檢查是否為中六班級
+        function isS6Class(className) {
+            return className.includes('6') || className.includes('六');
+        }
+        
         // 生成代課安排
         function generateSubstitutes() {
             console.log('開始生成代課安排');
@@ -432,6 +466,7 @@
             const day = parseInt(daySelect.value);
             const maxLoadSelect = document.getElementById('maxLoadSelect');
             const maxLoad = parseInt(maxLoadSelect.value);
+            const s6Finished = document.getElementById('s6Finished').checked;
             
             document.getElementById('result').innerHTML = '<div class="loading">正在計算代課安排...</div>';
             
@@ -488,7 +523,10 @@
             const teacherOriginalLoad = {};
             availableTeachers.forEach(teacher => {
                 const lessons = timetableData.filter(item => 
-                    item.teacher === teacher && item.day === day
+                    item.teacher === teacher && 
+                    item.day === day &&
+                    // 如果中六課程已完結，則忽略中六課程
+                    !(s6Finished && isS6Class(item.class))
                 );
                 teacherOriginalLoad[teacher] = lessons.length;
             });
@@ -509,7 +547,11 @@
             const teacherBusyPeriods = {};
             availableTeachers.forEach(teacher => {
                 const busyPeriods = timetableData
-                    .filter(item => item.teacher === teacher && item.day === day)
+                    .filter(item => 
+                        item.teacher === teacher && 
+                        item.day === day &&
+                        // 如果中六課程已完結，則忽略中六課程
+                        !(s6Finished && isS6Class(item.class))
                     .map(item => item.period)
                     .sort((a, b) => a - b);
                 teacherBusyPeriods[teacher] = busyPeriods;
@@ -633,14 +675,18 @@
             
             console.log('最終代課安排:', substitutes);
             // 顯示結果
-            displayResults(teacherInput, day, substitutes);
+            displayResults(teacherInput, day, substitutes, s6Finished);
         }
 
         // 顯示代課結果
-        function displayResults(absentTeacher, day, substitutes) {
+        function displayResults(absentTeacher, day, substitutes, s6Finished) {
             console.log('顯示結果');
             const resultDiv = document.getElementById('result');
             let html = `<h3>代課安排結果 (${absentTeacher} 星期${day})</h3>`;
+            
+            if (s6Finished) {
+                html += '<div class="priority-info" style="margin-top:10px;">中六課程已完結（中六課程視為空堂）</div>';
+            }
             
             if (substitutes.some(item => item.error)) {
                 html += '<div class="error">注意：部分課程未能找到合適的代課教師</div>';
