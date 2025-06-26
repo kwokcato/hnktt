@@ -151,7 +151,9 @@
             align-items: center;
             white-space: nowrap;
         }
-
+        .file-input {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -164,6 +166,16 @@
         3. 代堂數值為正數的教師<br>
         4. 教過相關班級的教師優先<br>
         5. 當天授課節數較少的教師優先
+    </div>
+
+    <div class="file-input">
+        <label for="timetableFile">課程表CSV檔案:</label>
+        <input type="file" id="timetableFile" accept=".csv">
+    </div>
+
+    <div class="file-input">
+        <label for="substFile">代堂數值CSV檔案:</label>
+        <input type="file" id="substFile" accept=".csv">
     </div>
     
     <div class="form-group">
@@ -219,53 +231,73 @@
         let allTeachers = [];
         let substData = {}; // 存儲代堂數據
         
-        // 頁面加載時讀取CSV數據
+        // 頁面加載時初始化
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('頁面加載完成，開始讀取數據');
-            document.getElementById('result').innerHTML = '<div class="loading">正在加載數據...</div>';
+            console.log('頁面加載完成');
+            document.getElementById('result').innerHTML = '<div class="loading">請上傳課程表和代堂數值CSV檔案</div>';
             
-            // 先讀取代堂數據
-            fetch('subst.csv')
-                .then(response => {
-                    console.log('獲取代堂數據響應:', response);
-                    if (!response.ok) {
-                        throw new Error('代堂數據讀取失敗: ' + response.status);
+            // 綁定文件上傳事件
+            document.getElementById('timetableFile').addEventListener('change', handleTimetableFile);
+            document.getElementById('substFile').addEventListener('change', handleSubstFile);
+            
+            // 設置排序選項事件監聽
+            document.getElementById('sortBySubstValue').addEventListener('change', function() {
+                const sortByValue = this.checked;
+                renderExcludeTeachers(sortByValue);
+            });
+            
+            // 設置輸入框和下拉選單的聯動
+            const teacherInput = document.getElementById('teacherInput');
+            const teacherSelect = document.getElementById('teacherSelect');
+            
+            teacherSelect.addEventListener('change', function() {
+                teacherInput.value = this.value;
+            });
+            
+            teacherInput.addEventListener('input', function() {
+                const inputValue = this.value.toUpperCase();
+                const options = teacherSelect.options;
+                
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].text.toUpperCase().includes(inputValue)) {
+                        teacherSelect.selectedIndex = i;
+                        break;
                     }
-                    return response.text();
-                })
-                .then(csvData => {
-                    console.log('獲取代堂CSV數據:', csvData);
-                    // 解析代堂CSV數據
-                    const lines = csvData.split(/\r?\n/);
-                    console.log('代堂數據行數:', lines.length);
-                    
-                    lines.forEach((line, index) => {
-                        if (line.trim()) {
-                            const parts = line.split(',');
-                            if (parts.length >= 2) {
-                                const teacher = parts[0].trim();
-                                const value = parts[1].trim();
-                                if (teacher && teacher !== 'Initial' && !isNaN(parseInt(value))) {
-                                    substData[teacher] = parseInt(value);
-                                }
-                            }
-                        }
-                    });
-                    console.log('解析後的代堂數據:', substData);
-                    
-                    // 然後讀取課程數據
-                    return fetch('tt.csv');
-                })
-                .then(response => {
-                    console.log('獲取課程數據響應:', response);
-                    if (!response.ok) {
-                        throw new Error('課程數據讀取失敗: ' + response.status);
+                }
+            });
+            
+            // 設置Enter鍵觸發代課生成
+            teacherInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('generateBtn').click();
+                }
+            });
+            
+            // 綁定生成按鈕事件
+            document.getElementById('generateBtn').addEventListener('click', function() {
+                console.log('點擊生成按鈕');
+                try {
+                    if (timetableData.length === 0) {
+                        throw new Error('請先上傳課程表CSV檔案');
                     }
-                    return response.text();
-                })
-                .then(csvData => {
-                    console.log('獲取課程CSV數據:', csvData);
-                    // 解析課程CSV數據
+                    generateSubstitutes();
+                } catch (e) {
+                    console.error('生成代課時出錯:', e);
+                    document.getElementById('result').innerHTML = 
+                        `<div class="error">系統錯誤: ${e.message}</div>`;
+                }
+            });
+        });
+        
+        // 處理課程表文件上傳
+        function handleTimetableFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csvData = e.target.result;
                     timetableData = parseCSV(csvData);
                     console.log('解析後的課程數據:', timetableData);
                     
@@ -290,57 +322,56 @@
                     // 填充排除教師複選框
                     renderExcludeTeachers(false);
                     
-                    // 設置排序選項事件監聽
-                    document.getElementById('sortBySubstValue').addEventListener('change', function() {
-                        const sortByValue = this.checked;
-                        renderExcludeTeachers(sortByValue);
-                    });
+                    document.getElementById('result').innerHTML = '<div class="loading">課程表已載入，請輸入查詢條件</div>';
+                } catch (error) {
+                    console.error('讀取課程表時出錯:', error);
+                    document.getElementById('result').innerHTML = 
+                        `<div class="error">錯誤: ${error.message}</div>`;
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        // 處理代堂數值文件上傳
+        function handleSubstFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csvData = e.target.result;
+                    // 解析代堂CSV數據
+                    const lines = csvData.split(/\r?\n/);
+                    console.log('代堂數據行數:', lines.length);
                     
-                    // 設置輸入框和下拉選單的聯動
-                    const teacherInput = document.getElementById('teacherInput');
-                    teacherSelect.addEventListener('change', function() {
-                        teacherInput.value = this.value;
-                    });
-                    
-                    teacherInput.addEventListener('input', function() {
-                        const inputValue = this.value.toUpperCase();
-                        const options = teacherSelect.options;
-                        
-                        for (let i = 0; i < options.length; i++) {
-                            if (options[i].text.toUpperCase().includes(inputValue)) {
-                                teacherSelect.selectedIndex = i;
-                                break;
+                    substData = {};
+                    lines.forEach((line, index) => {
+                        if (line.trim()) {
+                            const parts = line.split(',');
+                            if (parts.length >= 2) {
+                                const teacher = parts[0].trim();
+                                const value = parts[1].trim();
+                                if (teacher && teacher !== 'Initial' && !isNaN(parseInt(value))) {
+                                    substData[teacher] = parseInt(value);
+                                }
                             }
                         }
                     });
+                    console.log('解析後的代堂數據:', substData);
                     
-                    // 設置Enter鍵觸發代課生成
-                    teacherInput.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            document.getElementById('generateBtn').click();
-                        }
-                    });
+                    // 重新渲染排除教師列表以顯示代堂值
+                    renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
                     
-                    document.getElementById('result').innerHTML = '<div class="loading">數據加載完成，請輸入查詢條件</div>';
-                })
-                .catch(error => {
-                    console.error('讀取數據時出錯:', error);
+                    document.getElementById('result').innerHTML = '<div class="loading">代堂數值已載入，請輸入查詢條件</div>';
+                } catch (error) {
+                    console.error('讀取代堂數據時出錯:', error);
                     document.getElementById('result').innerHTML = 
-                        `<div class="error">錯誤: ${error.message}<br>請確保tt.csv和subst.csv文件存在且格式正確。</div>`;
-                });
-                
-            // 綁定生成按鈕事件
-            document.getElementById('generateBtn').addEventListener('click', function() {
-                console.log('點擊生成按鈕');
-                try {
-                    generateSubstitutes();
-                } catch (e) {
-                    console.error('生成代課時出錯:', e);
-                    document.getElementById('result').innerHTML = 
-                        `<div class="error">系統錯誤: ${e.message}</div>`;
+                        `<div class="error">錯誤: ${error.message}</div>`;
                 }
-            });
-        });
+            };
+            reader.readAsText(file);
+        }
         
         // 渲染排除教師列表
         function renderExcludeTeachers(sortByValue) {
@@ -412,7 +443,7 @@
                 const line = lines[i].trim();
                 if (line) {
                     // 處理可能包含逗號的字段
-                    const fields = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                    const fields = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
                     const cleanedFields = fields.map(field => 
                         field.replace(/^"(.*)"$/, '$1').trim()
                     );
