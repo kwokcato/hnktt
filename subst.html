@@ -159,6 +159,10 @@
             display: inline-block;
             margin-left: 15px;
         }
+        .s6-skipped {
+            color: #7f8c8d;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -314,11 +318,13 @@
                     });
                     
                     teacherInput.addEventListener('input', function() {
-                        const inputValue = this.value.toUpperCase();
+                        // Convert input to uppercase
+                        this.value = this.value.toUpperCase();
+                        const inputValue = this.value.toLowerCase();
                         const options = teacherSelect.options;
                         
                         for (let i = 0; i < options.length; i++) {
-                            if (options[i].text.toUpperCase().includes(inputValue)) {
+                            if (options[i].text.toLowerCase().includes(inputValue)) {
                                 teacherSelect.selectedIndex = i;
                                 break;
                             }
@@ -499,6 +505,11 @@
             timetableData
                 .filter(item => item.teacher === teacherInput && item.day === day)
                 .forEach(lesson => {
+                    // 如果中六課程已完結，則跳過六年級課程
+                    if (s6Finished && lesson.class.includes('6')) {
+                        return;
+                    }
+                    
                     if (!absentLessonsByPeriod[lesson.period]) {
                         absentLessonsByPeriod[lesson.period] = [];
                     }
@@ -510,7 +521,7 @@
             
             if (periods.length === 0) {
                 document.getElementById('result').innerHTML = 
-                    `<div class="error">教師 ${teacherInput} 在星期${day}沒有課程。</div>`;
+                    `<div class="error">教師 ${teacherInput} 在星期${day}沒有需要代課的課程。</div>`;
                 return;
             }
             
@@ -683,14 +694,18 @@
             
             console.log('最終代課安排:', substitutes);
             // 顯示結果
-            displayResults(teacherInput, day, substitutes);
+            displayResults(teacherInput, day, substitutes, s6Finished);
         }
 
         // 顯示代課結果
-        function displayResults(absentTeacher, day, substitutes) {
+        function displayResults(absentTeacher, day, substitutes, s6Finished) {
             console.log('顯示結果');
             const resultDiv = document.getElementById('result');
             let html = `<h3>代課安排結果 (${absentTeacher} 星期${day})</h3>`;
+            
+            if (s6Finished) {
+                html += '<div class="s6-skipped">注意：已跳過所有中六課程</div>';
+            }
             
             if (substitutes.some(item => item.error)) {
                 html += '<div class="error">注意：部分課程未能找到合適的代課教師</div>';
