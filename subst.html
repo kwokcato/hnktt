@@ -177,10 +177,11 @@
     <div class="priority-info">
         <strong>代課教師選擇優先級：</strong><br>
         <OL>
-        <LI>代堂數值最小的教師（負數最大）</LI>
-        <LI>代堂數值為正數的教師</LI>
-        <LI>教過相關班級的教師優先</LI>
-        <LI>當天授課節數較少的教師優先</LI>
+        <LI>代堂數值最小的教師（負數最大）優先選擇</LI>
+        <LI>與代堂科目相關的教師</LI>
+        <LI>當天較多空堂</LI>
+        <LI>未達到當天堂數上限</LI>
+        <LI>未被列入排除名單</LI>
         </OL>
     </div>
     
@@ -206,7 +207,6 @@
                 <input type="checkbox" id="s6Finished">
                 <label for="s6Finished">中六課程已完結</label>
             </div>
-            <button id="generateBtn">編排代課</button>
         </div>
         
         <div class="form-group">
@@ -222,14 +222,14 @@
         <div class="form-group">
             <div class="exclude-input-container">
                 <label>排除教師名單:</label>
-                <input type="text" id="excludeInput" placeholder="輸入教師名稱 (空格或逗號分隔)" title="輸入教師名稱 (空格或逗號分隔)">
+                <input type="text" id="excludeInput" placeholder="輸入教師名稱後按Enter (空格或逗號分隔)" 
+                       title="輸入教師名稱後按Enter (空格或逗號分隔)">
             </div>
             <div class="sort-option">
                 <input type="checkbox" id="sortBySubstValue">
                 <label for="sortBySubstValue">以代堂數排序（由小至大）</label>
             </div>
-            <div id="excludeTeachers">
-            </div>
+            <div id="excludeTeachers"></div>
         </div>
         
         <button id="generateBtn">編排代課</button>
@@ -244,6 +244,7 @@
         let timetableData = [];
         let allTeachers = [];
         let substData = {}; // 存儲代堂數據
+        let excludedTeachersSet = new Set(); // 存儲已排除的教師
         
         // 頁面加載時讀取CSV數據
         document.addEventListener('DOMContentLoaded', function() {
@@ -386,46 +387,41 @@
             // 分割輸入，支持空格或逗號分隔
             const teacherNames = input.split(/[, ]+/).filter(name => name);
             
-            // 獲取所有教師複選框
-            const checkboxes = document.querySelectorAll('#excludeTeachers input[type="checkbox"]');
-            
-            // 先取消所有選中的複選框
-            checkboxes.forEach(cb => {
-                cb.checked = false;
-            });
-            
-            // 選中匹配的教師
+            // 將新輸入的教師添加到排除集合
             teacherNames.forEach(name => {
-                const exactMatch = Array.from(checkboxes).find(cb => 
-                    cb.value === name
-                );
-                
+                // 嘗試完全匹配
+                const exactMatch = allTeachers.find(teacher => teacher === name);
                 if (exactMatch) {
-                    exactMatch.checked = true;
+                    excludedTeachersSet.add(exactMatch);
                 } else {
                     // 嘗試部分匹配
-                    Array.from(checkboxes).forEach(cb => {
-                        if (cb.value.includes(name)) {
-                            cb.checked = true;
-                        }
-                    });
+                    const partialMatches = allTeachers.filter(teacher => teacher.includes(name));
+                    partialMatches.forEach(match => excludedTeachersSet.add(match));
                 }
             });
             
+            // 更新所有複選框狀態
+            updateExcludeCheckboxes();
+            
             // 清空輸入框
             document.getElementById('excludeInput').value = '';
+        }
+        
+        // 更新排除教師的複選框狀態
+        function updateExcludeCheckboxes() {
+            // 獲取所有複選框
+            const checkboxes = document.querySelectorAll('#excludeTeachers input[type="checkbox"]');
+            
+            // 更新複選框狀態
+            checkboxes.forEach(cb => {
+                cb.checked = excludedTeachersSet.has(cb.value);
+            });
         }
         
         // 渲染排除教師列表
         function renderExcludeTeachers(sortByValue) {
             const excludeTeachersDiv = document.getElementById('excludeTeachers');
             excludeTeachersDiv.innerHTML = '';
-            
-            // 獲取當前已選中的教師
-            const checkedTeachers = new Set();
-            document.querySelectorAll('#excludeTeachers input[type="checkbox"]:checked').forEach(cb => {
-                checkedTeachers.add(cb.value);
-            });
             
             // 排序教師列表
             let sortedTeachers = [...allTeachers];
@@ -448,9 +444,16 @@
                 checkbox.type = 'checkbox';
                 checkbox.id = `exclude-${teacher}`;
                 checkbox.value = teacher;
-                if (checkedTeachers.has(teacher)) {
-                    checkbox.checked = true;
-                }
+                checkbox.checked = excludedTeachersSet.has(teacher);
+                
+                // 添加事件監聽器，當手動勾選時更新集合
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        excludedTeachersSet.add(this.value);
+                    } else {
+                        excludedTeachersSet.delete(this.value);
+                    }
+                });
                 
                 const label = document.createElement('label');
                 label.htmlFor = `exclude-${teacher}`;
@@ -544,9 +547,8 @@
                 return;
             }
             
-            // 獲取排除教師名單
-            const excludeCheckboxes = document.querySelectorAll('#excludeTeachers input[type="checkbox"]:checked');
-            const excludedTeachers = Array.from(excludeCheckboxes).map(cb => cb.value);
+            // 獲取排除教師名單（從集合轉換為數組）
+            const excludedTeachers = Array.from(excludedTeachersSet);
             excludedTeachers.push(teacherInput);
             
             // 獲取請假教師當天的課程
