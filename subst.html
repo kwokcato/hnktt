@@ -102,10 +102,25 @@
             color: #e74c3c;
             font-weight: bold;
         }
+        .priority-info {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #e8f4fc;
+            border-left: 4px solid #2ecc71;
+        }
     </style>
 </head>
 <body>
     <h1>教師代課系統</h1>
+    
+    <div class="priority-info">
+        <strong>代課教師選擇優先級：</strong><br>
+        1. 代堂數值最小的教師（負數最大）<br>
+        2. 代堂數值為0的教師<br>
+        3. 代堂數值為正數的教師<br>
+        4. 教過相關班級的教師優先<br>
+        5. 當天授課節數較少的教師優先
+    </div>
     
     <div class="form-group">
         <label for="teacherInput">請假教師:</label>
@@ -390,7 +405,11 @@
                 const classes = lessons.map(l => l.class);
                 const sampleLesson = lessons[0];
                 
-                // 優先選擇: 1. 在該節次沒有課 2. 教過這些班級 3. 當天空堂多
+                // 優先選擇: 
+                // 1. 在該節次沒有課的教師
+                // 2. 符合代堂數值優先級
+                // 3. 教過這些班級
+                // 4. 當天空堂多
                 const candidates = availableTeachers
                     .filter(teacher => 
                         !assignedTeachers.has(teacher) &&
@@ -407,23 +426,24 @@
                             taughtClasses,
                             load: teacherOriginalLoad[teacher],
                             busyPeriods: teacherBusyPeriods[teacher],
-                            substValue: substData[teacher] || 0,
+                            substValue: substData[teacher] || 0, // 默認值為0
                             random: Math.random()
                         };
                     })
                     .sort((a, b) => {
-                        // 先按代堂值排序（數值越大優先級越高）
+                        // 首要條件：代堂數值排序（負數最大優先）
                         if (a.substValue !== b.substValue) {
-                            return b.substValue - a.substValue;
+                            return a.substValue - b.substValue; // 升序排序（-10 < -5 < 0 < 5）
                         }
-                        // 然後按教過的班級數量排序
+                        // 次要條件：教過的班級數量
                         if (a.taughtClasses !== b.taughtClasses) {
                             return b.taughtClasses - a.taughtClasses;
                         }
-                        // 最後按負載排序
+                        // 第三條件：負載
                         if (a.load !== b.load) {
                             return a.load - b.load;
                         }
+                        // 最後隨機
                         return a.random - b.random;
                     });
                 
@@ -443,8 +463,9 @@
                         random: Math.random()
                     }))
                     .sort((a, b) => {
+                        // 同樣按代堂數值優先
                         if (a.substValue !== b.substValue) {
-                            return b.substValue - a.substValue;
+                            return a.substValue - b.substValue;
                         }
                         if (a.taughtClasses !== b.taughtClasses) {
                             return b.taughtClasses - a.taughtClasses;
@@ -543,9 +564,7 @@
                             '(空堂)';
                         
                         html += `代課教師: <strong>${item.primary.teacher}</strong> ${periodsText}`;
-                        if (item.primary.substValue !== 0) {
-                            html += ` <span class="subst-value">[代堂值: ${item.primary.substValue}]</span>`;
-                        }
+                        html += ` <span class="subst-value">[代堂值: ${item.primary.substValue}]</span>`;
                         html += `<br><div class="teacher-load">原有課堂: ${item.primary.originalLoad} 節</div>`;
                     } else {
                         html += `<span class="error">無首選代課教師</span><br>`;
@@ -564,11 +583,8 @@
                                 '';
                             
                             html += `<span class="backup-teacher">
-                                ${backup.teacher} ${periodsText}`;
-                            if (backup.substValue !== 0) {
-                                html += ` <span class="subst-value">[${backup.substValue}]</span>`;
-                            }
-                            html += ` ${busyText}</span>`;
+                                ${backup.teacher} ${periodsText} <span class="subst-value">[${backup.substValue}]</span> ${busyText}
+                            </span>`;
                         });
                         html += '</div>';
                     }
