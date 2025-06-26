@@ -93,6 +93,10 @@
         .backup-teacher {
             margin-left: 10px;
         }
+        .busy-warning {
+            color: #e67e22;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -103,7 +107,6 @@
         <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇">
         <select id="teacherSelect">
             <option value="">-- 選擇教師 --</option>
-            <!-- 教師選項將由JavaScript動態生成 -->
         </select>
     </div>
     
@@ -131,7 +134,6 @@
     <div class="form-group">
         <label>排除教師名單 (不參與代課):</label>
         <div id="excludeTeachers">
-            <!-- 教師複選框將由JavaScript動態生成 -->
         </div>
     </div>
     
@@ -147,13 +149,24 @@
         // 頁面加載時讀取CSV數據
         document.addEventListener('DOMContentLoaded', function() {
             fetch('tt.csv')
-                .then(response => response.text())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('網絡響應不正常');
+                    }
+                    return response.text();
+                })
                 .then(csvData => {
                     // 解析CSV數據
                     timetableData = parseCSV(csvData);
+                    console.log('解析後的課程數據:', timetableData);
+                    
+                    if (timetableData.length === 0) {
+                        throw new Error('CSV文件沒有有效數據');
+                    }
                     
                     // 提取所有教師名單
                     allTeachers = [...new Set(timetableData.map(item => item.teacher))].sort();
+                    console.log('所有教師:', allTeachers);
                     
                     // 填充教師下拉選單
                     const teacherSelect = document.getElementById('teacherSelect');
@@ -205,7 +218,7 @@
                 .catch(error => {
                     console.error('讀取CSV文件時出錯:', error);
                     document.getElementById('result').innerHTML = 
-                        '<div class="error">無法加載課程數據，請確保tt.csv文件存在。</div>';
+                        `<div class="error">錯誤: ${error.message}<br>請確保tt.csv文件存在且格式正確。</div>`;
                 });
                 
             // 綁定生成按鈕事件
@@ -214,23 +227,38 @@
         
         // 解析CSV數據
         function parseCSV(csv) {
-            const lines = csv.split('\n');
+            const lines = csv.split(/\r?\n/); // 處理不同操作系統的換行符
             const result = [];
             
-            for (let i = 0; i < lines.length; i++) {
+            // 跳過可能的標題行（如果第一行是標題）
+            let startLine = 0;
+            if (lines.length > 0 && /^[^0-9]/.test(lines[0])) {
+                startLine = 1;
+            }
+            
+            for (let i = startLine; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (line) {
-                    const fields = line.split(',');
-                    if (fields.length >= 7) {
+                    // 處理可能包含逗號的字段（如果字段用引號括起來）
+                    const fields = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+                    
+                    // 清理字段中的引號
+                    const cleanedFields = fields.map(field => 
+                        field.replace(/^"(.*)"$/, '$1').trim()
+                    );
+                    
+                    if (cleanedFields.length >= 7) {
                         result.push({
-                            year: fields[0],
-                            day: parseInt(fields[1]),
-                            period: parseInt(fields[2]),
-                            teacher: fields[3],
-                            class: fields[4],
-                            subject: fields[5],
-                            room: fields[6]
+                            year: cleanedFields[0],
+                            day: parseInt(cleanedFields[1]) || 0,
+                            period: parseInt(cleanedFields[2]) || 0,
+                            teacher: cleanedFields[3],
+                            class: cleanedFields[4],
+                            subject: cleanedFields[5],
+                            room: cleanedFields[6]
                         });
+                    } else if (cleanedFields.length > 0) {
+                        console.warn(`跳過格式不正確的行 ${i + 1}: ${line}`);
                     }
                 }
             }
@@ -330,16 +358,13 @@
             for (const period of periods) {
                 const lessons = absentLessonsByPeriod[period];
                 const classes = lessons.map(l => l.class);
-                const sampleLesson = lessons[0]; // 使用第一節課作為代表（科目和教室可能不同）
+                const sampleLesson = lessons[0];
                 
-                // 優先選擇: 
-                // 1. 在該節次沒有課的教師
-                // 2. 教過這些班級
-                // 3. 當天空堂多
+                // 優先選擇: 1. 在該節次沒有課 2. 教過這些班級 3. 當天空堂多
                 const candidates = availableTeachers
                     .filter(teacher => 
                         !teacherBusyPeriods[teacher].includes(period) && // 該節次沒有課
-                        teacherLoad[teacher] < maxLoad // 使用用戶選擇的上限
+                        teacherLoad[teacher] < maxLoad
                     )
                     .map(teacher => {
                         // 計算該教師教過多少個這些班級
@@ -349,10 +374,10 @@
                         
                         return {
                             teacher,
-                            taughtClasses, // 教過的班級數量
+                            taughtClasses,
                             load: teacherLoad[teacher],
                             busyPeriods: teacherBusyPeriods[teacher],
-                            random: Math.random() // 用於隨機排序相同條件的候選人
+                            random: Math.random()
                         };
                     })
                     .sort((a, b) => {
@@ -404,7 +429,7 @@
                 // 如果備選不足，從備選候選中添加
                 while (backups.length < 2 && backupCandidates.length > 0) {
                     const candidate = backupCandidates.shift();
-                    if (candidate && (!primary || candidate.teacher !== primary.teacher) {
+                    if (candidate && (!primary || candidate.teacher !== primary.teacher)) {
                         backups.push(candidate);
                     }
                 }
@@ -489,7 +514,7 @@
                                 '(空堂)';
                             
                             const busyText = backup.isBusy ? 
-                                `<span class="error">(注意: 該教師本節已有課)</span>` : 
+                                `<span class="busy-warning">(本節有課)</span>` : 
                                 '';
                             
                             html += `<span class="backup-teacher">
