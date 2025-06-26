@@ -132,9 +132,6 @@
             color: #27ae60;
             font-weight: bold;
         }
-        .not-regular-teacher {
-            color: #7f8c8d;
-        }
         .loading {
             color: #3498db;
             font-weight: bold;
@@ -162,6 +159,15 @@
         .s6-skipped {
             color: #7f8c8d;
             font-style: italic;
+        }
+        .exclude-input-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .exclude-input-container input[type="text"] {
+            margin-left: 10px;
+            flex-grow: 1;
         }
     </style>
 </head>
@@ -212,7 +218,10 @@
         </div>
         
         <div class="form-group">
-            <label>排除教師名單 (不參與代課):</label>
+            <div class="exclude-input-container">
+                <label>排除教師名單:</label>
+                <input type="text" id="excludeInput" placeholder="輸入教師名稱 (空格或逗號分隔)" title="輸入教師名稱 (空格或逗號分隔)">
+            </div>
             <div class="sort-option">
                 <input type="checkbox" id="sortBySubstValue">
                 <label for="sortBySubstValue">以代堂數排序（由小至大）</label>
@@ -338,6 +347,14 @@
                         }
                     });
                     
+                    // 設置排除教師輸入框事件
+                    const excludeInput = document.getElementById('excludeInput');
+                    excludeInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            processExcludeInput();
+                        }
+                    });
+                    
                     document.getElementById('result').innerHTML = '<div class="loading">數據加載完成，請輸入查詢條件</div>';
                 })
                 .catch(error => {
@@ -358,6 +375,44 @@
                 }
             });
         });
+        
+        // 處理排除教師輸入
+        function processExcludeInput() {
+            const input = document.getElementById('excludeInput').value.trim().toUpperCase();
+            if (!input) return;
+            
+            // 分割輸入，支持空格或逗號分隔
+            const teacherNames = input.split(/[, ]+/).filter(name => name);
+            
+            // 獲取所有教師複選框
+            const checkboxes = document.querySelectorAll('#excludeTeachers input[type="checkbox"]');
+            
+            // 先取消所有選中的複選框
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // 選中匹配的教師
+            teacherNames.forEach(name => {
+                const exactMatch = Array.from(checkboxes).find(cb => 
+                    cb.value === name
+                );
+                
+                if (exactMatch) {
+                    exactMatch.checked = true;
+                } else {
+                    // 嘗試部分匹配
+                    Array.from(checkboxes).forEach(cb => {
+                        if (cb.value.includes(name)) {
+                            cb.checked = true;
+                        }
+                    });
+                }
+            });
+            
+            // 清空輸入框
+            document.getElementById('excludeInput').value = '';
+        }
         
         // 渲染排除教師列表
         function renderExcludeTeachers(sortByValue) {
@@ -730,17 +785,12 @@
                         html += `首選教師: <strong>${item.primary.teacher}</strong> ${periodsText}`;
                         html += ` <span class="subst-value">[代堂值: ${item.primary.substValue}]</span>`;
                         html += `<div class="teacher-load">原有課堂: ${item.primary.originalLoad} 節</div>`;
-                        html += `<div class="teacher-status ${item.primary.isRegular ? 'regular-teacher' : 'not-regular-teacher'}">`;
                         
                         if (item.primary.isRegular) {
                             // 顯示具體是哪些班的科任教師
                             const regularClassesText = item.primary.regularClasses.join(', ');
-                            html += `該班科任教師 (負責班別: ${regularClassesText})`;
-                        } else {
-                            html += '非該班科任教師';
+                            html += `<div class="teacher-status regular-teacher">該班科任教師 (負責班別: ${regularClassesText})</div>`;
                         }
-                        
-                        html += `</div>`;
                     } else {
                         html += `<span class="error">無首選代課教師</span><br>`;
                     }
