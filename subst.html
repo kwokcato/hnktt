@@ -97,6 +97,11 @@
             color: #e67e22;
             font-weight: bold;
         }
+        .subst-value {
+            margin-left: 5px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -145,23 +150,43 @@
         // 全局變量存儲課程數據
         let timetableData = [];
         let allTeachers = [];
+        let substData = {}; // 存儲代堂數據
         
         // 頁面加載時讀取CSV數據
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('tt.csv')
+            // 先讀取代堂數據
+            fetch('subst.csv')
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('網絡響應不正常');
-                    }
+                    if (!response.ok) throw new Error('代堂數據讀取失敗');
                     return response.text();
                 })
                 .then(csvData => {
-                    // 解析CSV數據
+                    // 解析代堂CSV數據
+                    const lines = csvData.split(/\r?\n/);
+                    lines.forEach(line => {
+                        if (line.trim()) {
+                            const [teacher, value] = line.split(',');
+                            if (teacher && teacher !== 'Initial' && value) {
+                                substData[teacher.trim()] = parseInt(value.trim());
+                            }
+                        }
+                    });
+                    console.log('代堂數據:', substData);
+                    
+                    // 然後讀取課程數據
+                    return fetch('tt.csv');
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('課程數據讀取失敗');
+                    return response.text();
+                })
+                .then(csvData => {
+                    // 解析課程CSV數據
                     timetableData = parseCSV(csvData);
                     console.log('解析後的課程數據:', timetableData);
                     
                     if (timetableData.length === 0) {
-                        throw new Error('CSV文件沒有有效數據');
+                        throw new Error('課程數據文件沒有有效數據');
                     }
                     
                     // 提取所有教師名單
@@ -177,7 +202,7 @@
                         teacherSelect.appendChild(option);
                     });
                     
-                    // 填充排除教師複選框
+                    // 填充排除教師複選框，並顯示代堂值
                     const excludeTeachersDiv = document.getElementById('excludeTeachers');
                     allTeachers.forEach(teacher => {
                         const div = document.createElement('div');
@@ -191,6 +216,14 @@
                         const label = document.createElement('label');
                         label.htmlFor = `exclude-${teacher}`;
                         label.textContent = teacher;
+                        
+                        // 顯示代堂值（如果存在）
+                        if (substData.hasOwnProperty(teacher)) {
+                            const substSpan = document.createElement('span');
+                            substSpan.className = 'subst-value';
+                            substSpan.textContent = `(${substData[teacher]})`;
+                            label.appendChild(substSpan);
+                        }
                         
                         div.appendChild(checkbox);
                         div.appendChild(label);
@@ -216,9 +249,9 @@
                     });
                 })
                 .catch(error => {
-                    console.error('讀取CSV文件時出錯:', error);
+                    console.error('讀取數據時出錯:', error);
                     document.getElementById('result').innerHTML = 
-                        `<div class="error">錯誤: ${error.message}<br>請確保tt.csv文件存在且格式正確。</div>`;
+                        `<div class="error">錯誤: ${error.message}<br>請確保tt.csv和subst.csv文件存在且格式正確。</div>`;
                 });
                 
             // 綁定生成按鈕事件
@@ -227,10 +260,10 @@
         
         // 解析CSV數據
         function parseCSV(csv) {
-            const lines = csv.split(/\r?\n/); // 處理不同操作系統的換行符
+            const lines = csv.split(/\r?\n/);
             const result = [];
             
-            // 跳過可能的標題行（如果第一行是標題）
+            // 跳過可能的標題行
             let startLine = 0;
             if (lines.length > 0 && /^[^0-9]/.test(lines[0])) {
                 startLine = 1;
@@ -239,10 +272,7 @@
             for (let i = startLine; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (line) {
-                    // 處理可能包含逗號的字段（如果字段用引號括起來）
                     const fields = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-                    
-                    // 清理字段中的引號
                     const cleanedFields = fields.map(field => 
                         field.replace(/^"(.*)"$/, '$1').trim()
                     );
@@ -280,7 +310,6 @@
                 return;
             }
             
-            // 檢查輸入的教師是否存在
             if (!allTeachers.includes(teacherInput)) {
                 document.getElementById('result').innerHTML = 
                     `<div class="error">找不到教師 "${teacherInput}"，請檢查輸入是否正確。</div>`;
@@ -290,9 +319,9 @@
             // 獲取排除教師名單
             const excludeCheckboxes = document.querySelectorAll('#excludeTeachers input[type="checkbox"]:checked');
             const excludedTeachers = Array.from(excludeCheckboxes).map(cb => cb.value);
-            excludedTeachers.push(teacherInput); // 自動排除請假教師
+            excludedTeachers.push(teacherInput);
             
-            // 獲取請假教師當天的課程，按節次分組
+            // 獲取請假教師當天的課程
             const absentLessonsByPeriod = {};
             timetableData
                 .filter(item => item.teacher === teacherInput && item.day === day)
@@ -311,7 +340,7 @@
                 return;
             }
             
-            // 找出所有可能的代課教師 (不包含排除名單)
+            // 找出所有可能的代課教師
             const availableTeachers = allTeachers.filter(teacher => 
                 !excludedTeachers.includes(teacher)
             );
@@ -322,13 +351,13 @@
                 return;
             }
             
-            // 計算每位教師當天的課程數量
-            const teacherLoad = {};
+            // 計算每位教師當天的原始課程數量（不包含本次代課）
+            const teacherOriginalLoad = {};
             availableTeachers.forEach(teacher => {
                 const lessons = timetableData.filter(item => 
                     item.teacher === teacher && item.day === day
                 );
-                teacherLoad[teacher] = lessons.length;
+                teacherOriginalLoad[teacher] = lessons.length;
             });
             
             // 找出每位教師教授過的班級
@@ -354,6 +383,7 @@
             
             // 嘗試為每個節次安排代課教師
             const substitutes = [];
+            const assignedTeachers = new Set(); // 跟蹤已分配代課的教師
             
             for (const period of periods) {
                 const lessons = absentLessonsByPeriod[period];
@@ -363,11 +393,11 @@
                 // 優先選擇: 1. 在該節次沒有課 2. 教過這些班級 3. 當天空堂多
                 const candidates = availableTeachers
                     .filter(teacher => 
-                        !teacherBusyPeriods[teacher].includes(period) && // 該節次沒有課
-                        teacherLoad[teacher] < maxLoad
+                        !assignedTeachers.has(teacher) &&
+                        !teacherBusyPeriods[teacher].includes(period) &&
+                        teacherOriginalLoad[teacher] < maxLoad
                     )
                     .map(teacher => {
-                        // 計算該教師教過多少個這些班級
                         const taughtClasses = teacherClasses[teacher].filter(c => 
                             classes.includes(c)
                         ).length;
@@ -375,16 +405,22 @@
                         return {
                             teacher,
                             taughtClasses,
-                            load: teacherLoad[teacher],
+                            load: teacherOriginalLoad[teacher],
                             busyPeriods: teacherBusyPeriods[teacher],
+                            substValue: substData[teacher] || 0,
                             random: Math.random()
                         };
                     })
                     .sort((a, b) => {
-                        // 先按教過的班級數量排序，然後按負載排序，最後隨機
+                        // 先按代堂值排序（數值越大優先級越高）
+                        if (a.substValue !== b.substValue) {
+                            return b.substValue - a.substValue;
+                        }
+                        // 然後按教過的班級數量排序
                         if (a.taughtClasses !== b.taughtClasses) {
                             return b.taughtClasses - a.taughtClasses;
                         }
+                        // 最後按負載排序
                         if (a.load !== b.load) {
                             return a.load - b.load;
                         }
@@ -394,17 +430,22 @@
                 // 備選教師 (在該節次有課但負載較輕的教師)
                 const backupCandidates = availableTeachers
                     .filter(teacher => 
-                        teacherBusyPeriods[teacher].includes(period) && // 該節次有課
-                        teacherLoad[teacher] < maxLoad
+                        !assignedTeachers.has(teacher) &&
+                        teacherBusyPeriods[teacher].includes(period) &&
+                        teacherOriginalLoad[teacher] < maxLoad
                     )
                     .map(teacher => ({
                         teacher,
                         taughtClasses: teacherClasses[teacher].filter(c => classes.includes(c)).length,
-                        load: teacherLoad[teacher],
+                        load: teacherOriginalLoad[teacher],
                         busyPeriods: teacherBusyPeriods[teacher],
+                        substValue: substData[teacher] || 0,
                         random: Math.random()
                     }))
                     .sort((a, b) => {
+                        if (a.substValue !== b.substValue) {
+                            return b.substValue - a.substValue;
+                        }
                         if (a.taughtClasses !== b.taughtClasses) {
                             return b.taughtClasses - a.taughtClasses;
                         }
@@ -447,9 +488,9 @@
                     continue;
                 }
                 
-                // 更新教師負載
+                // 標記教師為已分配（僅標記首選教師）
                 if (primary) {
-                    teacherLoad[primary.teacher]++;
+                    assignedTeachers.add(primary.teacher);
                 }
                 
                 substitutes.push({
@@ -460,12 +501,14 @@
                     primary: primary ? {
                         teacher: primary.teacher,
                         busyPeriods: primary.busyPeriods,
-                        currentLoad: teacherLoad[primary.teacher]
+                        originalLoad: primary.load,
+                        substValue: primary.substValue
                     } : null,
                     backups: backups.map(b => ({
                         teacher: b.teacher,
                         busyPeriods: b.busyPeriods,
-                        currentLoad: teacherLoad[b.teacher],
+                        originalLoad: b.load,
+                        substValue: b.substValue,
                         isBusy: b.busyPeriods.includes(period)
                     }))
                 });
@@ -499,8 +542,11 @@
                             `(${item.primary.busyPeriods.join(',')})` : 
                             '(空堂)';
                         
-                        html += `代課教師: <strong>${item.primary.teacher}</strong> ${periodsText}<br>`;
-                        html += `<div class="teacher-load">當天已排課: ${item.primary.currentLoad} 節</div>`;
+                        html += `代課教師: <strong>${item.primary.teacher}</strong> ${periodsText}`;
+                        if (item.primary.substValue !== 0) {
+                            html += ` <span class="subst-value">[代堂值: ${item.primary.substValue}]</span>`;
+                        }
+                        html += `<br><div class="teacher-load">原有課堂: ${item.primary.originalLoad} 節</div>`;
                     } else {
                         html += `<span class="error">無首選代課教師</span><br>`;
                     }
@@ -518,8 +564,11 @@
                                 '';
                             
                             html += `<span class="backup-teacher">
-                                ${backup.teacher} ${periodsText} ${busyText}
-                            </span>`;
+                                ${backup.teacher} ${periodsText}`;
+                            if (backup.substValue !== 0) {
+                                html += ` <span class="subst-value">[${backup.substValue}]</span>`;
+                            }
+                            html += ` ${busyText}</span>`;
                         });
                         html += '</div>';
                     }
