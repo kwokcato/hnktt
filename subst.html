@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教師代課系統</title>
     <style>
-        /* 保持原有樣式不變 */
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
@@ -13,193 +12,230 @@
             padding: 20px;
             line-height: 1.6;
         }
-        /* 其他樣式保持不變... */
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input[type="text"], button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #excludeTeachers {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .teacher-checkbox {
+            display: flex;
+            align-items: center;
+        }
+        .teacher-checkbox input {
+            margin-right: 8px;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .loading {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <!-- 保持原有HTML結構不變... -->
+    <h1>教師代課系統</h1>
+    
+    <div class="form-group">
+        <label for="teacherInput">請假教師:</label>
+        <input type="text" id="teacherInput" placeholder="輸入教師姓名">
+        <select id="teacherSelect">
+            <option value="">-- 選擇教師 --</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="daySelect">請假星期:</label>
+        <select id="daySelect">
+            <option value="1">星期一</option>
+            <option value="2">星期二</option>
+            <option value="3">星期三</option>
+            <option value="4">星期四</option>
+            <option value="5">星期五</option>
+        </select>
+    </div>
+    
+    <button id="generateBtn">編排代課</button>
+    
+    <div id="result">準備載入數據...</div>
+
     <script>
-        // 全局變量存儲課程數據
-        let timetableData = [];
-        let allTeachers = [];
-        let substData = {};
-        
-        // 頁面加載時讀取CSV數據
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('頁面加載完成，開始讀取數據');
-            document.getElementById('result').innerHTML = '<div class="loading">正在加載數據...</div>';
-            
-            // 使用Promise.all同時讀取兩個CSV文件
-            Promise.all([
-                fetchCSV('tt.csv'),
-                fetchCSV('subst.csv')
-            ])
-            .then(([ttData, substDataText]) => {
-                // 解析代堂數據
-                substData = parseSubstCSV(substDataText);
-                console.log('代堂數據:', substData);
+        // 安全初始化函數
+        function initApp() {
+            try {
+                // 顯示載入狀態
+                document.getElementById('result').innerHTML = '<div class="loading">正在初始化系統...</div>';
                 
-                // 解析課程表數據
-                timetableData = parseTimetableCSV(ttData);
-                console.log('課程數據:', timetableData);
+                // 先載入靜態界面
+                renderBaseUI();
                 
-                if (timetableData.length === 0) {
-                    throw new Error('課程數據文件沒有有效數據');
-                }
-                
-                // 初始化教師列表和UI
-                initTeachers();
-            })
-            .catch(error => {
-                console.error('讀取數據時出錯:', error);
-                showError(`錯誤: ${error.message}<br>
-                可能原因:<br>
-                1. CSV文件不存在<br>
-                2. CSV格式不正確<br>
-                3. 服務器未正確配置CORS<br>
-                請檢查瀏覽器控制台獲取詳細信息`);
-            });
-            
-            // 綁定生成按鈕事件
-            document.getElementById('generateBtn').addEventListener('click', generateSubstitutes);
-        });
-
-        // 新增：專門用於獲取CSV文件的函數
-        function fetchCSV(filename) {
-            return fetch(filename)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`無法讀取 ${filename}: ${response.status}`);
-                    }
-                    // 檢查內容類型，處理可能的BOM字符
-                    return response.text().then(text => {
-                        // 移除可能的BOM字符
-                        return text.replace(/^\uFEFF/, '');
-                    });
-                });
-        }
-
-        // 新增：專門解析代堂CSV的函數
-        function parseSubstCSV(csvData) {
-            const data = {};
-            const lines = csvData.split(/\r?\n/);
-            
-            lines.forEach(line => {
-                if (line.trim()) {
-                    const [teacher, value] = line.split(',');
-                    if (teacher && teacher !== 'Initial' && !isNaN(parseInt(value))) {
-                        data[teacher.trim()] = parseInt(value.trim());
-                    }
-                }
-            });
-            return data;
-        }
-
-        // 新增：專門解析課程表CSV的函數
-        function parseTimetableCSV(csvData) {
-            const result = [];
-            const lines = csvData.split(/\r?\n/);
-            
-            // 跳過可能的標題行
-            let startLine = /^\D/.test(lines[0]) ? 1 : 0;
-            
-            for (let i = startLine; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                
-                // 處理可能包含逗號的字段
-                const fields = line.match(/(?:[^,"]+|"[^"]*")+/g) || [];
-                const cleanedFields = fields.map(field => 
-                    field.replace(/^"(.*)"$/, '$1').trim()
-                );
-                
-                if (cleanedFields.length >= 7) {
-                    result.push({
-                        year: cleanedFields[0],
-                        day: parseInt(cleanedFields[1]) || 0,
-                        period: parseInt(cleanedFields[2]) || 0,
-                        teacher: cleanedFields[3],
-                        class: cleanedFields[4],
-                        subject: cleanedFields[5],
-                        room: cleanedFields[6]
-                    });
-                }
+                // 然後異步載入數據
+                loadData();
+            } catch (error) {
+                showFatalError(error);
             }
-            return result;
         }
 
-        // 初始化教師列表
-        function initTeachers() {
-            // 提取所有教師名單
-            allTeachers = [...new Set(timetableData.map(item => item.teacher))].sort();
-            
-            // 填充教師下拉選單
-            const teacherSelect = document.getElementById('teacherSelect');
-            teacherSelect.innerHTML = '<option value="">-- 選擇教師 --</option>';
-            allTeachers.forEach(teacher => {
+        // 基礎UI渲染（不依賴數據）
+        function renderBaseUI() {
+            const daySelect = document.getElementById('daySelect');
+            daySelect.innerHTML = '';
+            [1,2,3,4,5].forEach(day => {
                 const option = document.createElement('option');
-                option.value = teacher;
-                option.textContent = teacher + (substData[teacher] !== undefined ? ` (${substData[teacher]})` : '');
-                teacherSelect.appendChild(option);
+                option.value = day;
+                option.textContent = '星期' + ['一','二','三','四','五'][day-1];
+                daySelect.appendChild(option);
             });
-            
-            // 填充排除教師複選框
-            const excludeTeachersDiv = document.getElementById('excludeTeachers');
-            excludeTeachersDiv.innerHTML = '';
-            allTeachers.forEach(teacher => {
-                const div = document.createElement('div');
-                div.className = 'teacher-checkbox';
+        }
+
+        // 數據載入函數
+        async function loadData() {
+            try {
+                const [ttData, substData] = await Promise.all([
+                    loadCSV('tt.csv'),
+                    loadCSV('subst.csv')
+                ]);
                 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `exclude-${teacher}`;
-                checkbox.value = teacher;
-                
-                const label = document.createElement('label');
-                label.htmlFor = `exclude-${teacher}`;
-                label.textContent = teacher;
-                
-                if (substData[teacher] !== undefined) {
-                    const substSpan = document.createElement('span');
-                    substSpan.className = 'subst-value';
-                    substSpan.textContent = `(${substData[teacher]})`;
-                    label.appendChild(substSpan);
+                if (!ttData || !substData) {
+                    throw new Error('無法讀取CSV文件');
                 }
                 
-                div.appendChild(checkbox);
-                div.appendChild(label);
-                excludeTeachersDiv.appendChild(div);
-            });
-            
-            // 設置輸入框和下拉選單的聯動
-            const teacherInput = document.getElementById('teacherInput');
-            document.getElementById('teacherSelect').addEventListener('change', function() {
-                teacherInput.value = this.value;
-            });
-            
-            teacherInput.addEventListener('input', function() {
-                const inputValue = this.value.toUpperCase();
-                const options = document.getElementById('teacherSelect').options;
+                window.timetableData = parseCSV(ttData);
+                window.substData = parseSubstData(substData);
                 
-                for (let i = 0; i < options.length; i++) {
-                    if (options[i].text.toUpperCase().includes(inputValue)) {
-                        options[i].selected = true;
-                        break;
+                initTeacherDropdown();
+                
+                document.getElementById('result').innerHTML = '<div class="loading">系統準備就緒，請輸入條件</div>';
+            } catch (error) {
+                showError('數據載入失敗: ' + error.message);
+                console.error('數據載入錯誤:', error);
+            }
+        }
+
+        // CSV載入函數（新增錯誤處理）
+        async function loadCSV(filename) {
+            try {
+                const response = await fetch(filename);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                let text = await response.text();
+                // 移除BOM字符
+                return text.replace(/^\uFEFF/, '');
+            } catch (error) {
+                console.error(`載入 ${filename} 失敗:`, error);
+                showError(`無法載入 ${filename} 文件`);
+                return null;
+            }
+        }
+
+        // 安全解析函數
+        function parseCSV(csv) {
+            try {
+                const lines = csv.split(/\r?\n/).filter(line => line.trim());
+                return lines.map(line => {
+                    const parts = line.split(',');
+                    return {
+                        year: parts[0]?.trim() || '',
+                        day: parseInt(parts[1]) || 0,
+                        period: parseInt(parts[2]) || 0,
+                        teacher: parts[3]?.trim() || '',
+                        class: parts[4]?.trim() || '',
+                        subject: parts[5]?.trim() || '',
+                        room: parts[6]?.trim() || ''
+                    };
+                });
+            } catch (error) {
+                console.error('CSV解析錯誤:', error);
+                return [];
+            }
+        }
+
+        // 初始化教師下拉選單
+        function initTeacherDropdown() {
+            try {
+                const teachers = [...new Set(window.timetableData.map(item => item.teacher))].sort();
+                const select = document.getElementById('teacherSelect');
+                
+                select.innerHTML = '<option value="">-- 選擇教師 --</option>';
+                teachers.forEach(teacher => {
+                    const option = document.createElement('option');
+                    option.value = teacher;
+                    option.textContent = teacher;
+                    select.appendChild(option);
+                });
+                
+                // 設置輸入聯動
+                document.getElementById('teacherInput').addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const options = select.options;
+                    
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].text.toLowerCase().includes(searchTerm)) {
+                            select.selectedIndex = i;
+                            break;
+                        }
                     }
-                }
-            });
-            
-            document.getElementById('result').innerHTML = '<div class="loading">數據加載完成，請輸入查詢條件</div>';
+                });
+            } catch (error) {
+                console.error('初始化教師列表失敗:', error);
+            }
         }
 
-        // 顯示錯誤信息
+        // 錯誤處理函數
         function showError(message) {
-            document.getElementById('result').innerHTML = 
-                `<div class="error">${message}</div>`;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="error">${message}</div>`;
         }
 
-        /* 保持原有的 generateSubstitutes() 和 displayResults() 函數不變 */
-        // ... [其他函數保持不變]
+        function showFatalError(error) {
+            document.body.innerHTML = `
+                <h1 style="color:red">系統嚴重錯誤</h1>
+                <p>${error.message}</p>
+                <p>請檢查控制台獲取詳細信息</p>
+            `;
+            console.error('致命錯誤:', error);
+        }
+
+        // 啟動應用
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
