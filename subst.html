@@ -169,6 +169,22 @@
             margin-left: 10px;
             flex-grow: 1;
         }
+        .confirm-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .confirm-btn:hover {
+            background-color: #27ae60;
+        }
+        .confirmed {
+            color: #2ecc71;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -790,8 +806,8 @@
                 html += '<div class="error">注意：部分課程未能找到合適的代課教師</div>';
             }
             
-            substitutes.forEach(item => {
-                html += `<div class="substitute-item">
+            substitutes.forEach((item, index) => {
+                html += `<div class="substitute-item" id="substitute-${index}">
                     <strong>第 ${item.period} 節</strong> | 
                     科目: ${item.subject} | 
                     教室: ${item.room}<br>`;
@@ -813,6 +829,13 @@
                             // 顯示具體是哪些班的科任教師
                             const regularClassesText = item.primary.regularClasses.join(', ');
                             html += `<div class="teacher-status regular-teacher">該班科任教師 (負責班別: ${regularClassesText})</div>`;
+                        }
+                        
+                        // 添加確認按鈕
+                        if (!item.confirmed) {
+                            html += `<button class="confirm-btn" data-index="${index}" data-teacher="${item.primary.teacher}">確認代課</button>`;
+                        } else {
+                            html += `<span class="confirmed">已確認代堂</span>`;
                         }
                     } else {
                         html += `<span class="error">無首選代課教師</span><br>`;
@@ -852,7 +875,74 @@
             });
             
             resultDiv.innerHTML = html;
+            
+            // 添加確認按鈕的事件監聽器
+            document.querySelectorAll('.confirm-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = this.getAttribute('data-index');
+                    const teacher = this.getAttribute('data-teacher');
+                    confirmSubstitute(index, teacher);
+                });
+            });
+            
             console.log('結果已顯示');
+        }
+        
+        // 確認代課
+        async function confirmSubstitute(index, teacher) {
+            try {
+                // 更新代堂數據
+                substData[teacher] = (substData[teacher] || 0) + 1;
+                
+                // 更新UI標記為已確認
+                const substituteItem = document.getElementById(`substitute-${index}`);
+                const confirmBtn = substituteItem.querySelector('.confirm-btn');
+                if (confirmBtn) {
+                    confirmBtn.remove();
+                    substituteItem.querySelector('strong').insertAdjacentHTML('afterend', 
+                        ' <span class="confirmed">已確認代堂</span>');
+                }
+                
+                // 更新CSV文件
+                await updateSubstCSV();
+                
+                // 重新渲染排除教師列表（只更新數字，不重置選擇）
+                renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
+                
+                console.log(`已確認 ${teacher} 代課，新代堂值: ${substData[teacher]}`);
+            } catch (error) {
+                console.error('確認代課時出錯:', error);
+                alert('確認代課時發生錯誤: ' + error.message);
+            }
+        }
+        
+        // 更新subst.csv文件
+        async function updateSubstCSV() {
+            try {
+                // 構建CSV內容
+                let csvContent = "Initial,代堂\r\n";
+                for (const teacher in substData) {
+                    csvContent += `${teacher},${substData[teacher]}\r\n`;
+                }
+                
+                // 發送到服務器保存
+                const response = await fetch('save_subst.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `csvData=${encodeURIComponent(csvContent)}`
+                });
+                
+                if (!response.ok) {
+                    throw new Error('保存失敗: ' + response.status);
+                }
+                
+                console.log('代堂數據已更新');
+            } catch (error) {
+                console.error('更新CSV時出錯:', error);
+                throw error;
+            }
         }
     </script>
 </body>
