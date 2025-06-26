@@ -382,7 +382,7 @@
                 .catch(error => {
                     console.error('讀取數據時出錯:', error);
                     document.getElementById('result').innerHTML = 
-                        `<div class="error">錯誤: ${error.message}<br>請確保tt.csv和subst.csv文件存在且格式正確。</div>`;
+                        `<div class="error">錯誤: ${error.message}<br>請確保相關文件存在且格式正確。</div>`;
                 });
                 
             // 綁定生成按鈕事件
