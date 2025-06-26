@@ -127,6 +127,12 @@
             color: #27ae60;
             font-weight: bold;
         }
+        .sort-option {
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -172,6 +178,10 @@
     
     <div class="form-group">
         <label>排除教師名單 (不參與代課):</label>
+        <div class="sort-option">
+            <input type="checkbox" id="sortBySubstValue">
+            <label for="sortBySubstValue">以代堂數排序（由小至大）</label>
+        </div>
         <div id="excludeTeachers">
         </div>
     </div>
@@ -254,33 +264,13 @@
                         teacherSelect.appendChild(option);
                     });
                     
-                    // 填充排除教師複選框，並顯示代堂值
-                    const excludeTeachersDiv = document.getElementById('excludeTeachers');
-                    excludeTeachersDiv.innerHTML = '';
-                    allTeachers.forEach(teacher => {
-                        const div = document.createElement('div');
-                        div.className = 'teacher-checkbox';
-                        
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.id = `exclude-${teacher}`;
-                        checkbox.value = teacher;
-                        
-                        const label = document.createElement('label');
-                        label.htmlFor = `exclude-${teacher}`;
-                        label.textContent = teacher;
-                        
-                        // 顯示代堂值（如果存在）
-                        if (substData.hasOwnProperty(teacher)) {
-                            const substSpan = document.createElement('span');
-                            substSpan.className = 'subst-value';
-                            substSpan.textContent = `(${substData[teacher]})`;
-                            label.appendChild(substSpan);
-                        }
-                        
-                        div.appendChild(checkbox);
-                        div.appendChild(label);
-                        excludeTeachersDiv.appendChild(div);
+                    // 填充排除教師複選框
+                    renderExcludeTeachers(false);
+                    
+                    // 設置排序選項事件監聽
+                    document.getElementById('sortBySubstValue').addEventListener('change', function() {
+                        const sortByValue = this.checked;
+                        renderExcludeTeachers(sortByValue);
                     });
                     
                     // 設置輸入框和下拉選單的聯動
@@ -321,6 +311,60 @@
                 }
             });
         });
+        
+        // 渲染排除教師列表
+        function renderExcludeTeachers(sortByValue) {
+            const excludeTeachersDiv = document.getElementById('excludeTeachers');
+            excludeTeachersDiv.innerHTML = '';
+            
+            // 獲取當前已選中的教師
+            const checkedTeachers = new Set();
+            document.querySelectorAll('#excludeTeachers input[type="checkbox"]:checked').forEach(cb => {
+                checkedTeachers.add(cb.value);
+            });
+            
+            // 排序教師列表
+            let sortedTeachers = [...allTeachers];
+            if (sortByValue) {
+                sortedTeachers.sort((a, b) => {
+                    const aValue = substData[a] || 0;
+                    const bValue = substData[b] || 0;
+                    return aValue - bValue; // 由小到大排序
+                });
+            } else {
+                sortedTeachers.sort(); // 按名稱排序
+            }
+            
+            // 渲染教師列表
+            sortedTeachers.forEach(teacher => {
+                const div = document.createElement('div');
+                div.className = 'teacher-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `exclude-${teacher}`;
+                checkbox.value = teacher;
+                if (checkedTeachers.has(teacher)) {
+                    checkbox.checked = true;
+                }
+                
+                const label = document.createElement('label');
+                label.htmlFor = `exclude-${teacher}`;
+                label.textContent = teacher;
+                
+                // 顯示代堂值（如果存在）
+                if (substData.hasOwnProperty(teacher)) {
+                    const substSpan = document.createElement('span');
+                    substSpan.className = 'subst-value';
+                    substSpan.textContent = `(${substData[teacher]})`;
+                    label.appendChild(substSpan);
+                }
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                excludeTeachersDiv.appendChild(div);
+            });
+        }
         
         // 解析CSV數據
         function parseCSV(csv) {
