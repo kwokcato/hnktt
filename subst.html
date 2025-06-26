@@ -7,29 +7,41 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             line-height: 1.6;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
         h1 {
             color: #2c3e50;
             text-align: center;
+            grid-column: 1 / -1;
         }
         .form-group {
             margin-bottom: 15px;
         }
         label {
-            display: block;
+            display: inline-block;
             margin-bottom: 5px;
             font-weight: bold;
+            min-width: 120px;
         }
         select, input[type="text"], button {
-            width: 100%;
             padding: 8px;
             margin-bottom: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            display: inline-block;
+        }
+        select {
+            width: auto;
+            min-width: 150px;
+        }
+        input[type="text"] {
+            width: 200px;
         }
         button {
             background-color: #3498db;
@@ -38,6 +50,7 @@
             cursor: pointer;
             padding: 10px;
             font-size: 16px;
+            width: auto;
         }
         button:hover {
             background-color: #2980b9;
@@ -61,6 +74,8 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             background-color: #f9f9f9;
+            height: calc(100% - 60px);
+            overflow-y: auto;
         }
         .substitute-item {
             margin-bottom: 10px;
@@ -107,6 +122,7 @@
             padding: 10px;
             background-color: #e8f4fc;
             border-left: 4px solid #2ecc71;
+            grid-column: 1 / -1;
         }
         .teacher-status {
             font-size: 0.9em;
@@ -133,6 +149,16 @@
             background-color: #f0f0f0;
             border-radius: 4px;
         }
+        .form-container {
+            grid-column: 1;
+        }
+        .result-container {
+            grid-column: 2;
+        }
+        .checkbox-container {
+            display: inline-block;
+            margin-left: 15px;
+        }
     </style>
 </head>
 <body>
@@ -147,48 +173,56 @@
         5. 當天授課節數較少的教師優先
     </div>
     
-    <div class="form-group">
-        <label for="teacherInput">請假教師:</label>
-        <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇">
-        <select id="teacherSelect">
-            <option value="">-- 選擇教師 --</option>
-        </select>
-    </div>
-    
-    <div class="form-group">
-        <label for="daySelect">請假星期:</label>
-        <select id="daySelect">
-            <option value="1">星期一</option>
-            <option value="2">星期二</option>
-            <option value="3">星期三</option>
-            <option value="4">星期四</option>
-            <option value="5">星期五</option>
-        </select>
-    </div>
-    
-    <div class="form-group">
-        <label for="maxLoadSelect">代課教師堂數上限:</label>
-        <select id="maxLoadSelect">
-            <option value="3">3堂</option>
-            <option value="4">4堂</option>
-            <option value="5" selected>5堂</option>
-            <option value="6">6堂</option>
-        </select>
-    </div>
-    
-    <div class="form-group">
-        <label>排除教師名單 (不參與代課):</label>
-        <div class="sort-option">
-            <input type="checkbox" id="sortBySubstValue">
-            <label for="sortBySubstValue">以代堂數排序（由小至大）</label>
+    <div class="form-container">
+        <div class="form-group">
+            <label for="teacherInput">請假教師:</label>
+            <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇">
+            <select id="teacherSelect">
+                <option value="">-- 選擇教師 --</option>
+            </select>
         </div>
-        <div id="excludeTeachers">
+        
+        <div class="form-group">
+            <label for="daySelect">請假星期:</label>
+            <select id="daySelect">
+                <option value="1">星期一</option>
+                <option value="2">星期二</option>
+                <option value="3">星期三</option>
+                <option value="4">星期四</option>
+                <option value="5">星期五</option>
+            </select>
+            <div class="checkbox-container">
+                <input type="checkbox" id="s6Finished">
+                <label for="s6Finished">中六課程已完結</label>
+            </div>
         </div>
+        
+        <div class="form-group">
+            <label for="maxLoadSelect">代課教師堂數上限:</label>
+            <select id="maxLoadSelect">
+                <option value="3">3堂</option>
+                <option value="4">4堂</option>
+                <option value="5" selected>5堂</option>
+                <option value="6">6堂</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>排除教師名單 (不參與代課):</label>
+            <div class="sort-option">
+                <input type="checkbox" id="sortBySubstValue">
+                <label for="sortBySubstValue">以代堂數排序（由小至大）</label>
+            </div>
+            <div id="excludeTeachers">
+            </div>
+        </div>
+        
+        <button id="generateBtn">編排代課</button>
     </div>
     
-    <button id="generateBtn">編排代課</button>
-    
-    <div id="result"></div>
+    <div class="result-container">
+        <div id="result"></div>
+    </div>
 
     <script>
         // 全局變量存儲課程數據
@@ -288,6 +322,13 @@
                                 teacherSelect.selectedIndex = i;
                                 break;
                             }
+                        }
+                    });
+
+                    // 設置Enter鍵觸發代課生成
+                    teacherInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            document.getElementById('generateBtn').click();
                         }
                     });
                     
@@ -432,6 +473,7 @@
             const day = parseInt(daySelect.value);
             const maxLoadSelect = document.getElementById('maxLoadSelect');
             const maxLoad = parseInt(maxLoadSelect.value);
+            const s6Finished = document.getElementById('s6Finished').checked;
             
             document.getElementById('result').innerHTML = '<div class="loading">正在計算代課安排...</div>';
             
@@ -488,7 +530,10 @@
             const teacherOriginalLoad = {};
             availableTeachers.forEach(teacher => {
                 const lessons = timetableData.filter(item => 
-                    item.teacher === teacher && item.day === day
+                    item.teacher === teacher && 
+                    item.day === day &&
+                    // 如果中六課程已完結，則忽略六年級課程
+                    !(s6Finished && item.class.includes('6'))
                 );
                 teacherOriginalLoad[teacher] = lessons.length;
             });
@@ -509,7 +554,12 @@
             const teacherBusyPeriods = {};
             availableTeachers.forEach(teacher => {
                 const busyPeriods = timetableData
-                    .filter(item => item.teacher === teacher && item.day === day)
+                    .filter(item => 
+                        item.teacher === teacher && 
+                        item.day === day &&
+                        // 如果中六課程已完結，則忽略六年級課程
+                        !(s6Finished && item.class.includes('6'))
+                    )
                     .map(item => item.period)
                     .sort((a, b) => a - b);
                 teacherBusyPeriods[teacher] = busyPeriods;
