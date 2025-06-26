@@ -108,6 +108,17 @@
             background-color: #e8f4fc;
             border-left: 4px solid #2ecc71;
         }
+        .teacher-status {
+            font-size: 0.9em;
+            margin-top: 3px;
+        }
+        .regular-teacher {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .not-regular-teacher {
+            color: #7f8c8d;
+        }
     </style>
 </head>
 <body>
@@ -311,6 +322,23 @@
             return result;
         }
         
+        // 檢查是否為班級科任教師
+        function checkIfRegularTeacher(teacher, classes, subject) {
+            for (const cls of classes) {
+                // 檢查該教師是否在該班級教授該科目
+                const isRegular = timetableData.some(item => 
+                    item.teacher === teacher && 
+                    item.class === cls && 
+                    item.subject === subject
+                );
+                
+                if (isRegular) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         // 生成代課安排
         function generateSubstitutes() {
             const teacherInput = document.getElementById('teacherInput').value.trim();
@@ -403,6 +431,7 @@
             for (const period of periods) {
                 const lessons = absentLessonsByPeriod[period];
                 const classes = lessons.map(l => l.class);
+                const subject = lessons[0].subject;
                 const sampleLesson = lessons[0];
                 
                 // 優先選擇: 
@@ -421,12 +450,16 @@
                             classes.includes(c)
                         ).length;
                         
+                        // 檢查是否為科任教師
+                        const isRegular = checkIfRegularTeacher(teacher, classes, subject);
+                        
                         return {
                             teacher,
                             taughtClasses,
                             load: teacherOriginalLoad[teacher],
                             busyPeriods: teacherBusyPeriods[teacher],
                             substValue: substData[teacher] || 0, // 默認值為0
+                            isRegular,
                             random: Math.random()
                         };
                     })
@@ -435,11 +468,15 @@
                         if (a.substValue !== b.substValue) {
                             return a.substValue - b.substValue; // 升序排序（-10 < -5 < 0 < 5）
                         }
-                        // 次要條件：教過的班級數量
+                        // 次要條件：是否為科任教師
+                        if (a.isRegular !== b.isRegular) {
+                            return b.isRegular - a.isRegular;
+                        }
+                        // 第三條件：教過的班級數量
                         if (a.taughtClasses !== b.taughtClasses) {
                             return b.taughtClasses - a.taughtClasses;
                         }
-                        // 第三條件：負載
+                        // 第四條件：負載
                         if (a.load !== b.load) {
                             return a.load - b.load;
                         }
@@ -454,18 +491,27 @@
                         teacherBusyPeriods[teacher].includes(period) &&
                         teacherOriginalLoad[teacher] < maxLoad
                     )
-                    .map(teacher => ({
-                        teacher,
-                        taughtClasses: teacherClasses[teacher].filter(c => classes.includes(c)).length,
-                        load: teacherOriginalLoad[teacher],
-                        busyPeriods: teacherBusyPeriods[teacher],
-                        substValue: substData[teacher] || 0,
-                        random: Math.random()
-                    }))
+                    .map(teacher => {
+                        // 檢查是否為科任教師
+                        const isRegular = checkIfRegularTeacher(teacher, classes, subject);
+                        
+                        return {
+                            teacher,
+                            taughtClasses: teacherClasses[teacher].filter(c => classes.includes(c)).length,
+                            load: teacherOriginalLoad[teacher],
+                            busyPeriods: teacherBusyPeriods[teacher],
+                            substValue: substData[teacher] || 0,
+                            isRegular,
+                            random: Math.random()
+                        };
+                    })
                     .sort((a, b) => {
                         // 同樣按代堂數值優先
                         if (a.substValue !== b.substValue) {
                             return a.substValue - b.substValue;
+                        }
+                        if (a.isRegular !== b.isRegular) {
+                            return b.isRegular - a.isRegular;
                         }
                         if (a.taughtClasses !== b.taughtClasses) {
                             return b.taughtClasses - a.taughtClasses;
@@ -500,7 +546,7 @@
                     substitutes.push({
                         period: period,
                         classes: classes,
-                        subject: sampleLesson.subject,
+                        subject: subject,
                         room: sampleLesson.room,
                         primary: null,
                         backups: [],
@@ -517,20 +563,22 @@
                 substitutes.push({
                     period: period,
                     classes: classes,
-                    subject: sampleLesson.subject,
+                    subject: subject,
                     room: sampleLesson.room,
                     primary: primary ? {
                         teacher: primary.teacher,
                         busyPeriods: primary.busyPeriods,
                         originalLoad: primary.load,
-                        substValue: primary.substValue
+                        substValue: primary.substValue,
+                        isRegular: primary.isRegular
                     } : null,
                     backups: backups.map(b => ({
                         teacher: b.teacher,
                         busyPeriods: b.busyPeriods,
                         originalLoad: b.load,
                         substValue: b.substValue,
-                        isBusy: b.busyPeriods.includes(period)
+                        isBusy: b.busyPeriods.includes(period),
+                        isRegular: b.isRegular
                     }))
                 });
             }
@@ -565,7 +613,10 @@
                         
                         html += `代課教師: <strong>${item.primary.teacher}</strong> ${periodsText}`;
                         html += ` <span class="subst-value">[代堂值: ${item.primary.substValue}]</span>`;
-                        html += `<br><div class="teacher-load">原有課堂: ${item.primary.originalLoad} 節</div>`;
+                        html += `<div class="teacher-load">原有課堂: ${item.primary.originalLoad} 節</div>`;
+                        html += `<div class="teacher-status ${item.primary.isRegular ? 'regular-teacher' : 'not-regular-teacher'}">`;
+                        html += item.primary.isRegular ? '該班科任教師' : '非該班科任教師';
+                        html += `</div>`;
                     } else {
                         html += `<span class="error">無首選代課教師</span><br>`;
                     }
@@ -583,7 +634,11 @@
                                 '';
                             
                             html += `<span class="backup-teacher">
-                                ${backup.teacher} ${periodsText} <span class="subst-value">[${backup.substValue}]</span> ${busyText}
+                                ${backup.teacher} ${periodsText} <span class="subst-value">[${backup.substValue}]</span>`;
+                            if (backup.isRegular) {
+                                html += ` <span class="regular-teacher">(科任)</span>`;
+                            }
+                            html += ` ${busyText}
                             </span>`;
                         });
                         html += '</div>';
