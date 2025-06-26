@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教師代課系統 V2</title>
+    <!-- 添加 FileSaver.js 庫 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -169,6 +171,7 @@
             margin-left: 10px;
             flex-grow: 1;
         }
+        /* 新增確認按鈕樣式 */
         .confirm-btn {
             background-color: #2ecc71;
             color: white;
@@ -184,11 +187,13 @@
         .confirmed {
             color: #2ecc71;
             font-weight: bold;
+            margin-left: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>教師代課系統 V3</h1>
+    <!-- 保持原有HTML結構不變 -->
+    <h1>教師代課系統 V2</h1>
     
     <div class="priority-info">
         <strong>代課教師選擇優先級：</strong><br>
@@ -248,8 +253,6 @@
             </div>
             <div id="excludeTeachers"></div>
         </div>
-        
-        <button id="generateBtn">編排代課</button>
     </div>
     
     <div class="result-container">
@@ -832,11 +835,7 @@
                         }
                         
                         // 添加確認按鈕
-                        if (!item.confirmed) {
-                            html += `<button class="confirm-btn" data-index="${index}" data-teacher="${item.primary.teacher}">確認代課</button>`;
-                        } else {
-                            html += `<span class="confirmed">已確認代堂</span>`;
-                        }
+                        html += `<button class="confirm-btn" data-index="${index}" data-teacher="${item.primary.teacher}">確認代課</button>`;
                     } else {
                         html += `<span class="error">無首選代課教師</span><br>`;
                     }
@@ -916,7 +915,7 @@
             }
         }
         
-        // 更新subst.csv文件
+        // 更新subst.csv文件 (純前端版本)
         async function updateSubstCSV() {
             try {
                 // 構建CSV內容
@@ -925,20 +924,12 @@
                     csvContent += `${teacher},${substData[teacher]}\r\n`;
                 }
                 
-                // 發送到服務器保存
-                const response = await fetch('save_subst.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `csvData=${encodeURIComponent(csvContent)}`
-                });
-                
-                if (!response.ok) {
-                    throw new Error('保存失敗: ' + response.status);
-                }
+                // 使用FileSaver.js保存文件
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+                saveAs(blob, "subst.csv");
                 
                 console.log('代堂數據已更新');
+                return true;
             } catch (error) {
                 console.error('更新CSV時出錯:', error);
                 throw error;
