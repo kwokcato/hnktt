@@ -99,147 +99,139 @@
     <div id="result">準備載入數據...</div>
 
     <script>
-        // 全局變量
-        let timetableData = [];
-        let substData = {};
-        let allTeachers = [];
-
-        // 主初始化函數
-        async function initApp() {
+        // 安全初始化函數
+        function initApp() {
             try {
-                showLoading("正在初始化系統...");
+                // 顯示載入狀態
+                document.getElementById('result').innerHTML = '<div class="loading">正在初始化系統...</div>';
                 
                 // 先載入靜態界面
-                initStaticUI();
+                renderBaseUI();
                 
-                // 並行載入兩個CSV文件
-                const [ttCSV, substCSV] = await Promise.all([
-                    loadCSVFile('tt.csv'),
-                    loadCSVFile('subst.csv')
-                ]);
-                
-                // 解析數據
-                timetableData = parseTimetableData(ttCSV);
-                substData = parseSubstitutionData(substCSV);
-                
-                // 初始化教師相關UI
-                initTeacherUI();
-                
-                showReady();
+                // 然後異步載入數據
+                loadData();
             } catch (error) {
-                showError("初始化失敗: " + error.message);
-                console.error("初始化錯誤:", error);
+                showFatalError(error);
             }
         }
 
-        // 載入CSV文件
-        async function loadCSVFile(filename) {
-            try {
-                const response = await fetch(filename);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                let text = await response.text();
-                return text.replace(/^\uFEFF/, ''); // 移除BOM
-            } catch (error) {
-                console.error(`載入 ${filename} 失敗:`, error);
-                throw new Error(`無法載入 ${filename}`);
-            }
-        }
-
-        // 解析課程表數據
-        function parseTimetableData(csv) {
-            const result = [];
-            const lines = csv.split(/\r?\n/).filter(line => line.trim());
-            
-            // 跳過標題行（如果存在）
-            const startLine = lines[0].match(/^[^0-9]/) ? 1 : 0;
-            
-            for (let i = startLine; i < lines.length; i++) {
-                const line = lines[i];
-                const parts = line.split(',').map(part => part.trim());
-                
-                if (parts.length >= 7) {
-                    result.push({
-                        year: parts[0],
-                        day: parseInt(parts[1]) || 0,
-                        period: parseInt(parts[2]) || 0,
-                        teacher: parts[3],
-                        class: parts[4],
-                        subject: parts[5],
-                        room: parts[6]
-                    });
-                }
-            }
-            return result;
-        }
-
-        // 解析代課數據（新增的函數）
-        function parseSubstitutionData(csv) {
-            const result = {};
-            const lines = csv.split(/\r?\n/).filter(line => line.trim());
-            
-            for (const line of lines) {
-                const [teacher, value] = line.split(',').map(item => item.trim());
-                if (teacher && !isNaN(value)) {
-                    result[teacher] = parseInt(value);
-                }
-            }
-            return result;
-        }
-
-        // 初始化靜態UI
-        function initStaticUI() {
-            // 初始化星期選擇下拉框
+        // 基礎UI渲染（不依賴數據）
+        function renderBaseUI() {
             const daySelect = document.getElementById('daySelect');
             daySelect.innerHTML = '';
-            ['星期一', '星期二', '星期三', '星期四', '星期五'].forEach((day, index) => {
+            [1,2,3,4,5].forEach(day => {
                 const option = document.createElement('option');
-                option.value = index + 1;
-                option.textContent = day;
+                option.value = day;
+                option.textContent = '星期' + ['一','二','三','四','五'][day-1];
                 daySelect.appendChild(option);
             });
         }
 
-        // 初始化教師相關UI
-        function initTeacherUI() {
-            // 獲取所有教師並排序
-            allTeachers = [...new Set(timetableData.map(item => item.teacher))].sort();
-            
-            // 初始化教師下拉框
-            const teacherSelect = document.getElementById('teacherSelect');
-            teacherSelect.innerHTML = '<option value="">-- 選擇教師 --</option>';
-            
-            allTeachers.forEach(teacher => {
-                const option = document.createElement('option');
-                option.value = teacher;
-                option.textContent = teacher;
-                teacherSelect.appendChild(option);
-            });
-            
-            // 設置輸入框聯動
-            document.getElementById('teacherInput').addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const options = teacherSelect.options;
+        // 數據載入函數
+        async function loadData() {
+            try {
+                const [ttData, substData] = await Promise.all([
+                    loadCSV('tt.csv'),
+                    loadCSV('subst.csv')
+                ]);
                 
-                for (let i = 0; i < options.length; i++) {
-                    if (options[i].text.toLowerCase().includes(searchTerm)) {
-                        teacherSelect.selectedIndex = i;
-                        break;
-                    }
+                if (!ttData || !substData) {
+                    throw new Error('無法讀取CSV文件');
                 }
-            });
+                
+                window.timetableData = parseCSV(ttData);
+                window.substData = parseSubstData(substData);
+                
+                initTeacherDropdown();
+                
+                document.getElementById('result').innerHTML = '<div class="loading">系統準備就緒，請輸入條件</div>';
+            } catch (error) {
+                showError('數據載入失敗: ' + error.message);
+                console.error('數據載入錯誤:', error);
+            }
         }
 
-        // 顯示狀態函數
-        function showLoading(message) {
-            document.getElementById('result').innerHTML = `<div class="loading">${message}</div>`;
+        // CSV載入函數（新增錯誤處理）
+        async function loadCSV(filename) {
+            try {
+                const response = await fetch(filename);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                let text = await response.text();
+                // 移除BOM字符
+                return text.replace(/^\uFEFF/, '');
+            } catch (error) {
+                console.error(`載入 ${filename} 失敗:`, error);
+                showError(`無法載入 ${filename} 文件`);
+                return null;
+            }
         }
-        
-        function showReady() {
-            document.getElementById('result').innerHTML = '<div class="loading">系統準備就緒，請輸入查詢條件</div>';
+
+        // 安全解析函數
+        function parseCSV(csv) {
+            try {
+                const lines = csv.split(/\r?\n/).filter(line => line.trim());
+                return lines.map(line => {
+                    const parts = line.split(',');
+                    return {
+                        year: parts[0]?.trim() || '',
+                        day: parseInt(parts[1]) || 0,
+                        period: parseInt(parts[2]) || 0,
+                        teacher: parts[3]?.trim() || '',
+                        class: parts[4]?.trim() || '',
+                        subject: parts[5]?.trim() || '',
+                        room: parts[6]?.trim() || ''
+                    };
+                });
+            } catch (error) {
+                console.error('CSV解析錯誤:', error);
+                return [];
+            }
         }
-        
+
+        // 初始化教師下拉選單
+        function initTeacherDropdown() {
+            try {
+                const teachers = [...new Set(window.timetableData.map(item => item.teacher))].sort();
+                const select = document.getElementById('teacherSelect');
+                
+                select.innerHTML = '<option value="">-- 選擇教師 --</option>';
+                teachers.forEach(teacher => {
+                    const option = document.createElement('option');
+                    option.value = teacher;
+                    option.textContent = teacher;
+                    select.appendChild(option);
+                });
+                
+                // 設置輸入聯動
+                document.getElementById('teacherInput').addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const options = select.options;
+                    
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].text.toLowerCase().includes(searchTerm)) {
+                            select.selectedIndex = i;
+                            break;
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('初始化教師列表失敗:', error);
+            }
+        }
+
+        // 錯誤處理函數
         function showError(message) {
-            document.getElementById('result').innerHTML = `<div class="error">${message}</div>`;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        function showFatalError(error) {
+            document.body.innerHTML = `
+                <h1 style="color:red">系統嚴重錯誤</h1>
+                <p>${error.message}</p>
+                <p>請檢查控制台獲取詳細信息</p>
+            `;
+            console.error('致命錯誤:', error);
         }
 
         // 啟動應用
