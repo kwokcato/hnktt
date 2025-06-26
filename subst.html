@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教師代課系統</title>
+    <title>教師代課系統 V2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -57,7 +57,7 @@
         }
         #excludeTeachers {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -314,11 +314,11 @@
                     });
                     
                     teacherInput.addEventListener('input', function() {
-                        const inputValue = this.value.toUpperCase();
+                        const inputValue = this.value.toLowerCase();
                         const options = teacherSelect.options;
                         
                         for (let i = 0; i < options.length; i++) {
-                            if (options[i].text.toUpperCase().includes(inputValue)) {
+                            if (options[i].text.toLowerCase().includes(inputValue)) {
                                 teacherSelect.selectedIndex = i;
                                 break;
                             }
