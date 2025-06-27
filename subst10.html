@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教師代課系統 V3</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            grid-column: 1 / -1;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            min-width: 120px;
+        }
+        select, input[type="text"], button, input[type="file"], input[type="date"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        select {
+            width: auto;
+            min-width: 150px;
+        }
+        input[type="text"], input[type="date"] {
+            width: 200px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            font-size: 16px;
+            width: auto;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #excludeTeachers {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .teacher-checkbox {
+            display: flex;
+            align-items: center;
+        }
+        .teacher-checkbox input {
+            margin-right: 8px;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            height: calc(100% - 60px);
+            overflow-y: auto;
+        }
+        .substitute-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #e8f4fc;
+            border-left: 4px solid #3498db;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .class-list {
+            margin-top: 5px;
+            padding-left: 15px;
+        }
+        .class-item {
+            margin-bottom: 3px;
+        }
+        .teacher-load {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
+        .backup-teachers {
+            margin-top: 5px;
+            padding-left: 15px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .backup-teacher {
+            margin-left: 10px;
+        }
+        .busy-warning {
+            color: #e67e22;
+            font-weight: bold;
+        }
+        .subst-value {
+            margin-left: 5px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .priority-info {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #e8f4fc;
+            border-left: 4px solid #2ecc71;
+            grid-column: 1 / -1;
+            display: none;
+        }
+        .teacher-status {
+            font-size: 0.9em;
+            margin-top: 3px;
+        }
+        .regular-teacher {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .loading {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .primary-elsewhere {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .sort-option {
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .form-container {
+            grid-column: 1;
+        }
+        .result-container {
+            grid-column: 2;
+        }
+        .checkbox-container {
+            display: inline-block;
+            margin-left: 15px;
+        }
+        .s6-skipped {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .exclude-input-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .exclude-input-container input[type="text"] {
+            margin-left: 10px;
+            flex-grow: 1;
+        }
+        .confirm-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .confirm-btn:hover {
+            background-color: #27ae60;
+        }
+        .confirmed {
+            color: #2ecc71;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .download-btn {
+            background-color: #9b59b6;
+            color: white;
+        }
+        .download-btn:hover {
+            background-color: #8e44ad;
+        }
+        .pending-updates {
+            background-color: #fff3cd;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffc107;
+            grid-column: 1 / -1;
+            display: none;
+        }
+        #pending-updates-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        #pending-updates-list li {
+            white-space: nowrap;
+        }
+        .leave-type {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .leave-type label {
+            display: inline-block;
+            margin-right: 15px;
+            min-width: auto;
+        }
+        .priority-toggle {
+            color: #3498db;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .selectable-teacher {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #3498db;
+            margin-left: 10px;
+        }
+        .selectable-teacher:hover {
+            color: #2980b9;
+            background-color: #f0f8ff;
+        }
+        .primary-teacher {
+            color: #2ecc71;
+        }
+        .duplicate-warning {
+            color: #e67e22;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .date-input-container {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>教師代課系統 V3</h1>
+    
+    <div class="priority-info">
+        <strong>代課教師選擇優先級：</strong><br>
+        <OL>
+        <LI>代堂數值最小的教師（負數最大）優先選擇</LI>
+        <LI>與代堂科目相關的教師</LI>
+        <LI>當天較多空堂</LI>
+        <LI>未達到當天堂數上限</LI>
+        <LI>未被列入排除名單</LI>
+        </OL>
+    </div>
+    
+    <div id="pending-updates" class="pending-updates" style="display: none;">
+        <strong>待更新的代課記錄:</strong>
+        <ul id="pending-updates-list"></ul>
+    </div>
+    
+    <div class="form-container">
+        <div class="file-actions">
+            <div>
+                <label for="csvUpload">上傳 subst.csv:</label>
+                <input type="file" id="csvUpload" accept=".csv">
+            </div>
+            <button id="downloadBtn" class="download-btn" disabled>下載代堂記錄更新版</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="teacherInput">請假教師:</label>
+            <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇">
+            <select id="teacherSelect">
+                <option value="">-- 選擇教師 --</option>
+            </select>
+        </div>
+        
+        <div class="leave-type">
+            <label>請假類別:</label>
+            <label><input type="radio" name="leaveType" value="病事假" checked> 病事假</label>
+            <label><input type="radio" name="leaveType" value="講座"> 講座</label>
+            <label><input type="radio" name="leaveType" value="職務"> 職務</label>
+            <label><input type="radio" name="leaveType" value="侍產假"> 侍產假</label>
+        </div>
+        
+        <span class="priority-toggle" id="priorityToggle">顯示代課教師選擇優先級</span>
+        
+        <div class="form-group">
+            <div class="date-input-container">
+                <label for="dateInput">代課日期:</label>
+                <input type="date" id="dateInput">
+            </div>
+            <div class="checkbox-container">
+                <input type="checkbox" id="s6Finished">
+                <label for="s6Finished">中六課程已完結</label>
+            </div>
+            <button id="generateBtn">編排代課</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="maxLoadSelect">代課教師堂數上限:</label>
+            <select id="maxLoadSelect">
+                <option value="3">3堂</option>
+                <option value="4">4堂</option>
+                <option value="5" selected>5堂</option>
+                <option value="6">6堂</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <div class="exclude-input-container">
+                <label>排除教師名單:</label>
+                <input type="text" id="excludeInput" placeholder="輸入教師名稱後按Enter (空格或逗號分隔)" 
+                       title="輸入教師名稱後按Enter (空格或逗號分隔)">
+            </div>
+            <div class="sort-option">
+                <input type="checkbox" id="sortBySubstValue">
+                <label for="sortBySubstValue">以代堂數排序（由小至大）</label>
+            </div>
+            <div id="excludeTeachers"></div>
+        </div>
+    </div>
+    
+    <div class="result-container">
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 全局變量存儲課程數據
+        let timetableData = [];
+        let allTeachers = [];
+        let substData = {}; // 存儲代堂數據
+        let excludedTeachersSet = new Set(); // 存儲已排除的教師
+        let pendingUpdates = {}; // 存儲待確認的代課更新
+        let confirmedSubstitutes = {}; // 存儲已確認的代課記錄
+        let substituteRecords = []; // 存儲代課記錄
+        let currentSubstitutes = []; // 存儲當前生成的代課安排
+        
+        // 根據當前日期設置預設日期
+        function setDefaultDate() {
+            const dateInput = document.getElementById('dateInput');
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${year}-${month}-${day}`;
+        }
+        
+        // 從日期獲取星期幾 (0=星期日, 1=星期一,...,6=星期六)
+        function getDayOfWeek(dateString) {
+            const date = new Date(dateString);
+            return date.getDay();
+        }
+        
+        // 格式化日期顯示 (yyyy-mm-dd 轉 yyyy/mm/dd)
+        function formatDateDisplay(dateString) {
+            return dateString.replace(/-/g, '/');
+        }
+        
+        // 解析CSV數據
+        function parseCSV(csv) {
+            console.log('開始解析CSV數據');
+            const lines = csv.split(/\r?\n/);
+            const result = [];
+            
+            // 跳過可能的標題行
+            let startLine = 0;
+            if (lines.length > 0 && /^[^0-9]/.test(lines[0])) {
+                startLine = 1;
+            }
+            
+            for (let i = startLine; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line) {
+                    // 處理可能包含逗號的字段
+                    const fields = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                    const cleanedFields = fields.map(field => 
+                        field.replace(/^"(.*)"$/, '$1').trim()
+                    );
+                    
+                    if (cleanedFields.length >= 7) {
+                        result.push({
+                            year: cleanedFields[0],
+                            day: parseInt(cleanedFields[1]) || 0,
+                            period: parseInt(cleanedFields[2]) || 0,
+                            teacher: cleanedFields[3],
+                            class: cleanedFields[4],
+                            subject: cleanedFields[5],
+                            room: cleanedFields[6]
+                        });
+                    } else if (cleanedFields.length > 0) {
+                        console.warn(`跳過格式不正確的行 ${i + 1}: ${line}`);
+                    }
+                }
+            }
+            
+            console.log('解析完成，共', result.length, '條記錄');
+            return result;
+        }
+        
+        // 解析代堂CSV數據
+        function parseSubstCSV(csv) {
+            const data = {};
+            const lines = csv.split(/\r?\n/);
+            
+            lines.forEach((line, index) => {
+                if (line.trim()) {
+                    const parts = line.split(',');
+                    if (parts.length >= 2) {
+                        const teacher = parts[0].trim();
+                        const value = parts[1].trim();
+                        if (teacher && teacher !== 'Initial' && !isNaN(parseInt(value))) {
+                            data[teacher] = parseInt(value);
+                        }
+                    }
+                }
+            });
+            
+            return data;
+        }
+        
+        // 檢查是否為班級科任教師
+        function checkIfRegularTeacher(teacher, classToCheck, subject) {
+            return timetableData.some(item => 
+                item.teacher === teacher && 
+                item.class === classToCheck && 
+                item.subject === subject
+            );
+        }
+        
+        // 顯示待更新提示
+        function showPendingUpdates() {
+            const pendingDiv = document.getElementById('pending-updates');
+            const list = document.getElementById('pending-updates-list');
+            
+            if (Object.keys(pendingUpdates).length === 0) {
+                pendingDiv.style.display = 'none';
+                return;
+            }
+            
+            let html = '';
+            for (const teacher in pendingUpdates) {
+                const change = pendingUpdates[teacher] > 0 ? `+${pendingUpdates[teacher]}` : pendingUpdates[teacher];
+                html += `<li>${teacher}: ${change} 堂</li>`;
+            }
+            
+            list.innerHTML = html;
+            pendingDiv.style.display = 'block';
+        }
+        
+        // 獲取當前日期時間字串 (用於文件名)
+        function getCurrentDateTimeString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+        }
+
+        // 獲取格式化日期 (mm/dd/yyyy)
+        function getFormattedDate() {
+            const now = new Date();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const year = now.getFullYear();
+            return `${month}/${day}/${year}`;
+        }
+        
+        // 下載CSV文件
+        function downloadCSV(content, filename) {
+            // 修正編碼問題，確保中文正常顯示
+            const BOM = "\uFEFF";
+            const blob = new Blob([BOM + content], { type: "text/csv;charset=utf-8;" });
+            
+            // 修正下載連結問題
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            
+            // 清理
+            setTimeout(() => {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        }
+        
+        // 頁面加載時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('頁面加載完成，開始初始化');
+            document.getElementById('result').innerHTML = '<div class="loading">請上傳 subst.csv 文件並輸入查詢條件</div>';
+            
+            // 設置預設日期
+            setDefaultDate();
+            
+            // 設置優先級清單切換
+            document.getElementById('priorityToggle').addEventListener('click', function() {
+                const priorityInfo = document.querySelector('.priority-info');
+                if (priorityInfo.style.display === 'none' || !priorityInfo.style.display) {
+                    priorityInfo.style.display = 'block';
+                    this.textContent = '隱藏代課教師選擇優先級';
+                } else {
+                    priorityInfo.style.display = 'none';
+                    this.textContent = '顯示代課教師選擇優先級';
+                }
+            });
+            
+            // 設置文件上傳事件
+            document.getElementById('csvUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        substData = parseSubstCSV(e.target.result);
+                        console.log('代堂數據已加載:', substData);
+                        document.getElementById('result').innerHTML = '<div class="loading">代堂數據已加載，請輸入查詢條件</div>';
+                        document.getElementById('downloadBtn').disabled = false;
+                        
+                        // 重新渲染排除教師列表
+                        renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
+                    } catch (error) {
+                        console.error('解析CSV時出錯:', error);
+                        document.getElementById('result').innerHTML = 
+                            `<div class="error">錯誤: 無法解析CSV文件<br>請確保文件格式正確</div>`;
+                    }
+                };
+                reader.readAsText(file);
+            });
+            
+            // 設置下載按鈕事件
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+                if (Object.keys(pendingUpdates).length === 0 && substituteRecords.length === 0) {
+                    alert('沒有待更新的代課記錄');
+                    return;
+                }
+                
+                const datetimeStr = getCurrentDateTimeString();
+                const formattedDate = getFormattedDate();
+                
+                try {
+                    // 生成第一個CSV：代堂數目更新 (包含代課老師和請假老師的更新)
+                    if (Object.keys(pendingUpdates).length > 0 || substituteRecords.length > 0) {
+                        // 1. 先處理所有代課更新
+                        const updatedSubstData = {...substData}; // 創建副本
+                        
+                        for (const teacher in pendingUpdates) {
+                            updatedSubstData[teacher] = (updatedSubstData[teacher] || 0) + pendingUpdates[teacher];
+                        }
+                        
+                        // 生成CSV內容
+                        let csvContent = "教師,代堂數\r\n";
+                        for (const teacher in updatedSubstData) {
+                            csvContent += `"${teacher}",${updatedSubstData[teacher]}\r\n`;
+                        }
+                        
+                        downloadCSV(csvContent, `subst_${datetimeStr}.csv`);
+                    }
+                    
+                    // 生成第二個CSV：代課記錄
+                    if (substituteRecords.length > 0) {
+                        const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
+                        let recordsContent = "請假教師,請假類別,日期,星期,節數,代課教師,班級,科目,教室,代堂數目變化\r\n";
+                        
+                        substituteRecords.forEach(record => {
+                            const dayOfWeek = getDayOfWeek(record.date);
+                            recordsContent += `"${record.absentTeacher}","${record.leaveType}","${formatDateDisplay(record.date)}","星期${dayNames[dayOfWeek]}","第${record.period}節","${record.substituteTeacher}","${record.classes.join('/')}","${record.subject}","${record.room}","代課+1/請假-1"\r\n`;
+                        });
+                        
+                        downloadCSV(recordsContent, `subst_records_${datetimeStr}.csv`);
+                    }
+                    
+                    // 清空待更新和已確認記錄
+                    pendingUpdates = {};
+                    confirmedSubstitutes = {};
+                    substituteRecords = [];
+                    currentSubstitutes = [];
+                    
+                    // 更新UI
+                    document.getElementById('pending-updates').style.display = 'none';
+                    const confirmSpans = document.querySelectorAll('.confirmed');
+                    confirmSpans.forEach(span => {
+                        span.textContent = '(已確認並下載)';
+                    });
+                    
+                    console.log('已下載更新後的代堂記錄');
+                    
+                    // 重新渲染排除教師列表以更新代堂值顯示
+                    renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
+                    
+                } catch (error) {
+                    console.error('下載CSV時出錯:', error);
+                    alert('下載CSV時發生錯誤，請查看控制台獲取詳細信息');
+                }
+            });
+            
+            // 讀取課程數據
+            fetch('tt.csv')
+                .then(response => {
+                    console.log('獲取課程數據響應:', response);
+                    if (!response.ok) {
+                        throw new Error('課程數據讀取失敗: ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(csvData => {
+                    console.log('獲取課程CSV數據:', csvData);
+                    // 解析課程CSV數據
+                    timetableData = parseCSV(csvData);
+                    console.log('解析後的課程數據:', timetableData);
+                    
+                    if (timetableData.length === 0) {
+                        throw new Error('課程數據文件沒有有效數據');
+                    }
+                    
+                    // 提取所有教師名單
+                    allTeachers = [...new Set(timetableData.map(item => item.teacher))].sort();
+                    console.log('所有教師:', allTeachers);
+                    
+                    // 填充教師下拉選單
+                    const teacherSelect = document.getElementById('teacherSelect');
+                    teacherSelect.innerHTML = '<option value="">-- 選擇教師 --</option>';
+                    allTeachers.forEach(teacher => {
+                        const option = document.createElement('option');
+                        option.value = teacher;
+                        option.textContent = teacher;
+                        teacherSelect.appendChild(option);
+                    });
+                    
+                    // 填充排除教師複選框
+                    renderExcludeTeachers(false);
+                    
+                    // 設置排序選項事件監聽
+                    document.getElementById('sortBySubstValue').addEventListener('change', function() {
+                        const sortByValue = this.checked;
+                        renderExcludeTeachers(sortByValue);
+                    });
+                    
+                    // 設置輸入框和下拉選單的聯動
+                    const teacherInput = document.getElementById('teacherInput');
+                    teacherSelect.addEventListener('change', function() {
+                        teacherInput.value = this.value;
+                    });
+                    
+                    teacherInput.addEventListener('input', function() {
+                        // Convert input to uppercase
+                        this.value = this.value.toUpperCase();
+                        const inputValue = this.value.toLowerCase();
+                        const options = teacherSelect.options;
+                        
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].text.toLowerCase().includes(inputValue)) {
+                                teacherSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    });
+
+                    // 設置Enter鍵觸發代課生成
+                    teacherInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            document.getElementById('generateBtn').click();
+                        }
+                    });
+                    
+                    // 設置排除教師輸入框事件
+                    const excludeInput = document.getElementById('excludeInput');
+                    excludeInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            processExcludeInput();
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('讀取課程數據時出錯:', error);
+                    document.getElementById('result').innerHTML = 
+                        `<div class="error">錯誤: ${error.message}<br>請確保課程數據文件(tt.csv)存在且格式正確。</div>`;
+                });
+                
+            // 綁定生成按鈕事件
+            document.getElementById('generateBtn').addEventListener('click', function() {
+                console.log('點擊生成按鈕');
+                try {
+                    generateSubstitutes();
+                } catch (e) {
+                    console.error('生成代課時出錯:', e);
+                    document.getElementById('result').innerHTML = 
+                        `<div class="error">系統錯誤: ${e.message}</div>`;
+                }
+            });
+        });
+        
+        // 處理排除教師輸入
+        function processExcludeInput() {
+            const input = document.getElementById('excludeInput').value.trim().toUpperCase();
+            if (!input) return;
+            
+            // 分割輸入，支持空格或逗號分隔
+            const teacherNames = input.split(/[, ]+/).filter(name => name);
+            
+            // 將新輸入的教師添加到排除集合
+            teacherNames.forEach(name => {
+                // 嘗試完全匹配
+                const exactMatch = allTeachers.find(teacher => teacher === name);
+                if (exactMatch) {
+                    excludedTeachersSet.add(exactMatch);
+                } else {
+                    // 嘗試部分匹配
+                    const partialMatches = allTeachers.filter(teacher => teacher.includes(name));
+                    partialMatches.forEach(match => excludedTeachersSet.add(match));
+                }
+            });
+            
+            // 更新所有複選框狀態
+            updateExcludeCheckboxes();
+            
+            // 清空輸入框
+            document.getElementById('excludeInput').value = '';
+        }
+        
+        // 更新排除教師的複選框狀態
+        function updateExcludeCheckboxes() {
+            // 獲取所有複選框
+            const checkboxes = document.querySelectorAll('#excludeTeachers input[type="checkbox"]');
+            
+            // 更新複選框狀態
+            checkboxes.forEach(cb => {
+                cb.checked = excludedTeachersSet.has(cb.value);
+            });
+        }
+        
+        // 渲染排除教師列表
+        function renderExcludeTeachers(sortByValue) {
+            const excludeTeachersDiv = document.getElementById('excludeTeachers');
+            excludeTeachersDiv.innerHTML = '';
+            
+            // 排序教師列表
+            let sortedTeachers = [...allTeachers];
+            if (sortByValue) {
+                sortedTeachers.sort((a, b) => {
+                    const aValue = substData[a] || 0;
+                    const bValue = substData[b] || 0;
+                    return aValue - bValue; // 由小到大排序
+                });
+            } else {
+                sortedTeachers.sort(); // 按名稱排序
+            }
+            
+            // 渲染教師列表
+            sortedTeachers.forEach(teacher => {
+                const div = document.createElement('div');
+                div.className = 'teacher-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `exclude-${teacher}`;
+                checkbox.value = teacher;
+                checkbox.checked = excludedTeachersSet.has(teacher);
+                
+                // 添加事件監聽器，當手動勾選時更新集合
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        excludedTeachersSet.add(this.value);
+                    } else {
+                        excludedTeachersSet.delete(this.value);
+                    }
+                });
+                
+                const label = document.createElement('label');
+                label.htmlFor = `exclude-${teacher}`;
+                label.textContent = teacher;
+                
+                // 顯示代堂值（如果存在）
+                if (substData.hasOwnProperty(teacher)) {
+                    const substSpan = document.createElement('span');
+                    substSpan.className = 'subst-value';
+                    substSpan.textContent = `(${substData[teacher]})`;
+                    label.appendChild(substSpan);
+                }
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                excludeTeachersDiv.appendChild(div);
+            });
+        }
+        
+        // 生成代課安排
+        function generateSubstitutes() {
+            console.log('開始生成代課安排');
+            const teacherInput = document.getElementById('teacherInput').value.trim();
+            const dateInput = document.getElementById('dateInput').value;
+            const maxLoadSelect = document.getElementById('maxLoadSelect');
+            const maxLoad = parseInt(maxLoadSelect.value);
+            const s6Finished = document.getElementById('s6Finished').checked;
+            const leaveType = document.querySelector('input[name="leaveType"]:checked').value;
+            
+            document.getElementById('result').innerHTML = '<div class="loading">正在計算代課安排...</div>';
+            
+            if (!teacherInput) {
+                document.getElementById('result').innerHTML = 
+                    '<div class="error">請輸入或選擇請假教師。</div>';
+                return;
+            }
+            
+            if (!dateInput) {
+                document.getElementById('result').innerHTML = 
+                    '<div class="error">請選擇代課日期。</div>';
+                return;
+            }
+            
+            if (!allTeachers.includes(teacherInput)) {
+                document.getElementById('result').innerHTML = 
+                    `<div class="error">找不到教師 "${teacherInput}"，請檢查輸入是否正確。</div>`;
+                return;
+            }
+            
+            // 確保請假教師不在排除名單中
+            if (excludedTeachersSet.has(teacherInput)) {
+                excludedTeachersSet.delete(teacherInput);
+                renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
+            }
+            
+            // 從日期獲取星期幾
+            const dayOfWeek = getDayOfWeek(dateInput);
+            const day = dayOfWeek === 0 ? 7 : dayOfWeek; // 轉換為1-7的格式（1=星期一,...,7=星期日）
+            
+            // 獲取排除教師名單（從集合轉換為數組）
+            const excludedTeachers = Array.from(excludedTeachersSet);
+            excludedTeachers.push(teacherInput);
+            
+            // 獲取請假教師當天的課程
+            const absentLessonsByPeriod = {};
+            timetableData
+                .filter(item => item.teacher === teacherInput && item.day === day)
+                .forEach(lesson => {
+                    // 如果中六課程已完結，則跳過六年級課程
+                    if (s6Finished && lesson.class.includes('6')) {
+                        return;
+                    }
+                    
+                    if (!absentLessonsByPeriod[lesson.period]) {
+                        absentLessonsByPeriod[lesson.period] = [];
+                    }
+                    absentLessonsByPeriod[lesson.period].push(lesson);
+                });
+            
+            const periods = Object.keys(absentLessonsByPeriod).map(Number).sort((a, b) => a - b);
+            console.log('請假教師在星期', day, '有課的節次:', periods);
+            
+            if (periods.length === 0) {
+                document.getElementById('result').innerHTML = 
+                    `<div class="error">教師 ${teacherInput} 在選擇的日期沒有需要代課的課程。</div>`;
+                return;
+            }
+            
+            // 找出所有可能的代課教師
+            const availableTeachers = allTeachers.filter(teacher => 
+                !excludedTeachers.includes(teacher)
+            );
+            console.log('可用代課教師:', availableTeachers);
+            
+            if (availableTeachers.length === 0) {
+                document.getElementById('result').innerHTML = 
+                    '<div class="error">沒有可用的代課教師，請減少排除名單中的教師數量。</div>';
+                return;
+            }
+            
+            // 計算每位教師當天的原始課程數量（不包含本次代課）
+            const teacherOriginalLoad = {};
+            availableTeachers.forEach(teacher => {
+                const lessons = timetableData.filter(item => 
+                    item.teacher === teacher && 
+                    item.day === day &&
+                    // 如果中六課程已完結，則忽略六年級課程
+                    !(s6Finished && item.class.includes('6'))
+                );
+                teacherOriginalLoad[teacher] = lessons.length;
+            });
+            console.log('教師原始課堂負載:', teacherOriginalLoad);
+            
+            // 找出每位教師教授過的班級
+            const teacherClasses = {};
+            availableTeachers.forEach(teacher => {
+                const classes = [...new Set(
+                    timetableData
+                        .filter(item => item.teacher === teacher)
+                        .map(item => item.class)
+                )];
+                teacherClasses[teacher] = classes;
+            });
+            
+            // 找出每位教師在代課節次是否有課
+            const teacherBusyPeriods = {};
+            availableTeachers.forEach(teacher => {
+                const busyPeriods = timetableData
+                    .filter(item => 
+                        item.teacher === teacher && 
+                        item.day === day &&
+                        // 如果中六課程已完結，則忽略六年級課程
+                        !(s6Finished && item.class.includes('6'))
+                    )
+                    .map(item => item.period)
+                    .sort((a, b) => a - b);
+                teacherBusyPeriods[teacher] = busyPeriods;
+            });
+            console.log('教師忙碌節次:', teacherBusyPeriods);
+            
+            // 嘗試為每個節次安排代課教師
+            const substitutes = [];
+            const primaryTeachers = new Set(); // 追蹤已被選為首選的教師
+            
+            for (const period of periods) {
+                console.log('處理節次:', period);
+                const lessons = absentLessonsByPeriod[period];
+                const classes = lessons.map(l => l.class);
+                const subject = lessons[0].subject;
+                const sampleLesson = lessons[0];
+                
+                // 只選擇在該節次沒有課的教師
+                const candidates = availableTeachers
+                    .filter(teacher => 
+                        !teacherBusyPeriods[teacher].includes(period) && // 必須是空堂
+                        teacherOriginalLoad[teacher] < maxLoad && // 不超過負載
+                        !primaryTeachers.has(teacher) // 尚未被選為其他節首選
+                    )
+                    .map(teacher => {
+                        const taughtClasses = teacherClasses[teacher].filter(c => 
+                            classes.includes(c)
+                        ).length;
+                        
+                        // 檢查是否為任一班的科任教師
+                        const isRegularForAnyClass = classes.some(cls => 
+                            checkIfRegularTeacher(teacher, cls, subject)
+                        );
+                        
+                        // 找出具體是哪些班的科任教師
+                        const regularClasses = classes.filter(cls => 
+                            checkIfRegularTeacher(teacher, cls, subject)
+                        );
+                        
+                        return {
+                            teacher,
+                            taughtClasses,
+                            load: teacherOriginalLoad[teacher],
+                            busyPeriods: teacherBusyPeriods[teacher],
+                            substValue: substData[teacher] || 0,
+                            isRegular: isRegularForAnyClass,
+                            regularClasses: regularClasses,
+                            random: Math.random()
+                        };
+                    })
+                    .sort((a, b) => {
+                        // 首要條件：代堂數值排序（負數最大優先）
+                        if (a.substValue !== b.substValue) {
+                            return a.substValue - b.substValue; // 升序排序（-10 < -5 < 0 < 5）
+                        }
+                        // 次要條件：是否為科任教師
+                        if (a.isRegular !== b.isRegular) {
+                            return b.isRegular - a.isRegular;
+                        }
+                        // 第三條件：教過的班級數量
+                        if (a.taughtClasses !== b.taughtClasses) {
+                            return b.taughtClasses - a.taughtClasses;
+                        }
+                        // 第四條件：負載
+                        if (a.load !== b.load) {
+                            return a.load - b.load;
+                        }
+                        // 最後隨機
+                        return a.random - b.random;
+                    });
+                
+                console.log('空堂候選人:', candidates);
+                
+                // 選擇首選教師和最多四位候選教師（全部必須是空堂）
+                const primary = candidates.length > 0 ? candidates[0] : null;
+                let backups = [];
+                
+                // 添加候選教師（可以包含已被選為其他節首選的教師）
+                if (candidates.length > 1) {
+                    backups = backups.concat(candidates.slice(1, 5)); // 最多取4位空堂候選
+                }
+                
+                console.log('最終候選人:', backups);
+                
+                if (!primary && backups.length === 0) {
+                    substitutes.push({
+                        period: period,
+                        classes: classes,
+                        subject: subject,
+                        room: sampleLesson.room,
+                        primary: null,
+                        backups: [],
+                        error: "找不到合適的代課教師"
+                    });
+                    continue;
+                }
+                
+                // 標記教師為已分配（僅標記首選教師）
+                if (primary) {
+                    primaryTeachers.add(primary.teacher);
+                    console.log('將教師設為首選:', primary.teacher);
+                }
+                
+                substitutes.push({
+                    period: period,
+                    classes: classes,
+                    subject: subject,
+                    room: sampleLesson.room,
+                    primary: primary ? {
+                        teacher: primary.teacher,
+                        busyPeriods: primary.busyPeriods,
+                        originalLoad: primary.load,
+                        substValue: primary.substValue,
+                        isRegular: primary.isRegular,
+                        regularClasses: primary.regularClasses,
+                        isBusy: false, // 空堂教師不會有課
+                        isPrimaryElsewhere: false // 初始化為false
+                    } : null,
+                    backups: backups.map(b => ({
+                        teacher: b.teacher,
+                        busyPeriods: b.busyPeriods,
+                        originalLoad: b.load,
+                        substValue: b.substValue,
+                        isBusy: false, // 空堂教師不會有課
+                        isRegular: b.isRegular,
+                        isPrimaryElsewhere: primaryTeachers.has(b.teacher) // 檢查是否在其他節是首選
+                    }))
+                });
+            }
+            
+            console.log('最終代課安排:', substitutes);
+            currentSubstitutes = substitutes; // 保存當前生成的代課安排
+            // 顯示結果
+            displayResults(teacherInput, dateInput, day, substitutes, s6Finished, leaveType);
+        }
+
+        // 顯示代課結果
+        function displayResults(absentTeacher, date, day, substitutes, s6Finished, leaveType) {
+            console.log('顯示結果');
+            const resultDiv = document.getElementById('result');
+            
+            const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
+            const displayDay = dayNames[day === 7 ? 0 : day]; // 轉換為0-6的索引
+            
+            let html = `<h3>代課安排結果 (${absentTeacher} ${formatDateDisplay(date)} 星期${displayDay})</h3>`;
+            
+            if (s6Finished) {
+                html += '<div class="s6-skipped">注意：已跳過所有中六課程</div>';
+            }
+            
+            if (substitutes.some(item => item.error)) {
+                html += '<div class="error">注意：部分課程未能找到合適的代課教師</div>';
+            }
+            
+            // 保存當前所有首選教師
+            const primaryTeachers = new Set(
+                substitutes
+                    .filter(item => item.primary)
+                    .map(item => item.primary.teacher)
+            );
+            
+            substitutes.forEach((item, index) => {
+                const uniqueKey = `${absentTeacher}-${date}-${item.period}`;
+                const isConfirmed = confirmedSubstitutes[uniqueKey];
+                html += `<div class="substitute-item" id="substitute-${index}">
+                    <strong>第 ${item.period} 節</strong> | 
+                    科目: ${item.subject} | 
+                    教室: ${item.room}<br>`;
+                
+                if (item.error) {
+                    html += `<span class="error">${item.error}</span>`;
+                } else {
+                    // 顯示首選教師
+                    if (item.primary) {
+                        const periodsText = item.primary.busyPeriods.length > 0 ? 
+                            `(${item.primary.busyPeriods.join(',')})` : 
+                            '(空堂)';
+                        
+                        html += `首選教師: <strong class="primary-teacher" data-period="${item.period}">${item.primary.teacher}</strong> ${periodsText}`;
+                        html += ` <span class="subst-value">[代堂值: ${item.primary.substValue}]</span>`;
+                        html += `<div class="teacher-load">原有課堂: ${item.primary.originalLoad} 節</div>`;
+                        
+                        if (item.primary.isRegular) {
+                            const regularClassesText = item.primary.regularClasses.join(', ');
+                            html += `<div class="teacher-status regular-teacher">該班科任教師 (負責班別: ${regularClassesText})</div>`;
+                        }
+                        
+                        // 添加確認按鈕
+                        if (!isConfirmed) {
+                            html += `<button class="confirm-btn" data-date="${date}" data-day="${day}" data-period="${item.period}" data-teacher="${item.primary.teacher}" data-absent-teacher="${absentTeacher}" data-subject="${item.subject}" data-room="${item.room}" data-classes="${item.classes.join(',')}" data-original-subst="${item.primary.substValue}">確認代課</button>`;
+                        } else {
+                            html += `<span class="confirmed">已確認</span>`;
+                        }
+                    } else {
+                        html += `<span class="error">無首選代課教師</span><br>`;
+                    }
+                    
+                    // 顯示候選教師
+                    if (item.backups.length > 0) {
+                        html += '<div class="backup-teachers">候選教師: ';
+                        item.backups.forEach((backup, backupIndex) => {
+                            const periodsText = backup.busyPeriods.length > 0 ? 
+                                `(${backup.busyPeriods.join(',')})` : 
+                                '(空堂)';
+                            
+                            const primaryElsewhereClass = backup.isPrimaryElsewhere ? 'primary-elsewhere' : '';
+                            const primaryElsewhereText = backup.isPrimaryElsewhere ? '(其他節首選)' : '';
+                            
+                            // 添加點擊事件和數據屬性
+                            html += `<span class="backup-teacher selectable-teacher" 
+                                data-period="${item.period}" 
+                                data-teacher="${backup.teacher}" 
+                                data-busy-periods="${backup.busyPeriods.join(',')}" 
+                                data-original-load="${backup.originalLoad}" 
+                                data-subst-value="${backup.substValue}" 
+                                data-is-regular="${backup.isRegular}" 
+                                data-regular-classes="${backup.regularClasses ? backup.regularClasses.join(',') : ''}" 
+                                data-is-primary-elsewhere="${backup.isPrimaryElsewhere}">
+                                
+                                ${backup.teacher} ${periodsText} <span class="subst-value">[${backup.substValue}]</span>`;
+                            
+                            if (backup.isRegular) {
+                                html += ` <span class="regular-teacher">(科任)</span>`;
+                            }
+                            if (backup.isPrimaryElsewhere) {
+                                html += ` <span class="${primaryElsewhereClass}">${primaryElsewhereText}</span>`;
+                            }
+                            html += `</span>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    html += '<div class="class-list">負責班別: ';
+                    html += item.classes.map(c => `<span class="class-item">${c}</span>`).join(', ');
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            });
+            
+            resultDiv.innerHTML = html;
+            
+            // 添加候選教師點擊事件
+            document.querySelectorAll('.selectable-teacher').forEach(teacherEl => {
+                teacherEl.addEventListener('click', function() {
+                    const clickedTeacher = this.getAttribute('data-teacher');
+                    const period = parseInt(this.getAttribute('data-period'));
+                    
+                    // 檢查該教師是否已被其他節數選為首選
+                    if (this.getAttribute('data-is-primary-elsewhere') === 'true') {
+                        alert(`教師 ${clickedTeacher} 已被其他節數選為首選，無法再次選擇。`);
+                        return;
+                    }
+                    
+                    // 獲取當前節的代課項目
+                    const substituteItem = this.closest('.substitute-item');
+                    const primaryTeacherEl = substituteItem.querySelector('.primary-teacher');
+                    const currentPrimaryTeacher = primaryTeacherEl.textContent;
+                    
+                    // 更新首選教師顯示
+                    primaryTeacherEl.textContent = clickedTeacher;
+                    
+                    // 更新確認按鈕的數據
+                    const confirmBtn = substituteItem.querySelector('.confirm-btn');
+                    if (confirmBtn) {
+                        confirmBtn.setAttribute('data-teacher', clickedTeacher);
+                        confirmBtn.setAttribute('data-original-subst', this.getAttribute('data-subst-value'));
+                    }
+                    
+                    // 從候選列表中移除當前首選教師（如果存在）
+                    const backupTeachersDiv = substituteItem.querySelector('.backup-teachers');
+                    if (backupTeachersDiv) {
+                        // 將原首選教師添加到候選列表
+                        const newBackupTeacher = document.createElement('span');
+                        newBackupTeacher.className = 'backup-teacher';
+                        newBackupTeacher.innerHTML = `
+                            ${currentPrimaryTeacher} <span class="subst-value">[${substData[currentPrimaryTeacher] || 0}]</span>
+                        `;
+                        backupTeachersDiv.appendChild(newBackupTeacher);
+                        
+                        // 移除被點擊的候選教師
+                        this.remove();
+                    }
+                    
+                    console.log(`已將第 ${period} 節的首選教師從 ${currentPrimaryTeacher} 更改為 ${clickedTeacher}`);
+                });
+            });
+            
+            // 添加確認按鈕的事件監聽器
+            document.querySelectorAll('.confirm-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const date = this.getAttribute('data-date');
+                    const day = this.getAttribute('data-day');
+                    const period = this.getAttribute('data-period');
+                    const teacher = this.getAttribute('data-teacher');
+                    const absentTeacher = this.getAttribute('data-absent-teacher');
+                    const subject = this.getAttribute('data-subject');
+                    const room = this.getAttribute('data-room');
+                    const classes = this.getAttribute('data-classes').split(',');
+                    const originalSubst = parseInt(this.getAttribute('data-original-subst')) || 0;
+                    const leaveType = document.querySelector('input[name="leaveType"]:checked').value;
+                    
+                    const uniqueKey = `${absentTeacher}-${date}-${period}`;
+                    
+                    // 檢查該代課教師是否已經為同一位請假教師代過課
+                    const existingRecords = substituteRecords.filter(record => 
+                        record.absentTeacher === absentTeacher && 
+                        record.substituteTeacher === teacher &&
+                        record.date === date
+                    );
+                    
+                    if (existingRecords.length > 0) {
+                        alert(`教師 ${teacher} 已經在 ${formatDateDisplay(date)} 為 ${absentTeacher} 代過課，一天內同一位教師只能代課一次。`);
+                        return;
+                    }
+                    
+                    // 檢查該代課教師是否已在其他節被選為首選
+                    const isPrimaryElsewhere = currentSubstitutes.some(sub => 
+                        sub.primary && 
+                        sub.primary.teacher === teacher && 
+                        sub.period !== parseInt(period)
+                    );
+                    
+                    if (isPrimaryElsewhere) {
+                        alert(`教師 ${teacher} 已被其他節數選為首選，無法再次選擇。`);
+                        return;
+                    }
+                    
+                    // 記錄已確認的代課
+                    confirmedSubstitutes[uniqueKey] = {
+                        teacher: teacher,
+                        date: date,
+                        day: day,
+                        period: period,
+                        absentTeacher: absentTeacher
+                    };
+                    
+                    // 添加到代課記錄
+                    substituteRecords.push({
+                        absentTeacher: absentTeacher,
+                        leaveType: leaveType,
+                        date: date,
+                        day: day,
+                        period: period,
+                        substituteTeacher: teacher,
+                        classes: classes,
+                        subject: subject,
+                        room: room,
+                        substChange: "代課+1/請假-1"
+                    });
+                    
+                    // 將教師加入排除名單
+                    excludedTeachersSet.add(teacher);
+                    updateExcludeCheckboxes();
+                    
+                    // 更新UI
+                    const substituteItem = this.closest('.substitute-item');
+                    this.remove();
+                    substituteItem.querySelector('strong').insertAdjacentHTML('afterend', 
+                        ' <span class="confirmed">已確認</span>');
+                    
+                    // 添加到待更新列表
+                    pendingUpdates[teacher] = (pendingUpdates[teacher] || 0) + 1; // 代課老師 +1
+                    pendingUpdates[absentTeacher] = (pendingUpdates[absentTeacher] || 0) - 1; // 請假老師 -1
+                    
+                    // 顯示待更新提示
+                    showPendingUpdates();
+                    
+                    console.log(`已確認 ${teacher} 代課，代堂數目: ${originalSubst} → ${originalSubst + 1}`);
+                    console.log(`請假老師 ${absentTeacher} 代堂數目更新: -1`);
+                });
+            });
+            
+            console.log('結果已顯示');
+        }
+    </script>
+</body>
+</html>
