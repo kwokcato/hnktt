@@ -433,7 +433,6 @@
         }
         
         // 獲取當前日期時間字串
-        // 獲取當前日期時間字串 (用於文件名)
         function getCurrentDateTimeString() {
             const now = new Date();
             const year = now.getFullYear();
@@ -444,68 +443,102 @@
             const seconds = String(now.getSeconds()).padStart(2, '0');
             return `${year}${month}${day}_${hours}${minutes}${seconds}`;
         }
-
-        // 獲取格式化日期 (mm/dd/yyyy)
-        function getFormattedDate() {
-            const now = new Date();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const year = now.getFullYear();
-            return `${month}/${day}/${year}`;
-        }
-
-        // 設置下載按鈕事件 (修正部分)
-        document.getElementById('downloadBtn').addEventListener('click', function() {
-            if (Object.keys(pendingUpdates).length === 0 && substituteRecords.length === 0) {
-                alert('沒有待更新的代課記錄');
-                return;
-            }
+        
+        // 頁面加載時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('頁面加載完成，開始初始化');
+            document.getElementById('result').innerHTML = '<div class="loading">請上傳 subst.csv 文件並輸入查詢條件</div>';
             
-            const datetimeStr = getCurrentDateTimeString();
-            const formattedDate = getFormattedDate(); // 獲取格式化日期
+            // 設置預設星期
+            setDefaultDay();
             
-            // 生成第一個CSV：代堂數目更新
-            if (Object.keys(pendingUpdates).length > 0) {
-                // 應用所有待更新
-                for (const teacher in pendingUpdates) {
-                    substData[teacher] = (substData[teacher] || 0) + pendingUpdates[teacher];
+            // 設置優先級清單切換
+            document.getElementById('priorityToggle').addEventListener('click', function() {
+                const priorityInfo = document.querySelector('.priority-info');
+                if (priorityInfo.style.display === 'none' || !priorityInfo.style.display) {
+                    priorityInfo.style.display = 'block';
+                    this.textContent = '隱藏代課教師選擇優先級';
+                } else {
+                    priorityInfo.style.display = 'none';
+                    this.textContent = '顯示代課教師選擇優先級';
                 }
-                
-                let csvContent = "Initial,代堂\r\n";
-                for (const teacher in substData) {
-                    csvContent += `${teacher},${substData[teacher]}\r\n`;
-                }
-                
-                downloadCSV(csvContent, `subst_${datetimeStr}.csv`);
-            }
-            
-            // 生成第二個CSV：代課記錄 (修正日期格式)
-            if (substituteRecords.length > 0) {
-                let recordsContent = "請假教師,請假類別,日期,星期,節數,代課教師,班級,科目,教室\r\n";
-                substituteRecords.forEach(record => {
-                    recordsContent += `${record.absentTeacher},${record.leaveType},${formattedDate},星期${record.day},第${record.period}節,${record.substituteTeacher},${record.classes.join('/')},${record.subject},${record.room}\r\n`;
-                });
-                
-                downloadCSV(recordsContent, `subst_records_${datetimeStr}.csv`);
-            }
-            
-            // 清空待更新和已確認記錄
-            pendingUpdates = {};
-            confirmedSubstitutes = {};
-            substituteRecords = [];
-            
-            // 更新UI
-            document.getElementById('pending-updates').style.display = 'none';
-            const confirmSpans = document.querySelectorAll('.confirmed');
-            confirmSpans.forEach(span => {
-                span.textContent = '(已確認並下載)';
             });
             
-            console.log('已下載更新後的代堂記錄');
+            // 設置文件上傳事件
+            document.getElementById('csvUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        substData = parseSubstCSV(e.target.result);
+                        console.log('代堂數據已加載:', substData);
+                        document.getElementById('result').innerHTML = '<div class="loading">代堂數據已加載，請輸入查詢條件</div>';
+                        document.getElementById('downloadBtn').disabled = false;
+                        
+                        // 重新渲染排除教師列表
+                        renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
+                    } catch (error) {
+                        console.error('解析CSV時出錯:', error);
+                        document.getElementById('result').innerHTML = 
+                            `<div class="error">錯誤: 無法解析CSV文件<br>請確保文件格式正確</div>`;
+                    }
+                };
+                reader.readAsText(file);
+            });
             
-            // 重新渲染排除教師列表以更新代堂值顯示
-            renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
-        });
+            // 設置下載按鈕事件
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+                if (Object.keys(pendingUpdates).length === 0 && substituteRecords.length === 0) {
+                    alert('沒有待更新的代課記錄');
+                    return;
+                }
+                
+                const datetimeStr = getCurrentDateTimeString();
+                
+                // 生成第一個CSV：代堂數目更新
+                if (Object.keys(pendingUpdates).length > 0) {
+                    // 應用所有待更新
+                    for (const teacher in pendingUpdates) {
+                        substData[teacher] = (substData[teacher] || 0) + pendingUpdates[teacher];
+                    }
+                    
+                    let csvContent = "Initial,代堂\r\n";
+                    for (const teacher in substData) {
+                        csvContent += `${teacher},${substData[teacher]}\r\n`;
+                    }
+                    
+                    downloadCSV(csvContent, `subst_${datetimeStr}.csv`);
+                }
+                
+                // 生成第二個CSV：代課記錄
+                if (substituteRecords.length > 0) {
+                    let recordsContent = "請假教師,請假類別,日期,節數,代課教師,班級,科目,教室\r\n";
+                    substituteRecords.forEach(record => {
+                        recordsContent += `${record.absentTeacher},${record.leaveType},星期${record.day},第${record.period}節,${record.substituteTeacher},${record.classes.join('/')},${record.subject},${record.room}\r\n`;
+                    });
+                    
+                    downloadCSV(recordsContent, `subst_records_${datetimeStr}.csv`);
+                }
+                
+                // 清空待更新和已確認記錄
+                pendingUpdates = {};
+                confirmedSubstitutes = {};
+                substituteRecords = [];
+                
+                // 更新UI
+                document.getElementById('pending-updates').style.display = 'none';
+                const confirmSpans = document.querySelectorAll('.confirmed');
+                confirmSpans.forEach(span => {
+                    span.textContent = '(已確認並下載)';
+                });
+                
+                console.log('已下載更新後的代堂記錄');
+                
+                // 重新渲染排除教師列表以更新代堂值顯示
+                renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
+            });
             
             // 讀取課程數據
             fetch('tt.csv')
