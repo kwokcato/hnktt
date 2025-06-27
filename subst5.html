@@ -123,7 +123,7 @@
             background-color: #e8f4fc;
             border-left: 4px solid #2ecc71;
             grid-column: 1 / -1;
-            display: none; /* 隱藏優先級清單 */
+            display: none;
         }
         .teacher-status {
             font-size: 0.9em;
@@ -432,7 +432,7 @@
             pendingDiv.style.display = 'block';
         }
         
-        // 獲取當前日期時間字串
+        // 獲取當前日期時間字串 (用於文件名)
         function getCurrentDateTimeString() {
             const now = new Date();
             const year = now.getFullYear();
@@ -442,6 +442,32 @@
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
             return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+        }
+
+        // 獲取格式化日期 (mm/dd/yyyy)
+        function getFormattedDate() {
+            const now = new Date();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const year = now.getFullYear();
+            return `${month}/${day}/${year}`;
+        }
+        
+        // 下載CSV文件
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            
+            // 清理
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
         }
         
         // 頁面加載時初始化
@@ -496,14 +522,28 @@
                 }
                 
                 const datetimeStr = getCurrentDateTimeString();
+                const formattedDate = getFormattedDate();
                 
-                // 生成第一個CSV：代堂數目更新
-                if (Object.keys(pendingUpdates).length > 0) {
-                    // 應用所有待更新
+                // 生成第一個CSV：代堂數目更新 (包含請假老師和被代課老師的更新)
+                if (Object.keys(pendingUpdates).length > 0 || substituteRecords.length > 0) {
+                    // 1. 先處理代課老師的代堂數目更新
                     for (const teacher in pendingUpdates) {
                         substData[teacher] = (substData[teacher] || 0) + pendingUpdates[teacher];
                     }
                     
+                    // 2. 處理請假老師的代堂數目更新 (減去被代堂的節數)
+                    const absentTeachersUpdates = {};
+                    substituteRecords.forEach(record => {
+                        const absentTeacher = record.absentTeacher;
+                        absentTeachersUpdates[absentTeacher] = (absentTeachersUpdates[absentTeacher] || 0) - 1;
+                    });
+                    
+                    // 合併更新到substData
+                    for (const teacher in absentTeachersUpdates) {
+                        substData[teacher] = (substData[teacher] || 0) + absentTeachersUpdates[teacher];
+                    }
+                    
+                    // 生成CSV內容
                     let csvContent = "Initial,代堂\r\n";
                     for (const teacher in substData) {
                         csvContent += `${teacher},${substData[teacher]}\r\n`;
@@ -514,9 +554,9 @@
                 
                 // 生成第二個CSV：代課記錄
                 if (substituteRecords.length > 0) {
-                    let recordsContent = "請假教師,請假類別,日期,節數,代課教師,班級,科目,教室\r\n";
+                    let recordsContent = "請假教師,請假類別,日期,星期,節數,代課教師,班級,科目,教室\r\n";
                     substituteRecords.forEach(record => {
-                        recordsContent += `${record.absentTeacher},${record.leaveType},星期${record.day},第${record.period}節,${record.substituteTeacher},${record.classes.join('/')},${record.subject},${record.room}\r\n`;
+                        recordsContent += `${record.absentTeacher},${record.leaveType},${formattedDate},星期${record.day},第${record.period}節,${record.substituteTeacher},${record.classes.join('/')},${record.subject},${record.room}\r\n`;
                     });
                     
                     downloadCSV(recordsContent, `subst_records_${datetimeStr}.csv`);
@@ -635,23 +675,6 @@
                 }
             });
         });
-        
-        // 下載CSV文件
-        function downloadCSV(content, filename) {
-            const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            
-            // 清理
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
-        }
         
         // 處理排除教師輸入
         function processExcludeInput() {
@@ -1120,12 +1143,14 @@
                         ' <span class="confirmed">已確認</span>');
                     
                     // 添加到待更新列表
-                    pendingUpdates[teacher] = (pendingUpdates[teacher] || 0) + 1;
+                    pendingUpdates[teacher] = (pendingUpdates[teacher] || 0) + 1; // 代課老師 +1
+                    pendingUpdates[absentTeacher] = (pendingUpdates[absentTeacher] || 0) - 1; // 請假老師 -1
                     
                     // 顯示待更新提示
                     showPendingUpdates();
                     
                     console.log(`已確認 ${teacher} 代課，待更新代堂值: ${pendingUpdates[teacher]}`);
+                    console.log(`請假老師 ${absentTeacher} 代堂數目更新: ${pendingUpdates[absentTeacher]}`);
                 });
             });
             
