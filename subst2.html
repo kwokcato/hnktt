@@ -211,7 +211,7 @@
             border-left: 4px solid #ffc107;
             grid-column: 1 / -1;
         }
-        .leave-types {
+      .leave-types {
             display: flex;
             gap: 15px;
             margin-top: 5px;
@@ -221,7 +221,7 @@
             display: flex;
             align-items: center;
         }
-        .leave-type input {
+        .leave-type input[type="radio"] {
             margin-right: 5px;
         }
     </style>
@@ -256,31 +256,31 @@
             <button id="downloadBtn" class="download-btn" disabled>下載代堂記錄更新版</button>
         </div>
         
-        <div class="form-group">
-            <label for="teacherInput">請假教師:</label>
-            <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇">
-            <select id="teacherSelect">
-                <option value="">-- 選擇教師 --</option>
-            </select>
-            <div class="leave-types">
-                <div class="leave-type">
-                    <input type="checkbox" id="sickLeave">
-                    <label for="sickLeave">病事假</label>
-                </div>
-                <div class="leave-type">
-                    <input type="checkbox" id="seminarLeave">
-                    <label for="seminarLeave">講座</label>
-                </div>
-                <div class="leave-type">
-                    <input type="checkbox" id="dutyLeave">
-                    <label for="dutyLeave">職務</label>
-                </div>
-                <div class="leave-type">
-                    <input type="checkbox" id="paternityLeave">
-                    <label for="paternityLeave">侍產假</label>
-                </div>
+     <div class="form-group">
+        <label for="teacherInput">請假教師:</label>
+        <input type="text" id="teacherInput" placeholder="輸入教師姓名或從下拉選單選擇">
+        <select id="teacherSelect">
+            <option value="">-- 選擇教師 --</option>
+        </select>
+        <div class="leave-types">
+            <div class="leave-type">
+                <input type="radio" id="sickLeave" name="leaveType" value="病事假" checked>
+                <label for="sickLeave">病事假</label>
+            </div>
+            <div class="leave-type">
+                <input type="radio" id="seminarLeave" name="leaveType" value="講座">
+                <label for="seminarLeave">講座</label>
+            </div>
+            <div class="leave-type">
+                <input type="radio" id="dutyLeave" name="leaveType" value="職務">
+                <label for="dutyLeave">職務</label>
+            </div>
+            <div class="leave-type">
+                <input type="radio" id="paternityLeave" name="leaveType" value="侍產假">
+                <label for="paternityLeave">侍產假</label>
             </div>
         </div>
+    </div>
         
         <div class="form-group">
             <label for="daySelect">代堂日子:</label>
@@ -450,13 +450,17 @@
         }
         
         // 獲取請假類別
-        function getLeaveType() {
+/*        function getLeaveType() {
             const types = [];
             if (document.getElementById('sickLeave').checked) types.push('病事假');
             if (document.getElementById('seminarLeave').checked) types.push('講座');
             if (document.getElementById('dutyLeave').checked) types.push('職務');
             if (document.getElementById('paternityLeave').checked) types.push('侍產假');
             return types.join(' ');
+        }*/
+        function getLeaveType() {
+            const selected = document.querySelector('input[name="leaveType"]:checked');
+            return selected ? selected.value : '病事假';
         }
         
         // 頁面加載時初始化
@@ -498,14 +502,13 @@
                     return;
                 }
 
-                // 獲取當前日期時間
+                // 獲取當前日期
                 const now = new Date();
                 const dateStr = now.toISOString().split('T')[0];
-                const timeStr = now.toTimeString().split(' ')[0];
                 
                 // 獲取請假教師和請假類別
                 const absentTeacher = document.getElementById('teacherInput').value.trim();
-                const leaveType = getLeaveType() || '未指定';
+                const leaveType = getLeaveType();
                 
                 // 更新代堂數據
                 for (const teacher in pendingUpdates) {
@@ -513,21 +516,21 @@
                 }
                 
                 // 生成第一個CSV (subst_update.csv) - initial / 代堂數目
-                let csvContent1 = "Initial,代堂數目\r\n";
+                let csvContent1 = "\uFEFFInitial,代堂數目\r\n";
                 for (const teacher in substData) {
                     csvContent1 += `${teacher},${substData[teacher]}\r\n`;
                 }
                 
-                // 生成第二個CSV (subst_records.csv) - 請假教師 / 請假類型 / 日期 / 代堂課節 / 代堂教師
-                let csvContent2 = "請假教師,請假類型,日期,代堂課節,代堂教師\r\n";
+                // 生成第二個CSV (subst_records.csv) - 請假教師 / 請假類型 / 星期 / 代堂課節 / 代堂教師
+                let csvContent2 = "\uFEFF請假教師,請假類型,星期,代堂課節,代堂教師\r\n";
                 for (const uniqueKey in confirmedSubstitutes) {
                     const record = confirmedSubstitutes[uniqueKey];
                     const [day, period] = uniqueKey.split('-');
-                    csvContent2 += `"${absentTeacher}","${leaveType}","${dateStr}","星期${day}第${period}節","${record.teacher}"\r\n`;
+                    csvContent2 += `"${absentTeacher}","${leaveType}","星期${day}","第${period}節","${record.teacher}"\r\n`;
                 }
                 
                 // 創建下載鏈接 - 第一個文件
-                const blob1 = new Blob(["\uFEFF" + csvContent1], { type: "text/csv;charset=utf-8" });
+                const blob1 = new Blob([csvContent1], { type: "text/csv;charset=utf-8" });
                 const url1 = URL.createObjectURL(blob1);
                 const a1 = document.createElement('a');
                 a1.href = url1;
@@ -536,7 +539,7 @@
                 a1.click();
                 
                 // 創建下載鏈接 - 第二個文件
-                const blob2 = new Blob(["\uFEFF" + csvContent2], { type: "text/csv;charset=utf-8" });
+                const blob2 = new Blob([csvContent2], { type: "text/csv;charset=utf-8" });
                 const url2 = URL.createObjectURL(blob2);
                 const a2 = document.createElement('a');
                 a2.href = url2;
