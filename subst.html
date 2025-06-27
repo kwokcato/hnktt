@@ -199,6 +199,13 @@
         .download-btn:hover {
             background-color: #8e44ad;
         }
+        .pending-updates {
+            background-color: #fff3cd;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffc107;
+            grid-column: 1 / -1;
+        }
     </style>
 </head>
 <body>
@@ -213,6 +220,11 @@
         <LI>未達到當天堂數上限</LI>
         <LI>未被列入排除名單</LI>
         </OL>
+    </div>
+    
+    <div id="pending-updates" class="pending-updates" style="display: none;">
+        <strong>待更新的代課記錄:</strong>
+        <ul id="pending-updates-list"></ul>
     </div>
     
     <div class="form-container">
@@ -283,6 +295,7 @@
         let substData = {}; // 存儲代堂數據
         let excludedTeachersSet = new Set(); // 存儲已排除的教師
         let pendingUpdates = {}; // 存儲待確認的代課更新
+        let confirmedSubstitutes = {}; // 存儲已確認的代課記錄
         
         // 根據當前日期設置預設星期
         function setDefaultDay() {
@@ -370,6 +383,25 @@
             );
         }
         
+        // 顯示待更新提示
+        function showPendingUpdates() {
+            const pendingDiv = document.getElementById('pending-updates');
+            const list = document.getElementById('pending-updates-list');
+            
+            if (Object.keys(pendingUpdates).length === 0) {
+                pendingDiv.style.display = 'none';
+                return;
+            }
+            
+            let html = '';
+            for (const teacher in pendingUpdates) {
+                html += `<li>${teacher}: +${pendingUpdates[teacher]} 堂</li>`;
+            }
+            
+            list.innerHTML = html;
+            pendingDiv.style.display = 'block';
+        }
+        
         // 頁面加載時初始化
         document.addEventListener('DOMContentLoaded', function() {
             console.log('頁面加載完成，開始初始化');
@@ -390,6 +422,9 @@
                         console.log('代堂數據已加載:', substData);
                         document.getElementById('result').innerHTML = '<div class="loading">代堂數據已加載，請輸入查詢條件</div>';
                         document.getElementById('downloadBtn').disabled = false;
+                        
+                        // 重新渲染排除教師列表
+                        renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
                     } catch (error) {
                         console.error('解析CSV時出錯:', error);
                         document.getElementById('result').innerHTML = 
@@ -432,16 +467,21 @@
                     URL.revokeObjectURL(url);
                 }, 100);
                 
-                // 清空待更新
+                // 清空待更新和已確認記錄
                 pendingUpdates = {};
+                confirmedSubstitutes = {};
                 
                 // 更新UI
-                const confirmButtons = document.querySelectorAll('.confirmed');
-                confirmButtons.forEach(el => {
-                    el.textContent = '(已確認並下載)';
+                document.getElementById('pending-updates').style.display = 'none';
+                const confirmSpans = document.querySelectorAll('.confirmed');
+                confirmSpans.forEach(span => {
+                    span.textContent = '(已確認並下載)';
                 });
                 
                 console.log('已下載更新後的代堂記錄');
+                
+                // 重新渲染排除教師列表以更新代堂值顯示
+                renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
             });
             
             // 讀取課程數據
@@ -656,6 +696,12 @@
                 document.getElementById('result').innerHTML = 
                     `<div class="error">找不到教師 "${teacherInput}"，請檢查輸入是否正確。</div>`;
                 return;
+            }
+            
+            // 確保請假教師不在排除名單中
+            if (excludedTeachersSet.has(teacherInput)) {
+                excludedTeachersSet.delete(teacherInput);
+                renderExcludeTeachers(document.getElementById('sortBySubstValue').checked);
             }
             
             // 獲取排除教師名單（從集合轉換為數組）
@@ -883,6 +929,7 @@
             }
             
             substitutes.forEach((item, index) => {
+                const uniqueKey = `${day}-${item.period}`;
                 html += `<div class="substitute-item" id="substitute-${index}">
                     <strong>第 ${item.period} 節</strong> | 
                     科目: ${item.subject} | 
@@ -908,10 +955,10 @@
                         }
                         
                         // 添加確認按鈕
-                        if (!pendingUpdates[item.primary.teacher]) {
-                            html += `<button class="confirm-btn" data-index="${index}" data-teacher="${item.primary.teacher}">確認代課</button>`;
+                        if (!confirmedSubstitutes[uniqueKey]) {
+                            html += `<button class="confirm-btn" data-day="${day}" data-period="${item.period}" data-teacher="${item.primary.teacher}">確認代課</button>`;
                         } else {
-                            html += `<span class="confirmed">已確認 (待下載)</span>`;
+                            html += `<span class="confirmed">已確認</span>`;
                         }
                     } else {
                         html += `<span class="error">無首選代課教師</span><br>`;
@@ -955,17 +1002,33 @@
             // 添加確認按鈕的事件監聽器
             document.querySelectorAll('.confirm-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const index = this.getAttribute('data-index');
+                    const day = this.getAttribute('data-day');
+                    const period = this.getAttribute('data-period');
                     const teacher = this.getAttribute('data-teacher');
+                    const uniqueKey = `${day}-${period}`;
+                    
+                    // 記錄已確認的代課
+                    confirmedSubstitutes[uniqueKey] = {
+                        teacher: teacher,
+                        day: day,
+                        period: period
+                    };
+                    
+                    // 將教師加入排除名單
+                    excludedTeachersSet.add(teacher);
+                    updateExcludeCheckboxes();
+                    
+                    // 更新UI
+                    this.remove();
+                    const substituteItem = this.closest('.substitute-item');
+                    substituteItem.querySelector('strong').insertAdjacentHTML('afterend', 
+                        ' <span class="confirmed">已確認</span>');
                     
                     // 添加到待更新列表
                     pendingUpdates[teacher] = (pendingUpdates[teacher] || 0) + 1;
                     
-                    // 更新UI
-                    this.remove();
-                    const substituteItem = document.getElementById(`substitute-${index}`);
-                    substituteItem.querySelector('strong').insertAdjacentHTML('afterend', 
-                        ' <span class="confirmed">已確認 (待下載)</span>');
+                    // 顯示待更新提示
+                    showPendingUpdates();
                     
                     console.log(`已確認 ${teacher} 代課，待更新代堂值: ${pendingUpdates[teacher]}`);
                 });
