@@ -465,6 +465,10 @@
         
         // 頁面加載時初始化
         document.addEventListener('DOMContentLoaded', function() {
+                // 初始化時清理可能殘留的確認狀態
+            confirmedSubstitutes = {};
+            pendingUpdates = {};
+
             console.log('頁面加載完成，開始初始化');
             document.getElementById('result').innerHTML = '<div class="loading">請上傳 subst.csv 文件並輸入查詢條件</div>';
             
@@ -764,6 +768,13 @@
         
         // 生成代課安排
         function generateSubstitutes() {
+            // 生成前先清理可能殘留的確認狀態
+                const day = parseInt(document.getElementById('daySelect').value);
+            Object.keys(confirmedSubstitutes).forEach(key => {
+                if (key.startsWith(`${day}-`)) {
+                    delete confirmedSubstitutes[key];
+                }
+            });
             console.log('開始生成代課安排');
             const teacherInput = document.getElementById('teacherInput').value.trim();
             const daySelect = document.getElementById('daySelect');
@@ -1017,8 +1028,10 @@
             }
             
             substitutes.forEach((item, index) => {
-                const uniqueKey = `${day}-${item.period}`;
-                const isConfirmed = confirmedSubstitutes[uniqueKey];
+            const uniqueKey = `${day}-${item.period}`;
+            // 嚴格檢查確認狀態，避免誤判
+            const isConfirmed = confirmedSubstitutes[uniqueKey] && 
+                          confirmedSubstitutes[uniqueKey].teacher === item.primary?.teacher;
                 html += `<div class="substitute-item" id="substitute-${index}">
                     <strong>第 ${item.period} 節</strong> | 
                     科目: ${item.subject} | 
@@ -1044,14 +1057,12 @@
                         }
                         
                         // 添加確認按鈕
-                        if (!isConfirmed) {
-                            html += `<button class="confirm-btn" data-day="${day}" data-period="${item.period}" data-teacher="${item.primary.teacher}">確認代課</button>`;
-                        } else {
-                            html += `<span class="confirmed">已確認</span>`;
-                        }
-                    } else {
-                        html += `<span class="error">無首選代課教師</span><br>`;
-                    }
+                        if (isConfirmed) {
+                html += `<span class="confirmed">已確認</span>`;
+            } else {
+                html += `<button class="confirm-btn" data-day="${day}" data-period="${item.period}" data-teacher="${item.primary.teacher}">確認代課</button>`;
+            }
+        }
                     
                     // 顯示候選教師
                     if (item.backups.length > 0) {
@@ -1088,40 +1099,39 @@
             
             resultDiv.innerHTML = html;
             
-            // 添加確認按鈕的事件監聽器
             document.querySelectorAll('.confirm-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const day = this.getAttribute('data-day');
-                    const period = this.getAttribute('data-period');
-                    const teacher = this.getAttribute('data-teacher');
-                    const uniqueKey = `${day}-${period}`;
-                    
-                    // 記錄已確認的代課
-                    confirmedSubstitutes[uniqueKey] = {
-                        teacher: teacher,
-                        day: day,
-                        period: period
-                    };
-                    
-                    // 將教師加入排除名單
-                    excludedTeachersSet.add(teacher);
-                    updateExcludeCheckboxes();
-                    
-                    // 更新UI
-                    const substituteItem = this.closest('.substitute-item');
-                    this.remove();
-                    substituteItem.querySelector('strong').insertAdjacentHTML('afterend', 
-                        ' <span class="confirmed">已確認</span>');
-                    
-                    // 添加到待更新列表
-                    pendingUpdates[teacher] = (pendingUpdates[teacher] || 0) + 1;
-                    
-                    // 顯示待更新提示
-                    showPendingUpdates();
-                    
-                    console.log(`已確認 ${teacher} 代課，待更新代堂值: ${pendingUpdates[teacher]}`);
-                });
-            });
+    btn.addEventListener('click', function() {
+        const day = this.getAttribute('data-day');
+        const period = this.getAttribute('data-period');
+        const teacher = this.getAttribute('data-teacher');
+        const uniqueKey = `${day}-${period}`;
+        
+        // 增加檢查，避免重複確認
+        if (!confirmedSubstitutes[uniqueKey]) {
+            confirmedSubstitutes[uniqueKey] = {
+                teacher: teacher,
+                day: day,
+                period: period
+            };
+            
+            // 將教師加入排除名單
+            excludedTeachersSet.add(teacher);
+            updateExcludeCheckboxes();
+            
+            // 添加到待更新列表
+            pendingUpdates[teacher] = (pendingUpdates[teacher] || 0) + 1;
+        }
+        
+        // 更新UI
+        const substituteItem = this.closest('.substitute-item');
+        this.remove();
+        substituteItem.querySelector('strong').insertAdjacentHTML('afterend', 
+            ' <span class="confirmed">已確認</span>');
+        
+        // 顯示待更新提示
+        showPendingUpdates();
+    });
+});
             
             console.log('結果已顯示');
         }
