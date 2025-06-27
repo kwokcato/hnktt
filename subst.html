@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教師代課系統 V2</title>
+    <title>教師代課系統 V3</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -209,7 +209,7 @@
     </style>
 </head>
 <body>
-    <h1>教師代課系統 V2</h1>
+    <h1>教師代課系統 V3</h1>
     
     <div class="priority-info">
         <strong>代課教師選擇優先級：</strong><br>
@@ -930,6 +930,7 @@
             
             substitutes.forEach((item, index) => {
                 const uniqueKey = `${day}-${item.period}`;
+                const isConfirmed = confirmedSubstitutes[uniqueKey];
                 html += `<div class="substitute-item" id="substitute-${index}">
                     <strong>第 ${item.period} 節</strong> | 
                     科目: ${item.subject} | 
@@ -955,7 +956,7 @@
                         }
                         
                         // 添加確認按鈕
-                        if (!confirmedSubstitutes[uniqueKey]) {
+                        if (!isConfirmed) {
                             html += `<button class="confirm-btn" data-day="${day}" data-period="${item.period}" data-teacher="${item.primary.teacher}">確認代課</button>`;
                         } else {
                             html += `<span class="confirmed">已確認</span>`;
@@ -1019,8 +1020,8 @@
                     updateExcludeCheckboxes();
                     
                     // 更新UI
-                    this.remove();
                     const substituteItem = this.closest('.substitute-item');
+                    this.remove();
                     substituteItem.querySelector('strong').insertAdjacentHTML('afterend', 
                         ' <span class="confirmed">已確認</span>');
                     
