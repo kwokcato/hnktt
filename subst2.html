@@ -123,6 +123,11 @@
             background-color: #e8f4fc;
             border-left: 4px solid #2ecc71;
             grid-column: 1 / -1;
+            cursor: pointer;
+        }
+        .priority-content {
+            display: none;
+            margin-top: 10px;
         }
         .teacher-status {
             font-size: 0.9em;
@@ -206,20 +211,35 @@
             border-left: 4px solid #ffc107;
             grid-column: 1 / -1;
         }
+        .leave-types {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+            margin-left: 120px;
+        }
+        .leave-type {
+            display: flex;
+            align-items: center;
+        }
+        .leave-type input {
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>教師代課系統 V3</h1>
     
-    <div class="priority-info">
-        <strong>代課教師選擇優先級：</strong><br>
-        <OL>
-        <LI>代堂數值最小的教師（負數最大）優先選擇</LI>
-        <LI>與代堂科目相關的教師</LI>
-        <LI>當天較多空堂</LI>
-        <LI>未達到當天堂數上限</LI>
-        <LI>未被列入排除名單</LI>
-        </OL>
+    <div class="priority-info" onclick="togglePriorityInfo()">
+        <strong>代課教師選擇優先級 ▼</strong>
+        <div class="priority-content">
+            <OL>
+            <LI>代堂數值最小的教師（負數最大）優先選擇</LI>
+            <LI>與代堂科目相關的教師</LI>
+            <LI>當天較多空堂</LI>
+            <LI>未達到當天堂數上限</LI>
+            <LI>未被列入排除名單</LI>
+            </OL>
+        </div>
     </div>
     
     <div id="pending-updates" class="pending-updates" style="display: none;">
@@ -242,6 +262,24 @@
             <select id="teacherSelect">
                 <option value="">-- 選擇教師 --</option>
             </select>
+            <div class="leave-types">
+                <div class="leave-type">
+                    <input type="checkbox" id="sickLeave">
+                    <label for="sickLeave">病事假</label>
+                </div>
+                <div class="leave-type">
+                    <input type="checkbox" id="seminarLeave">
+                    <label for="seminarLeave">講座</label>
+                </div>
+                <div class="leave-type">
+                    <input type="checkbox" id="dutyLeave">
+                    <label for="dutyLeave">職務</label>
+                </div>
+                <div class="leave-type">
+                    <input type="checkbox" id="paternityLeave">
+                    <label for="paternityLeave">侍產假</label>
+                </div>
+            </div>
         </div>
         
         <div class="form-group">
@@ -296,6 +334,15 @@
         let excludedTeachersSet = new Set(); // 存儲已排除的教師
         let pendingUpdates = {}; // 存儲待確認的代課更新
         let confirmedSubstitutes = {}; // 存儲已確認的代課記錄
+        
+        // 切換優先級信息的顯示/隱藏
+        function togglePriorityInfo() {
+            const content = document.querySelector('.priority-content');
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+            const header = document.querySelector('.priority-info strong');
+            header.innerHTML = content.style.display === 'block' ? 
+                '代課教師選擇優先級 ▲' : '代課教師選擇優先級 ▼';
+        }
         
         // 根據當前日期設置預設星期
         function setDefaultDay() {
@@ -402,6 +449,16 @@
             pendingDiv.style.display = 'block';
         }
         
+        // 獲取請假類別
+        function getLeaveType() {
+            const types = [];
+            if (document.getElementById('sickLeave').checked) types.push('病事假');
+            if (document.getElementById('seminarLeave').checked) types.push('講座');
+            if (document.getElementById('dutyLeave').checked) types.push('職務');
+            if (document.getElementById('paternityLeave').checked) types.push('侍產假');
+            return types.join(' ');
+        }
+        
         // 頁面加載時初始化
         document.addEventListener('DOMContentLoaded', function() {
             console.log('頁面加載完成，開始初始化');
@@ -441,15 +498,23 @@
                     return;
                 }
                 
+                // 獲取當前日期時間
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0];
+                const timeStr = now.toTimeString().split(' ')[0];
+                
+                // 獲取請假類別
+                const leaveType = getLeaveType() || '未指定';
+                
                 // 應用所有待更新
                 for (const teacher in pendingUpdates) {
                     substData[teacher] = (substData[teacher] || 0) + pendingUpdates[teacher];
                 }
                 
                 // 生成CSV內容
-                let csvContent = "Initial,代堂\r\n";
+                let csvContent = "Initial,代堂數目,請假類別,日期,時間\r\n";
                 for (const teacher in substData) {
-                    csvContent += `${teacher},${substData[teacher]}\r\n`;
+                    csvContent += `${teacher},${substData[teacher]},"${leaveType}","${dateStr}","${timeStr}"\r\n`;
                 }
                 
                 // 創建下載鏈接
