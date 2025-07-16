@@ -356,7 +356,8 @@
                 timetableContainer.innerHTML = '';
                 
                 Promise.all([
-                    fetchCSV('tt.csv'),
+                    //fetchCSV('tt.csv'),
+                    fetchCSV('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV'),
                     fetchCSV('agroup.csv')
                 ])
                 .then(([ttData, agroupData]) => {
