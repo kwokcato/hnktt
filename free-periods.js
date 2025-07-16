@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadCSV() {
         // 添加隨機參數防止緩存
         // https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV
-        //fetch('tt.csv?' + new Date().getTime())
-        fetch('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV?' + new Date().getTime())
+        fetch('tt.csv?' + new Date().getTime())
+        //fetch('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV?' + new Date().getTime())
             .then(response => {
                 if (!response.ok) {
                     throw new Error('網絡響應不正常');
