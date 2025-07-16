@@ -269,8 +269,8 @@
             showStatus('正在載入數據...', 'loading', 'roomStatusMessage');
             
             try {
-                //const response = await fetch('tt.csv');
-                const response = await fetch('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV');
+                //const response = await fetch('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV');
+                const response = await fetch('tt.csv');
                 if (!response.ok) {
                     throw new Error('無法載入CSV文件');
                 }
