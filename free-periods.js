@@ -25,7 +25,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // 載入 CSV 文件
     function loadCSV() {
         // 添加隨機參數防止緩存
-        fetch('tt.csv?' + new Date().getTime())
+        // https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV
+        //fetch('tt.csv?' + new Date().getTime())
+        fetch('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV?' + new Date().getTime())
             .then(response => {
                 if (!response.ok) {
                     throw new Error('網絡響應不正常');
