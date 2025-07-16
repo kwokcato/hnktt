@@ -6,6 +6,43 @@
     <link rel="stylesheet" type="text/css" href="hnkstyle.css">
 
     <title>房間查詢系統</title>
+   <script>
+    // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
+    const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 假設的網域名稱，請務必修改
+
+    // 解碼 JWT
+    function decodeJwtResponse(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // 檢查 sessionStorage 中是否有有效的登入憑證
+    const id_token = window.sessionStorage.getItem('google_id_token');
+    let is_authenticated = false;
+
+    if (id_token) {
+        const payload = decodeJwtResponse(id_token);
+        // 檢查憑證是否存在、網域是否正確，以及憑證是否已過期
+        if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp * 1000 > Date.now()) {
+            is_authenticated = true;
+        }
+    }
+
+    // 如果未通過驗證，則導向到主登入頁面
+    if (!is_authenticated) {
+        // 使用 window.top 來確保是整個視窗跳轉，而不是只有 iframe 跳轉
+        window.top.location.href = 'index.html';
+    }
+    </script>
+ 
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .container { max-width: 80%; margin: auto; } /*1000px*/
