@@ -301,41 +301,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 教師查詢：同一時段多班顯示（5A/B/C/D ICT (CR1)），分組同科需顯示其餘教師
-    function formatMultipleClasses(lessons, isClassQuery) {
-        if (isClassQuery) {
-            return formatLesson(lessons[0], true);
-        }
-        if (!lessons || lessons.length === 0) return '';
-        // 分組情況：同一班同一科多位教師
-        // 範例：2A CL, KYM+KCK, 房間分別為 CR1/CR2
-        // -> KYM 顯示：2A CL (CR1) (KCK)
-        // -> KCK 顯示：2A CL (CR2) (KYM)
-        const classList = [...new Set(lessons.map(l => l.class))].sort((a,b)=>a.localeCompare(b, 'zh-Hant'));
-        const subject = lessons[0].subject;
-        const isSameClass = classList.length === 1;
-        const isSameSubject = lessons.every(l => l.subject === subject);
-        const teachers = lessons.map(l => l.teacher);
-        // 分組：同班同科多位教師
-        if (isSameClass && isSameSubject && teachers.length > 1) {
-            // 取得目前顯示的教師名
-            const currentTeacher = currentTitle.replace(' 的時間表','');
-            const myLesson = lessons.find(l => l.teacher === currentTeacher);
-            if (myLesson) {
-                const otherTeachers = lessons.filter(l => l.teacher !== currentTeacher).map(l => l.teacher).join('/');
-                return `<span class="subject" style="color:blue">${myLesson.class} ${myLesson.subject}</span> <span class="room" style="color:#555;font-size:0.7em">(${myLesson.room})</span> <span class="teacher" style="font-size:0.8em">(${otherTeachers})</span>`;
-            }
-            // fallback
-            return `<span class="subject" style="color:blue">${classList.join('/')} ${subject}</span>`;
-        }
-        // 其餘情況，維持原有合班顯示
-        if(subject === 'MAUP') {
-            return `<span class="subject" style="color:blue">${classList.join('/')} MAUP</span>`;
-        }
-        if(subject === 'PE') {
-            return `<span class="subject" style="color:blue">${classList.join('/')} PE</span>`;
-        }
-        return `<span class="subject" style="color:blue">${classList.join('/')} ${subject}</span> <span class="room" style="color:#555;font-size:0.7em">(${lessons[0].room})</span>`;
+function formatMultipleClasses(lessons, isClassQuery) {
+    if (isClassQuery) {
+        return formatLesson(lessons[0], true);
     }
+    if (!lessons || lessons.length === 0) return '';
+    // 處理兼教教師
+    // 1. 必須所有 lesson 都是同一班同一科
+    const classList = [...new Set(lessons.map(l => l.class.trim().toUpperCase()))];
+    const subjectList = [...new Set(lessons.map(l => l.subject.trim().toUpperCase()))];
+    const teacherList = lessons.map(l => l.teacher.trim());
+    if (classList.length === 1 && subjectList.length === 1 && teacherList.length > 1) {
+        // 取得目前教師
+        const currentTeacher = currentTitle.replace(' 的時間表','').trim();
+        // 用不分大小寫尋找
+        const myLesson = lessons.find(l => l.teacher.trim().toUpperCase() === currentTeacher.toUpperCase());
+        if (myLesson) {
+            // 其他教師
+            const others = lessons
+                .filter(l => l.teacher.trim().toUpperCase() !== currentTeacher.toUpperCase())
+                .map(l => l.teacher.trim())
+                .join('/');
+            return `<span class="subject" style="color:blue">${myLesson.class} ${myLesson.subject}</span> <span class="room" style="color:#555;font-size:0.7em">(${myLesson.room})</span> <span class="teacher" style="font-size:0.8em">(${others})</span>`;
+        }
+    }
+    // 其餘情況
+    if(subjectList[0] === 'MAUP') {
+        return `<span class="subject" style="color:blue">${classList.join('/')} MAUP</span>`;
+    }
+    if(subjectList[0] === 'PE') {
+        return `<span class="subject" style="color:blue">${classList.join('/')} PE</span>`;
+    }
+    return `<span class="subject" style="color:blue">${classList.join('/')} ${lessons[0].subject}</span> <span class="room" style="color:#555;font-size:0.7em">(${lessons[0].room})</span>`;
+}
     // Excel用文字版本
     function formatMultipleClassesText(lessons) {
         if (!lessons || lessons.length === 0) return '';
