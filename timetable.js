@@ -421,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (dayLessons.length === 0) {
                         if (day === 3 && slot.period === '10') {
-                            row.push('(放學Time 15:30)');
+                            row.push('(放學時間 15:30)');
                         } else {
                             row.push('');
                         }
@@ -712,13 +712,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td class="empty-cell">
-                            <div class="dismissal-time" style="font-size:10px;">(放學Time 15:30)</div>
+                            <div class="dismissal-time" style="font-size:10px;">(放學時間 15:30)</div>
                         </td>`;
                     } else {
                         const firstLesson = dayLessons[0];
                         tableHTML += `<td>
                             <div class="main-lesson">${formatLesson(firstLesson, isClassQuery)}</div>
-                            <div class="dismissal-time" style="font-size:10px;">(放學Time 15:30)</div>
+                            <div class="dismissal-time" style="font-size:10px;">(放學時間 15:30)</div>
                         </td>`;
                     }
                     continue;
