@@ -215,13 +215,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td style="background-color:#f9f9f9;">
-                            <div class="dismissal-time" style="font-size:8px;">(放學Time 15:30)</div>
+                            <div class="dismissal-time" style="font-size:8px;">(放學時間 15:30)</div>
                         </td>`;
                     } else {
                         const firstLesson = dayLessons[0];
                         tableHTML += `<td>
                             <div>${formatLessonForExport(firstLesson, isClassQuery)}</div>
-                            <div class="dismissal-time" style="font-size:8px;">(放學Time 15:30)</div>
+                            <div class="dismissal-time" style="font-size:8px;">(放學時間 15:30)</div>
                         </td>`;
                     }
                     continue;
@@ -519,12 +519,12 @@ document.addEventListener('DOMContentLoaded', function() {
             let subject = lesson.subject;
             if (subject.includes('!CHEM')) subject = 'X2';
             if (subject.includes('!ICT')) subject = 'X3';
-            return `<span style="color:blue;font-size:9px">${subject}</span> <span style="font-size:8px">(${lesson.teacher})</span>`;
+            return `<span style="color:blue;font-size:10px">${subject}</span> <span style="font-size:8px">(${lesson.teacher})</span>`;
         }
         if (lesson.subject === 'MAUP') {
             return `<span style="color:blue;font-size:9px">${lesson.class} MAUP</span>`;
         }
-        return `<span style="color:blue;font-size:9px">${lesson.class} ${lesson.subject}</span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
+        return `<span style="color:blue;font-size:10px">${lesson.class} ${lesson.subject}</span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
     }
 
     // 按 Enter 鍵查詢
@@ -760,9 +760,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:11px;">${subjects}<br></span>
-                                    <span class="room" style="color:#555;font-size:10px;"> ${rooms}<br></span>
-                                    <span class="teacher" style="font-size:10px;">(${teachers})</span>
+                                    <span class="subject" style="color:blue;font-size:10px;">${subjects}<br></span>
+                                    <span class="room" style="color:#555;font-size:8px;"> ${rooms}<br></span>
+                                    <span class="teacher" style="font-size:9px;">(${teachers})</span>
                                 </div>
                             </td>`;
                         }
@@ -831,9 +831,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:11px;">${classDisplay} ${firstLesson.subject}<br></span>
-                                    <span class="room" style="color:#555;font-size:10px;"> ${firstLesson.room}<br></span>
-                                    ${coTeachers ? `<span class="teacher" style="font-size:10px;">(${coTeachers})</span>` : ''}
+                                    <span class="subject" style="color:blue;font-size:10px;">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span class="room" style="color:#555;font-size:8px;"> ${firstLesson.room}<br></span>
+                                    ${coTeachers ? `<span class="teacher" style="font-size:9px;">(${coTeachers})</span>` : ''}
                                 </div>
                             </td>`;
                         }
@@ -854,10 +854,10 @@ document.addEventListener('DOMContentLoaded', function() {
             let subject = lesson.subject;
             if (subject.includes('!CHEM')) subject = 'X2';
             if (subject.includes('!ICT')) subject = 'X3';
-            return `<span class="subject" style="color:blue;font-size:11px;">${subject}</span> <span class="teacher" style="font-size:10px;">(${lesson.teacher})</span>`;
+            return `<span class="subject" style="color:blue;font-size:10px;">${subject}</span> <span class="teacher" style="font-size:10px;">(${lesson.teacher})</span>`;
         }
         if (lesson.subject === 'MAUP') {
-            return `<span class="subject" style="color:blue;font-size:11px;">${lesson.class} MAUP</span>`;
+            return `<span class="subject" style="color:blue;font-size:10px;">${lesson.class} MAUP</span>`;
         }
 
         const groupedLessons = allLessons.filter(
@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
             classDisplay = simplifiedClasses;
         }
 
-        return `<span class="subject" style="color:blue;font-size:11px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
+        return `<span class="subject" style="color:blue;font-size:10px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
     }
 
     // 自動載入 CSV 文件
