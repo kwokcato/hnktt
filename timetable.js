@@ -97,6 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // 使用html2pdf.js庫
         const element = document.createElement('div');
         element.style.width = '100%';
         element.innerHTML = `
@@ -105,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         const opt = {
-            margin: [10, 5, 10, 5],
+            margin: [10, 5, 10, 5], // 上下左右邊距
             filename: `${currentTitle}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { 
@@ -126,13 +127,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         
+        // 引入html2pdf庫
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
         script.onload = function() {
+            // 添加處理程序確保所有內容都已渲染
             setTimeout(() => {
                 html2pdf().set(opt).from(element).save()
+                    .then(() => {
+                        console.log('PDF generated successfully');
+                    })
                     .catch(err => {
                         console.error('PDF generation error:', err);
+                        // 嘗試備用方法
                         backupPDFGeneration(element, opt);
                     });
             }, 500);
@@ -140,7 +147,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(script);
     }
 
+    // 備用PDF生成方法
     function backupPDFGeneration(element, opt) {
+        // 嘗試使用不同的設置
         const backupOpt = {
             ...opt,
             html2canvas: {
@@ -150,17 +159,19 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             jsPDF: {
                 ...opt.jsPDF,
-                format: 'a2'
+                format: 'a2' // 使用更大的紙張尺寸
             }
         };
         
         try {
             html2pdf().set(backupOpt).from(element).save();
         } catch (err) {
+            console.error('Backup PDF generation failed:', err);
             alert('PDF生成失敗，請嘗試列印功能或聯繫管理員');
         }
     }
     
+    // 生成時間表HTML (用於PDF和列印)
     function generateTimetableHTML(lessons, isClassQuery) {
         let tableHTML = `
             <table style="width:100%;border-collapse:collapse;margin-top:20px;">
@@ -200,6 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                 );
                 
+                // 星期三第10節特殊處理
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td style="background-color:#f9f9f9;">
@@ -218,9 +230,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (dayLessons.length === 0) {
                     tableHTML += `<td style="background-color:#f9f9f9;"></td>`;
                 } else {
+                    // 處理班別查詢的多科目情況
                     if (isClassQuery) {
                         const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
+                        
+                        // 檢查是否有MAUP科目
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
+                        // 檢查是否有CHEM或ICT科目
                         const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
                         
@@ -257,6 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </td>`;
                         }
                     } else {
+                        // 教師查詢保持原樣
                         const firstLesson = dayLessons[0];
                         const isPE = firstLesson.subject === 'PE';
                         const isMaup = firstLesson.subject === 'MAUP';
@@ -304,10 +321,27 @@ document.addEventListener('DOMContentLoaded', function() {
                                     .sort()
                                     .join('/');
                             }
+
+                            // 檢查是否有合併班別情況
+                            const groupedLessons = allLessons.filter(
+                                lesson => lesson.day === day && 
+                                         lesson.period === parseInt(slot.period) &&
+                                         lesson.subject === firstLesson.subject &&
+                                         lesson.teacher === firstLesson.teacher
+                            );
+
+                            let classDisplay = firstLesson.class;
+                            if (groupedLessons.length > 1) {
+                                // 合併班別顯示
+                                const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+                                // 簡化顯示，例如 5A/B/C/D
+                                const simplifiedClasses = simplifyClassNames(allClasses);
+                                classDisplay = simplifiedClasses;
+                            }
                             
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue">${firstLesson.class} ${firstLesson.subject}</span>
+                                    <span style="color:blue">${classDisplay} ${firstLesson.subject}</span>
                                     <span style="color:#555;font-size:0.7em"> ${firstLesson.room}</span>
                                     ${coTeachers ? `<span style="font-size:0.8em">(${coTeachers})</span>` : ''}
                                 </div>
@@ -323,30 +357,72 @@ document.addEventListener('DOMContentLoaded', function() {
         tableHTML += `</tbody></table>`;
         return tableHTML;
     }
+
+    // 簡化班別名稱顯示 (例如將 ['5A', '5B', '5C', '5D'] 轉換為 '5A/B/C/D')
+    function simplifyClassNames(classNames) {
+        if (classNames.length <= 1) return classNames[0];
+        
+        // 按年級和班別排序
+        classNames.sort();
+        
+        const gradeMap = {};
+        
+        // 按年級分組
+        classNames.forEach(className => {
+            const grade = className[0];
+            const classLetter = className[1];
+            if (!gradeMap[grade]) {
+                gradeMap[grade] = [];
+            }
+            gradeMap[grade].push(classLetter);
+        });
+        
+        // 生成簡化格式
+        let result = [];
+        for (const grade in gradeMap) {
+            const letters = gradeMap[grade];
+            if (letters.length > 1) {
+                result.push(`${grade}${letters[0]}/${letters.slice(1).join('/')}`);
+            } else {
+                result.push(`${grade}${letters[0]}`);
+            }
+        }
+        
+        return result.join(' ');
+    }
     
+    // 匯出Excel
     function exportToExcel() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('請先查詢時間表');
             return;
         }
 
+        // 創建工作簿
         const wb = XLSX.utils.book_new();
+        
+        // 準備數據
         const rows = [];
         
+        // 添加標題行
         rows.push([currentTitle]);
         rows.push([]);
         
+        // 添加表頭
         const headerRow = ['時間', '節數', '星期一', '星期二', '星期三', '星期四', '星期五'];
         rows.push(headerRow);
         
+        // 判斷是否是班別查詢
         const isClassQuery = currentTitle.includes('班別');
         
+        // 添加時間表數據
         timeSlots.forEach(slot => {
             const row = [];
             row.push(`${slot.time}-${slot.endTime}`);
             row.push(slot.period || '');
             
             if (slot.isBreak) {
+                // 處理休息時間
                 for (let day = 1; day <= 5; day++) {
                     row.push(slot.label);
                 }
@@ -357,15 +433,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     );
                     
                     if (dayLessons.length === 0) {
+                        // 星期三第10節特殊處理
                         if (day === 3 && slot.period === '10') {
                             row.push('(放學時間 15:30)');
                         } else {
                             row.push('');
                         }
                     } else {
+                        // 處理班別查詢的多科目情況
                         if (isClassQuery) {
                             const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
+                            
+                            // 檢查是否有MAUP科目
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
+                            // 檢查是否有CHEM或ICT科目
                             const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
                             
@@ -381,6 +462,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 row.push(`${subjects} ${rooms} (${teachers})`);
                             }
                         } else {
+                            // 教師查詢
                             const firstLesson = dayLessons[0];
                             const isPE = firstLesson.subject === 'PE';
                             const isMaup = firstLesson.subject === 'MAUP';
@@ -419,8 +501,25 @@ document.addEventListener('DOMContentLoaded', function() {
                                         .sort()
                                         .join('/');
                                 }
+
+                                // 檢查是否有合併班別情況
+                                const groupedLessons = allLessons.filter(
+                                    lesson => lesson.day === day && 
+                                             lesson.period === parseInt(slot.period) &&
+                                             lesson.subject === firstLesson.subject &&
+                                             lesson.teacher === firstLesson.teacher
+                                );
+
+                                let classDisplay = firstLesson.class;
+                                if (groupedLessons.length > 1) {
+                                    // 合併班別顯示
+                                    const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+                                    // 簡化顯示，例如 5A/B/C/D
+                                    const simplifiedClasses = simplifyClassNames(allClasses);
+                                    classDisplay = simplifiedClasses;
+                                }
                                 
-                                row.push(`${firstLesson.class} ${firstLesson.subject} ${firstLesson.room}${coTeachers ? ` (${coTeachers})` : ''}`);
+                                row.push(`${classDisplay} ${firstLesson.subject} ${firstLesson.room}${coTeachers ? ` (${coTeachers})` : ''}`);
                             }
                         }
                     }
@@ -430,11 +529,17 @@ document.addEventListener('DOMContentLoaded', function() {
             rows.push(row);
         });
         
+        // 創建工作表
         const ws = XLSX.utils.aoa_to_sheet(rows);
+        
+        // 添加工作表到工作簿
         XLSX.utils.book_append_sheet(wb, ws, '時間表');
+        
+        // 導出Excel文件
         XLSX.writeFile(wb, `${currentTitle}.xlsx`);
     }
     
+    // 格式化課程顯示 (用於導出)
     function formatLessonForExport(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -442,27 +547,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (subject.includes('!ICT')) subject = 'X3';
             return `${subject} (${lesson.teacher})`;
         }
-
-        const sameSubjectLessons = allLessons.filter(l =>
-            l.day === lesson.day &&
-            l.period === lesson.period &&
-            l.subject === lesson.subject &&
-            l.teacher === lesson.teacher &&
-            l.room === lesson.room
-        );
-
-        const classes = [...new Set(sameSubjectLessons.map(l => l.class))].sort();
-        const classDisplay = classes.length > 1
-            ? classes.join('/')
-            : lesson.class;
-
         if (lesson.subject === 'MAUP') {
-            return `${classDisplay} MAUP`;
+            return `${lesson.class} MAUP`;
         }
-
-        return `${classDisplay} ${lesson.subject} ${lesson.room}`;
+        return `${lesson.class} ${lesson.subject} ${lesson.room}`;
     }
 
+    // 按 Enter 鍵查詢
     teacherNameInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const query = teacherNameInput.value.trim();
@@ -480,37 +571,47 @@ document.addEventListener('DOMContentLoaded', function() {
         this.value = '';
     });
 
+    
+    // 教師下拉選單選擇
     teacherDropdown.addEventListener('change', function() {
         const teacherName = teacherDropdown.value;
         if (teacherName) {
             teacherNameInput.value = teacherName;
             displayTimetable(teacherName);
-            classDropdown.value = '';
+            classDropdown.value = ''; // 清除班別選擇
         }
     });
     
+    // 班別下拉選單選擇
     classDropdown.addEventListener('change', function() {
         const className = classDropdown.value;
         if (className) {
             teacherNameInput.value = className;
             displayClassTimetable(className);
-            teacherDropdown.value = '';
+            teacherDropdown.value = ''; // 清除教師選擇
         }
     });
     
+    // 判斷是否為班別查詢
     function isClassQuery(query) {
-        return /^[1-6][A-D]$/i.test(query);
+        return /^[1-6][A-D]$/i.test(query); // 匹配1A-6D格式
     }
     
+    // 載入 CSV 文件
     function loadCSV() {
+        //fetch('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV');
+        // 添加隨機參數防止緩存
         fetch('tt.csv?' + new Date().getTime())
+        //fetch('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV?' + new Date().getTime())
             .then(response => {
                 if (!response.ok) throw new Error('網絡響應不正常');
                 return response.text();
             })
             .then(data => {
                 allLessons = parseCSV(data);
+                // 提取所有教師名單並去重
                 allTeachers = [...new Set(allLessons.map(item => item.teacher.trim()))].sort();
+                // 提取1-6年級班別名單並去重
                 allClasses = [...new Set(allLessons
                     .filter(item => /^[1-6][A-D]$/i.test(item.class.trim()))
                     .map(item => item.class.trim()))].sort();
@@ -522,22 +623,27 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('載入CSV文件時出錯:', error);
                 loadingDiv.innerHTML = `<p style="color:red">錯誤: ${error.message}</p>`;
+                // 重試機制
                 setTimeout(loadCSV, 1000);
             });
     }
     
+    // 填充下拉選單
     function populateDropdowns() {
+        // 填充教師下拉選單
         teacherDropdown.innerHTML = '<option value="">選擇教師...</option>';
         allTeachers.forEach(teacher => {
             teacherDropdown.innerHTML += `<option value="${teacher}">${teacher}</option>`;
         });
         
+        // 填充班別下拉選單 (只顯示1-6年級班別)
         classDropdown.innerHTML = '<option value="">選擇班別...</option>';
         allClasses.forEach(cls => {
             classDropdown.innerHTML += `<option value="${cls}">${cls}</option>`;
         });
     }
     
+    // 解析 CSV
     function parseCSV(csv) {
         const lines = csv.split('\n');
         const result = [];
@@ -563,7 +669,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
     
+    // 顯示教師時間表
     function displayTimetable(teacherName) {
+        // 過濾該教師的課程
         currentLessons = allLessons.filter(item => 
             item.teacher.toUpperCase() === teacherName.toUpperCase()
         );
@@ -580,7 +688,9 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTimetable(currentLessons);
     }
     
+    // 顯示班別時間表
     function displayClassTimetable(className) {
+        // 過濾該班別的課程
         currentLessons = allLessons.filter(item => 
             item.class.toUpperCase() === className.toUpperCase()
         );
@@ -594,9 +704,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         currentTitle = `班別 ${className} 的時間表`;
         resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
-        renderTimetable(currentLessons, true);
+        renderTimetable(currentLessons, true); // 傳入true表示是班別查詢
     }
     
+    // 渲染時間表 (共用函數)
     function renderTimetable(lessons, isClassQuery = false) {
         let tableHTML = `
             <thead>
@@ -635,6 +746,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                 );
                 
+                // 星期三第10節特殊處理
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td class="empty-cell">
@@ -653,9 +765,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (dayLessons.length === 0) {
                     tableHTML += `<td class="empty-cell"></td>`;
                 } else {
+                    // 處理班別查詢的多科目情況
                     if (isClassQuery) {
                         const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
+                        
+                        // 檢查是否有MAUP科目
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
+                        // 檢查是否有CHEM或ICT科目
                         const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
                         
@@ -692,6 +808,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </td>`;
                         }
                     } else {
+                        // 教師查詢保持原樣
                         const firstLesson = dayLessons[0];
                         const isPE = firstLesson.subject === 'PE';
                         const isMaup = firstLesson.subject === 'MAUP';
@@ -739,10 +856,27 @@ document.addEventListener('DOMContentLoaded', function() {
                                     .sort()
                                     .join('/');
                             }
+
+                            // 檢查是否有合併班別情況
+                            const groupedLessons = allLessons.filter(
+                                lesson => lesson.day === day && 
+                                         lesson.period === parseInt(slot.period) &&
+                                         lesson.subject === firstLesson.subject &&
+                                         lesson.teacher === firstLesson.teacher
+                            );
+
+                            let classDisplay = firstLesson.class;
+                            if (groupedLessons.length > 1) {
+                                // 合併班別顯示
+                                const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+                                // 簡化顯示，例如 5A/B/C/D
+                                const simplifiedClasses = simplifyClassNames(allClasses);
+                                classDisplay = simplifiedClasses;
+                            }
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue">${firstLesson.class} ${firstLesson.subject}</span>
+                                    <span class="subject" style="color:blue">${classDisplay} ${firstLesson.subject}</span>
                                     <span class="room" style="color:#555;font-size:0.7em"> ${firstLesson.room}</span>
                                     ${coTeachers ? `<span class="teacher" style="font-size:0.8em">(${coTeachers})</span>` : ''}
                                 </div>
@@ -759,6 +893,7 @@ document.addEventListener('DOMContentLoaded', function() {
         timetableTable.innerHTML = tableHTML;
     }
     
+    // 格式化課程顯示
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -766,26 +901,30 @@ document.addEventListener('DOMContentLoaded', function() {
             if (subject.includes('!ICT')) subject = 'X3';
             return `<span class="subject" style="color:blue">${subject}</span> <span class="teacher" style="font-size:0.8em">(${lesson.teacher})</span>`;
         }
+        if (lesson.subject === 'MAUP') {
+            return `<span class="subject" style="color:blue">${lesson.class} MAUP</span>`;
+        }
 
-        const sameSubjectLessons = allLessons.filter(l =>
-            l.day === lesson.day &&
-            l.period === lesson.period &&
-            l.subject === lesson.subject &&
-            l.teacher === lesson.teacher &&
-            l.room === lesson.room
+        // 檢查是否有合併班別情況
+        const groupedLessons = allLessons.filter(
+            l => l.day === lesson.day && 
+                 l.period === lesson.period && 
+                 l.subject === lesson.subject && 
+                 l.teacher === lesson.teacher
         );
 
-        const classes = [...new Set(sameSubjectLessons.map(l => l.class))].sort();
-        const classDisplay = classes.length > 1
-            ? classes.join('/')
-            : lesson.class;
-
-        if (lesson.subject === 'MAUP') {
-            return `<span class="subject" style="color:blue">${classDisplay} MAUP</span>`;
+        let classDisplay = lesson.class;
+        if (groupedLessons.length > 1) {
+            // 合併班別顯示
+            const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+            // 簡化顯示，例如 5A/B/C/D
+            const simplifiedClasses = simplifyClassNames(allClasses);
+            classDisplay = simplifiedClasses;
         }
 
         return `<span class="subject" style="color:blue">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:0.7em">${lesson.room}</span>`;
     }
 
+    // 自動載入 CSV 文件
     loadCSV();
 });
