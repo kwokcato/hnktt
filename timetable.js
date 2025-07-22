@@ -7,13 +7,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const timetableTable = document.getElementById('timetable');
     const exportBtnGroup = document.getElementById('exportBtnGroup');
     
-    let allLessons = []; // 存儲所有課程數據
-    let allTeachers = []; // 存儲所有教師名單
-    let allClasses = []; // 存儲所有班別名單
-    let currentTitle = ''; // 當前顯示的時間表標題
-    let currentLessons = []; // 當前顯示的課程數據
+    let allLessons = [];
+    let allTeachers = [];
+    let allClasses = [];
+    let currentTitle = '';
+    let currentLessons = [];
     
-    // 時間段定義
     const timeSlots = [
         { time: '8:05', period: '0', endTime: '8:20', isBreak: true, label: '早會' },
         { time: '8:20', period: '1', endTime: '8:55', isBreak: false },
@@ -32,7 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
         { time: '15:15', period: '10', endTime: '15:50', isBreak: false }
     ];
 
-    // 初始化導出按鈕
     function initExportButtons() {
         exportBtnGroup.innerHTML = `
             <button id="printBtn" class="export-btn">列印時間表</button>
@@ -44,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
     }
 
-    // 列印時間表
     function printTimetable() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('請先查詢時間表');
@@ -88,7 +85,6 @@ document.addEventListener('DOMContentLoaded', function() {
         printWindow.document.close();
     }
 
-    // 匯出PDF
     function exportToPDF() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('請先查詢時間表');
@@ -134,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 生成時間表HTML (用於PDF和列印)
     function generateTimetableHTML(lessons, isClassQuery) {
         let tableHTML = `
             <table style="width:100%;border-collapse:collapse;margin-top:20px;">
@@ -244,7 +239,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return tableHTML;
     }
 
-    // 匯出Excel
     function exportToExcel() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('請先查詢時間表');
@@ -306,41 +300,70 @@ document.addEventListener('DOMContentLoaded', function() {
         XLSX.writeFile(wb, `${currentTitle}.xlsx`);
     }
 
-    // 教師查詢：同一時段多班顯示（5A/B/C/D ICT (CR1)）---修正版
+    // 教師查詢：同一時段多班顯示（5A/B/C/D ICT (CR1)），分組同科需顯示其餘教師
     function formatMultipleClasses(lessons, isClassQuery) {
         if (isClassQuery) {
             return formatLesson(lessons[0], true);
         }
         if (!lessons || lessons.length === 0) return '';
+        // 分組情況：同一班同一科多位教師
+        // 範例：2A CL, KYM+KCK, 房間分別為 CR1/CR2
+        // -> KYM 顯示：2A CL (CR1) (KCK)
+        // -> KCK 顯示：2A CL (CR2) (KYM)
         const classList = [...new Set(lessons.map(l => l.class))].sort((a,b)=>a.localeCompare(b, 'zh-Hant'));
         const subject = lessons[0].subject;
-        const room = lessons[0].room;
+        const isSameClass = classList.length === 1;
+        const isSameSubject = lessons.every(l => l.subject === subject);
+        const teachers = lessons.map(l => l.teacher);
+        // 分組：同班同科多位教師
+        if (isSameClass && isSameSubject && teachers.length > 1) {
+            // 對每個教師只顯示自己那一組
+            // 取出查詢的教師（在 displayTimetable 可拿到）
+            // 需取得目前顯示的教師名
+            const currentTeacher = currentTitle.replace(' 的時間表','');
+            const myLesson = lessons.find(l => l.teacher === currentTeacher);
+            if (myLesson) {
+                const otherTeachers = lessons.filter(l => l.teacher !== currentTeacher).map(l => l.teacher).join('/');
+                return `<span class="subject" style="color:blue">${myLesson.class} ${myLesson.subject}</span> <span class="room" style="color:#555;font-size:0.7em">(${myLesson.room})</span> <span class="teacher" style="font-size:0.8em">(${otherTeachers})</span>`;
+            }
+            // fallback
+            return `<span class="subject" style="color:blue">${classList.join('/')} ${subject}</span>`;
+        }
+        // 其餘情況，維持原有合班顯示
         if(subject === 'MAUP') {
             return `<span class="subject" style="color:blue">${classList.join('/')} MAUP</span>`;
         }
         if(subject === 'PE') {
             return `<span class="subject" style="color:blue">${classList.join('/')} PE</span>`;
         }
-        // --- 修改這裡，將課室放入括號 ---
-        return `<span class="subject" style="color:blue">${classList.join('/')} ${subject}</span> <span class="room" style="color:#555;font-size:0.7em">(${room})</span>`;
+        return `<span class="subject" style="color:blue">${classList.join('/')} ${subject}</span> <span class="room" style="color:#555;font-size:0.7em">(${lessons[0].room})</span>`;
     }
     // Excel用文字版本
     function formatMultipleClassesText(lessons) {
         if (!lessons || lessons.length === 0) return '';
         const classList = [...new Set(lessons.map(l => l.class))].sort((a,b)=>a.localeCompare(b, 'zh-Hant'));
         const subject = lessons[0].subject;
-        const room = lessons[0].room;
+        const isSameClass = classList.length === 1;
+        const isSameSubject = lessons.every(l => l.subject === subject);
+        const teachers = lessons.map(l => l.teacher);
+        if (isSameClass && isSameSubject && teachers.length > 1) {
+            const currentTeacher = currentTitle.replace(' 的時間表','');
+            const myLesson = lessons.find(l => l.teacher === currentTeacher);
+            if (myLesson) {
+                const otherTeachers = lessons.filter(l => l.teacher !== currentTeacher).map(l => l.teacher).join('/');
+                return `${myLesson.class} ${myLesson.subject} (${myLesson.room}) (${otherTeachers})`;
+            }
+            return `${classList.join('/')} ${subject}`;
+        }
         if(subject === 'MAUP') {
             return `${classList.join('/')} MAUP`;
         }
         if(subject === 'PE') {
             return `${classList.join('/')} PE`;
         }
-        // --- 修改這裡，將課室放入括號 ---
-        return `${classList.join('/')} ${subject} (${room})`;
+        return `${classList.join('/')} ${subject} (${lessons[0].room})`;
     }
 
-    // 格式化課程顯示 (用於PDF/列印)
     function formatLessonForExport(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -351,11 +374,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (lesson.subject === 'MAUP') {
             return `${lesson.class} MAUP`;
         }
-        // --- 修改這裡，將課室放入括號 ---
         return `${lesson.class} ${lesson.subject} (${lesson.room})`;
     }
 
-    // 按 Enter 鍵查詢
     teacherNameInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const query = teacherNameInput.value.trim();
@@ -449,7 +470,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
 
-    // 顯示教師時間表
     function displayTimetable(teacherName) {
         currentLessons = allLessons.filter(item => 
             item.teacher.toUpperCase() === teacherName.toUpperCase()
@@ -464,7 +484,6 @@ document.addEventListener('DOMContentLoaded', function() {
         resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons);
     }
-    // 顯示班別時間表
     function displayClassTimetable(className) {
         currentLessons = allLessons.filter(item => 
             item.class.toUpperCase() === className.toUpperCase()
@@ -480,7 +499,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTimetable(currentLessons, true);
     }
 
-    // 渲染時間表 (重點修正版)
     function renderTimetable(lessons, isClassQuery = false) {
         let tableHTML = `
             <thead>
@@ -589,7 +607,6 @@ document.addEventListener('DOMContentLoaded', function() {
         timetableTable.innerHTML = tableHTML;
     }
 
-    // 格式化課程顯示
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -600,10 +617,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (lesson.subject === 'MAUP') {
             return `<span class="subject" style="color:blue">${lesson.class} MAUP</span>`;
         }
-        // --- 修改這裡，將課室放入括號 ---
         return `<span class="subject" style="color:blue">${lesson.class} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:0.7em">(${lesson.room})</span>`;
     }
 
-    // 自動載入 CSV 文件
     loadCSV();
 });
