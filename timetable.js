@@ -179,11 +179,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     <tr>
                         <th style="width:50px;background-color:#3498db;color:white;font-size:9px;">時間</th>  <!-- 80 -->
                         <th style="width:20px;background-color:#3498db;color:white;font-size:9px;">節數</th>  <!-- 30 -->
-                        <th style="background-color:#3498db;color:white;font-size:9px;">星期一</th>
-                        <th style="background-color:#3498db;color:white;font-size:9px;">星期二</th>
-                        <th style="background-color:#3498db;color:white;font-size:9px;">星期三</th>
-                        <th style="background-color:#3498db;color:white;font-size:9px;">星期四</th>
-                        <th style="background-color:#3498db;color:white;font-size:9px;">星期五</th>
+                        <th style="background-color:#3498db;color:white;font-size:9px;">Monday</th>
+                        <th style="background-color:#3498db;color:white;font-size:9px;">Tuesday</th>
+                        <th style="background-color:#3498db;color:white;font-size:9px;">Wednesday</th>
+                        <th style="background-color:#3498db;color:white;font-size:9px;">Thursday</th>
+                        <th style="background-color:#3498db;color:white;font-size:9px;">Friday</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                 );
                 
-                // 星期三第10節特殊處理
+                // Wednesday第10節特殊處理
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td style="background-color:#f9f9f9;">
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
         rows.push([currentTitle]);
         rows.push([]);
         
-        const headerRow = ['時間', '節數', '星期一', '星期二', '星期三', '星期四', '星期五'];
+        const headerRow = ['時間', '節數', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         rows.push(headerRow);
         
         const isClassQuery = currentTitle.includes('班別');
@@ -677,11 +677,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <tr>
                     <th class="time-col" style="padding: 4px;font-size:11px;">時間</th>
                     <th class="period-col" style="padding: 4px;font-size:11px;">節數</th>
-                    <th style="padding: 4px;font-size:11px;">星期一</th>
-                    <th style="padding: 4px;font-size:11px;">星期二</th>
-                    <th style="padding: 4px;font-size:11px;">星期三</th>
-                    <th style="padding: 4px;font-size:11px;">星期四</th>
-                    <th style="padding: 4px;font-size:11px;">星期五</th>
+                    <th style="padding: 4px;font-size:11px;">Monday</th>
+                    <th style="padding: 4px;font-size:11px;">Tuesday</th>
+                    <th style="padding: 4px;font-size:11px;">Wednesday</th>
+                    <th style="padding: 4px;font-size:11px;">Thursday</th>
+                    <th style="padding: 4px;font-size:11px;">Friday</th>
                 </tr>
             </thead>
             <tbody>
