@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <button id="pdfBtn" class="export-btn">匯出PDF</button>
             <button id="excelBtn" class="export-btn">匯出Excel</button>
         `;
+        
         document.getElementById('printBtn').addEventListener('click', printTimetable);
         document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
@@ -50,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('請先查詢時間表');
             return;
         }
+        
         const printWindow = window.open('', '', 'width=1000,height=600');
         printWindow.document.write(`
             <html>
@@ -94,27 +96,45 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('請先查詢時間表');
             return;
         }
+        
         const element = document.createElement('div');
         element.style.width = '100%';
         element.innerHTML = `
             <h1 style="text-align:center;font-family:Arial;margin-bottom:20px;">${currentTitle}</h1>
             ${generateTimetableHTML(currentLessons, currentTitle.includes('班別'))}
         `;
+        
         const opt = {
             margin: [10, 5, 10, 5],
             filename: `${currentTitle}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, logging: true, useCORS: true, scrollY: 0, windowHeight: document.getElementById('timetable').scrollHeight + 200 },
-            jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape', compress: true },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            html2canvas: { 
+                scale: 2, 
+                logging: true, 
+                useCORS: true,
+                scrollY: 0,
+                windowHeight: document.getElementById('timetable').scrollHeight + 200
+            },
+            jsPDF: { 
+                unit: 'mm', 
+                format: 'a3', 
+                orientation: 'landscape',
+                compress: true
+            },
+            pagebreak: { 
+                mode: ['avoid-all', 'css', 'legacy'] 
+            }
         };
+        
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
         script.onload = function() {
             setTimeout(() => {
                 html2pdf().set(opt).from(element).save()
-                    .then(() => { console.log('PDF generated successfully'); })
-                    .catch(err => { console.error('PDF generation error:', err); backupPDFGeneration(element, opt); });
+                    .catch(err => {
+                        console.error('PDF generation error:', err);
+                        backupPDFGeneration(element, opt);
+                    });
             }, 500);
         };
         document.head.appendChild(script);
@@ -123,18 +143,24 @@ document.addEventListener('DOMContentLoaded', function() {
     function backupPDFGeneration(element, opt) {
         const backupOpt = {
             ...opt,
-            html2canvas: { ...opt.html2canvas, scale: 1.5, windowHeight: document.getElementById('timetable').scrollHeight + 500 },
-            jsPDF: { ...opt.jsPDF, format: 'a2' }
+            html2canvas: {
+                ...opt.html2canvas,
+                scale: 1.5,
+                windowHeight: document.getElementById('timetable').scrollHeight + 500
+            },
+            jsPDF: {
+                ...opt.jsPDF,
+                format: 'a2'
+            }
         };
+        
         try {
             html2pdf().set(backupOpt).from(element).save();
         } catch (err) {
-            console.error('Backup PDF generation failed:', err);
             alert('PDF生成失敗，請嘗試列印功能或聯繫管理員');
         }
     }
     
-    // 生成時間表HTML (用於PDF和列印)
     function generateTimetableHTML(lessons, isClassQuery) {
         let tableHTML = `
             <table style="width:100%;border-collapse:collapse;margin-top:20px;">
@@ -151,6 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </thead>
                 <tbody>
         `;
+        
         timeSlots.forEach(slot => {
             if (slot.isBreak) {
                 tableHTML += `
@@ -161,15 +188,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 return;
             }
+            
             tableHTML += `
                 <tr>
                     <td style="width:100px;background-color:#3498db;color:white;">${slot.time}-${slot.endTime}</td>
                     <td style="width:50px;background-color:#3498db;color:white;">${slot.period}</td>
             `;
+            
             for (let day = 1; day <= 5; day++) {
                 const dayLessons = lessons.filter(
                     lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                 );
+                
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td style="background-color:#f9f9f9;">
@@ -184,6 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     continue;
                 }
+                
                 if (dayLessons.length === 0) {
                     tableHTML += `<td style="background-color:#f9f9f9;"></td>`;
                 } else {
@@ -192,6 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                         const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
+                        
                         if (hasChem) {
                             tableHTML += `<td>
                                 <div>
@@ -228,17 +260,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         const firstLesson = dayLessons[0];
                         const isPE = firstLesson.subject === 'PE';
                         const isMaup = firstLesson.subject === 'MAUP';
+                        
                         if (isPE) {
                             const allPELessons = allLessons.filter(
                                 lesson => lesson.day === day && 
                                          lesson.period === parseInt(slot.period) &&
                                          lesson.subject === 'PE'
                             );
+                            
                             const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
                             const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
                                 .filter(t => t !== firstLesson.teacher)
                                 .sort()
                                 .join('/');
+                            
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue">${allClasses} PE</span>
@@ -255,6 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
                             const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
                             let coTeachers = '';
+                            
                             if (shouldShowCoTeachers) {
                                 const sameLessons = allLessons.filter(
                                     lesson => lesson.day === day && 
@@ -262,11 +298,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                              lesson.class === firstLesson.class &&
                                              lesson.subject === firstLesson.subject
                                 );
+                                
                                 coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
                                     .filter(t => t !== firstLesson.teacher)
                                     .sort()
                                     .join('/');
                             }
+                            
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue">${firstLesson.class} ${firstLesson.subject}</span>
@@ -278,29 +316,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+            
             tableHTML += `</tr>`;
         });
+        
         tableHTML += `</tbody></table>`;
         return tableHTML;
     }
     
-    // 匯出Excel
     function exportToExcel() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('請先查詢時間表');
             return;
         }
+
         const wb = XLSX.utils.book_new();
         const rows = [];
+        
         rows.push([currentTitle]);
         rows.push([]);
+        
         const headerRow = ['時間', '節數', '星期一', '星期二', '星期三', '星期四', '星期五'];
         rows.push(headerRow);
+        
         const isClassQuery = currentTitle.includes('班別');
+        
         timeSlots.forEach(slot => {
             const row = [];
             row.push(`${slot.time}-${slot.endTime}`);
             row.push(slot.period || '');
+            
             if (slot.isBreak) {
                 for (let day = 1; day <= 5; day++) {
                     row.push(slot.label);
@@ -310,6 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const dayLessons = currentLessons.filter(
                         lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                     );
+                    
                     if (dayLessons.length === 0) {
                         if (day === 3 && slot.period === '10') {
                             row.push('(放學時間 15:30)');
@@ -322,6 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
+                            
                             if (hasChem) {
                                 row.push(`X2 (${teachers})`);
                             } else if (hasIct) {
@@ -337,17 +384,20 @@ document.addEventListener('DOMContentLoaded', function() {
                             const firstLesson = dayLessons[0];
                             const isPE = firstLesson.subject === 'PE';
                             const isMaup = firstLesson.subject === 'MAUP';
+                            
                             if (isPE) {
                                 const allPELessons = allLessons.filter(
                                     lesson => lesson.day === day && 
                                              lesson.period === parseInt(slot.period) &&
                                              lesson.subject === 'PE'
                                 );
+                                
                                 const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
                                 const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
                                     .filter(t => t !== firstLesson.teacher)
                                     .sort()
                                     .join('/');
+                                
                                 row.push(`${allClasses} PE${otherTeachers ? ` (${otherTeachers})` : ''}`);
                             } else if (isMaup) {
                                 row.push(`${firstLesson.class} MAUP`);
@@ -355,6 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
                                 const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
                                 let coTeachers = '';
+                                
                                 if (shouldShowCoTeachers) {
                                     const sameLessons = allLessons.filter(
                                         lesson => lesson.day === day && 
@@ -362,25 +413,28 @@ document.addEventListener('DOMContentLoaded', function() {
                                                  lesson.class === firstLesson.class &&
                                                  lesson.subject === firstLesson.subject
                                     );
+                                    
                                     coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
                                         .filter(t => t !== firstLesson.teacher)
                                         .sort()
                                         .join('/');
                                 }
+                                
                                 row.push(`${firstLesson.class} ${firstLesson.subject} ${firstLesson.room}${coTeachers ? ` (${coTeachers})` : ''}`);
                             }
                         }
                     }
                 }
             }
+            
             rows.push(row);
         });
+        
         const ws = XLSX.utils.aoa_to_sheet(rows);
         XLSX.utils.book_append_sheet(wb, ws, '時間表');
         XLSX.writeFile(wb, `${currentTitle}.xlsx`);
     }
     
-    // 格式化課程顯示 (用於導出)
     function formatLessonForExport(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -388,13 +442,27 @@ document.addEventListener('DOMContentLoaded', function() {
             if (subject.includes('!ICT')) subject = 'X3';
             return `${subject} (${lesson.teacher})`;
         }
+
+        const sameSubjectLessons = allLessons.filter(l =>
+            l.day === lesson.day &&
+            l.period === lesson.period &&
+            l.subject === lesson.subject &&
+            l.teacher === lesson.teacher &&
+            l.room === lesson.room
+        );
+
+        const classes = [...new Set(sameSubjectLessons.map(l => l.class))].sort();
+        const classDisplay = classes.length > 1
+            ? classes.join('/')
+            : lesson.class;
+
         if (lesson.subject === 'MAUP') {
-            return `${lesson.class} MAUP`;
+            return `${classDisplay} MAUP`;
         }
-        return `${lesson.class} ${lesson.subject} ${lesson.room}`;
+
+        return `${classDisplay} ${lesson.subject} ${lesson.room}`;
     }
 
-    // 按 Enter 鍵查詢
     teacherNameInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const query = teacherNameInput.value.trim();
@@ -420,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
             classDropdown.value = '';
         }
     });
+    
     classDropdown.addEventListener('change', function() {
         const className = classDropdown.value;
         if (className) {
@@ -428,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
             teacherDropdown.value = '';
         }
     });
-
+    
     function isClassQuery(query) {
         return /^[1-6][A-D]$/i.test(query);
     }
@@ -456,19 +525,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(loadCSV, 1000);
             });
     }
+    
     function populateDropdowns() {
         teacherDropdown.innerHTML = '<option value="">選擇教師...</option>';
         allTeachers.forEach(teacher => {
             teacherDropdown.innerHTML += `<option value="${teacher}">${teacher}</option>`;
         });
+        
         classDropdown.innerHTML = '<option value="">選擇班別...</option>';
         allClasses.forEach(cls => {
             classDropdown.innerHTML += `<option value="${cls}">${cls}</option>`;
         });
     }
+    
     function parseCSV(csv) {
         const lines = csv.split('\n');
         const result = [];
+        
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (line) {
@@ -486,41 +559,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+        
         return result;
     }
-
-    // 顯示教師時間表
+    
     function displayTimetable(teacherName) {
         currentLessons = allLessons.filter(item => 
             item.teacher.toUpperCase() === teacherName.toUpperCase()
         );
+        
         if (currentLessons.length === 0) {
             resultDiv.innerHTML = `<p>找不到教師 ${teacherName} 的時間表</p>`;
             timetableTable.innerHTML = '';
             currentTitle = '';
             return;
         }
+        
         currentTitle = `${teacherName} 的時間表`;
         resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons);
     }
-    // 顯示班別時間表
+    
     function displayClassTimetable(className) {
         currentLessons = allLessons.filter(item => 
             item.class.toUpperCase() === className.toUpperCase()
         );
+        
         if (currentLessons.length === 0) {
             resultDiv.innerHTML = `<p>找不到班別 ${className} 的時間表</p>`;
             timetableTable.innerHTML = '';
             currentTitle = '';
             return;
         }
+        
         currentTitle = `班別 ${className} 的時間表`;
         resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons, true);
     }
-
-    // 渲染時間表 (重點修正版)
+    
     function renderTimetable(lessons, isClassQuery = false) {
         let tableHTML = `
             <thead>
@@ -536,6 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </thead>
             <tbody>
         `;
+        
         timeSlots.forEach((slot, index) => {
             if (slot.isBreak) {
                 tableHTML += `
@@ -546,15 +623,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 return;
             }
+            
             tableHTML += `
                 <tr>
                     <td class="time-col">${slot.time}-${slot.endTime}</td>
                     <td class="period-col">${slot.period}</td>
             `;
+            
             for (let day = 1; day <= 5; day++) {
                 const dayLessons = lessons.filter(
                     lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                 );
+                
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td class="empty-cell">
@@ -569,6 +649,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     continue;
                 }
+                
                 if (dayLessons.length === 0) {
                     tableHTML += `<td class="empty-cell"></td>`;
                 } else {
@@ -577,6 +658,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                         const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
+                        
                         if (hasChem) {
                             tableHTML += `<td>
                                 <div class="main-lesson">
@@ -613,17 +695,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         const firstLesson = dayLessons[0];
                         const isPE = firstLesson.subject === 'PE';
                         const isMaup = firstLesson.subject === 'MAUP';
+                        
                         if (isPE) {
                             const allPELessons = allLessons.filter(
                                 lesson => lesson.day === day && 
                                          lesson.period === parseInt(slot.period) &&
                                          lesson.subject === 'PE'
                             );
+                            
                             const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
                             const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
                                 .filter(t => t !== firstLesson.teacher)
                                 .sort()
                                 .join('/');
+                            
                             tableHTML += `<td>
                                 <div class="main-lesson">
                                     <span class="subject" style="color:blue">${allClasses} PE</span>
@@ -640,6 +725,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
                             const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
                             let coTeachers = '';
+                            
                             if (shouldShowCoTeachers) {
                                 const sameLessons = allLessons.filter(
                                     lesson => lesson.day === day && 
@@ -647,11 +733,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                              lesson.class === firstLesson.class &&
                                              lesson.subject === firstLesson.subject
                                 );
+                                
                                 coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
                                     .filter(t => t !== firstLesson.teacher)
                                     .sort()
                                     .join('/');
                             }
+                            
                             tableHTML += `<td>
                                 <div class="main-lesson">
                                     <span class="subject" style="color:blue">${firstLesson.class} ${firstLesson.subject}</span>
@@ -663,13 +751,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+            
             tableHTML += `</tr>`;
         });
+        
         tableHTML += `</tbody>`;
         timetableTable.innerHTML = tableHTML;
     }
-
-    // 格式化課程顯示
+    
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -677,12 +766,26 @@ document.addEventListener('DOMContentLoaded', function() {
             if (subject.includes('!ICT')) subject = 'X3';
             return `<span class="subject" style="color:blue">${subject}</span> <span class="teacher" style="font-size:0.8em">(${lesson.teacher})</span>`;
         }
+
+        const sameSubjectLessons = allLessons.filter(l =>
+            l.day === lesson.day &&
+            l.period === lesson.period &&
+            l.subject === lesson.subject &&
+            l.teacher === lesson.teacher &&
+            l.room === lesson.room
+        );
+
+        const classes = [...new Set(sameSubjectLessons.map(l => l.class))].sort();
+        const classDisplay = classes.length > 1
+            ? classes.join('/')
+            : lesson.class;
+
         if (lesson.subject === 'MAUP') {
-            return `<span class="subject" style="color:blue">${lesson.class} MAUP</span>`;
+            return `<span class="subject" style="color:blue">${classDisplay} MAUP</span>`;
         }
-        return `<span class="subject" style="color:blue">${lesson.class} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:0.7em">${lesson.room}</span>`;
+
+        return `<span class="subject" style="color:blue">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:0.7em">${lesson.room}</span>`;
     }
 
-    // 自動載入 CSV 文件
     loadCSV();
 });
