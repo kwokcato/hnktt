@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             jsPDF: { 
                 unit: 'mm', 
-                format: 'a5',  // a3
+                format: 'a4',  // a3
                 orientation: 'landscape',
                 compress: true
             },
@@ -154,12 +154,12 @@ document.addEventListener('DOMContentLoaded', function() {
             ...opt,
             html2canvas: {
                 ...opt.html2canvas,
-                scale: 1.5,
+                scale: 1, //1.5
                 windowHeight: document.getElementById('timetable').scrollHeight + 500
             },
             jsPDF: {
                 ...opt.jsPDF,
-                format: 'a5' // 使用更大的紙張尺寸
+                format: 'a4' // 使用更大的紙張尺寸
             }
         };
         
@@ -177,13 +177,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <table style="width:100%;border-collapse:collapse;margin-top:20px;">
                 <thead>
                     <tr>
-                        <th style="width:100px;background-color:#3498db;color:white;">時間</th>
-                        <th style="width:50px;background-color:#3498db;color:white;">節數</th>
-                        <th style="background-color:#3498db;color:white;">星期一</th>
-                        <th style="background-color:#3498db;color:white;">星期二</th>
-                        <th style="background-color:#3498db;color:white;">星期三</th>
-                        <th style="background-color:#3498db;color:white;">星期四</th>
-                        <th style="background-color:#3498db;color:white;">星期五</th>
+                        <th style="width:100px;background-color:#3498db;color:white;font-size:0.8em;"">時間</th>
+                        <th style="width:50px;background-color:#3498db;color:white;font-size:0.8em;">節數</th>
+                        <th style="background-color:#3498db;color:white;font-size:0.8em;">星期一</th>
+                        <th style="background-color:#3498db;color:white;font-size:0.8em;">星期二</th>
+                        <th style="background-color:#3498db;color:white;font-size:0.8em;">星期三</th>
+                        <th style="background-color:#3498db;color:white;font-size:0.8em;">星期四</th>
+                        <th style="background-color:#3498db;color:white;font-size:0.8em;">星期五</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue">${subjects}<br></span>
+                                    <span style="color:blue;font-size:0.8em"">${subjects}<br></span>
                                     <span style="color:#555;font-size:0.7em"> ${rooms}<br></span>
                                     <span style="font-size:0.8em">(${teachers})</span>
                                 </div>
@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span style="color:blue";font-size:0.8em">${classDisplay} ${firstLesson.subject}<br></span>
                                     <span style="color:#555;font-size:0.7em"> ${firstLesson.room}<br></span>
                                     ${coTeachers ? `<span style="font-size:0.8em">(${coTeachers})</span>` : ''}
                                 </div>
