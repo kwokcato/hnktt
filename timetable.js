@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:9px">${subjects}<br></span>
+                                    <span style="color:blue;font-size:12px">${subjects}<br></span>
                                     <span style="color:#555;font-size:8px"> ${rooms}<br></span>
                                     <span style="font-size:8px">(${teachers})</span>
                                 </div>
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:9px">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span style="color:blue;font-size:12px">${classDisplay} ${firstLesson.subject}<br></span>
                                     <span style="color:#555;font-size:8px"> ${firstLesson.room}<br></span>
                                     ${coTeachers ? `<span style="font-size:8px">(${coTeachers})</span>` : ''}
                                 </div>
@@ -519,12 +519,12 @@ document.addEventListener('DOMContentLoaded', function() {
             let subject = lesson.subject;
             if (subject.includes('!CHEM')) subject = 'X2';
             if (subject.includes('!ICT')) subject = 'X3';
-            return `<span style="color:blue;font-size:10px">${subject}</span> <span style="font-size:8px">(${lesson.teacher})</span>`;
+            return `<span style="color:blue;font-size:12px">${subject}</span> <span style="font-size:8px">(${lesson.teacher})</span>`;
         }
         if (lesson.subject === 'MAUP') {
             return `<span style="color:blue;font-size:9px">${lesson.class} MAUP</span>`;
         }
-        return `<span style="color:blue;font-size:10px">${lesson.class} ${lesson.subject}</span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
+        return `<span style="color:blue;font-size:12px">${lesson.class} ${lesson.subject}</span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
     }
 
     // 按 Enter 鍵查詢
@@ -760,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:10px;">${subjects}<br></span>
+                                    <span class="subject" style="color:blue;font-size:12px;">${subjects}<br></span>
                                     <span class="room" style="color:#555;font-size:8px;"> ${rooms}<br></span>
                                     <span class="teacher" style="font-size:9px;">(${teachers})</span>
                                 </div>
@@ -786,14 +786,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:11px;">${allClasses} PE</span>
+                                    <span class="subject" style="color:blue;font-size:12px;">${allClasses} PE</span>
                                     ${otherTeachers ? `<span class="teacher" style="font-size:10px;">(${otherTeachers})</span>` : ''}
                                 </div>
                             </td>`;
                         } else if (isMaup) {
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:11px;">${firstLesson.class} MAUP</span>
+                                    <span class="subject" style="color:blue;font-size:12px;">${firstLesson.class} MAUP</span>
                                 </div>
                             </td>`;
                         } else {
@@ -831,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:10px;">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span class="subject" style="color:blue;font-size:12px;">${classDisplay} ${firstLesson.subject}<br></span>
                                     <span class="room" style="color:#555;font-size:8px;"> ${firstLesson.room}<br></span>
                                     ${coTeachers ? `<span class="teacher" style="font-size:9px;">(${coTeachers})</span>` : ''}
                                 </div>
@@ -854,7 +854,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let subject = lesson.subject;
             if (subject.includes('!CHEM')) subject = 'X2';
             if (subject.includes('!ICT')) subject = 'X3';
-            return `<span class="subject" style="color:blue;font-size:10px;">${subject}</span> <span class="teacher" style="font-size:10px;">(${lesson.teacher})</span>`;
+            return `<span class="subject" style="color:blue;font-size:12px;">${subject}</span> <span class="teacher" style="font-size:10px;">(${lesson.teacher})</span>`;
         }
         if (lesson.subject === 'MAUP') {
             return `<span class="subject" style="color:blue;font-size:10px;">${lesson.class} MAUP</span>`;
@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
             classDisplay = simplifiedClasses;
         }
 
-        return `<span class="subject" style="color:blue;font-size:10px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
+        return `<span class="subject" style="color:blue;font-size:12px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
     }
 
     // 自動載入 CSV 文件
