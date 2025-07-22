@@ -317,9 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const teachers = lessons.map(l => l.teacher);
         // 分組：同班同科多位教師
         if (isSameClass && isSameSubject && teachers.length > 1) {
-            // 對每個教師只顯示自己那一組
-            // 取出查詢的教師（在 displayTimetable 可拿到）
-            // 需取得目前顯示的教師名
+            // 取得目前顯示的教師名
             const currentTeacher = currentTitle.replace(' 的時間表','');
             const myLesson = lessons.find(l => l.teacher === currentTeacher);
             if (myLesson) {
