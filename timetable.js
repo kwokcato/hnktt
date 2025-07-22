@@ -177,8 +177,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:10px;">
                 <thead>
                     <tr>
-                        <th style="width:80px;background-color:#3498db;color:white;font-size:9px;">時間</th>
-                        <th style="width:30px;background-color:#3498db;color:white;font-size:9px;">節數</th>
+                        <th style="width:50px;background-color:#3498db;color:white;font-size:9px;">時間</th>  <!-- 80 -->
+                        <th style="width:20px;background-color:#3498db;color:white;font-size:9px;">節數</th>  <!-- 30 -->
                         <th style="background-color:#3498db;color:white;font-size:9px;">星期一</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">星期二</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">星期三</th>
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (slot.isBreak) {
                 tableHTML += `
                     <tr>
-                        <td style="width:80px;background-color:#3498db;color:white;font-size:9px;">${slot.time}-${slot.endTime}</td>
+                        <td style="width:50px;background-color:#3498db;color:white;font-size:9px;">${slot.time}-${slot.endTime}</td>
                         <td style="background-color:#e6e6e6;color:#777;font-style:italic;font-size:9px;" colspan="6">${slot.label}</td>
                     </tr>
                 `;
@@ -202,8 +202,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             tableHTML += `
                 <tr>
-                    <td style="width:80px;background-color:#3498db;color:white;font-size:9px;">${slot.time}-${slot.endTime}</td>
-                    <td style="width:30px;background-color:#3498db;color:white;font-size:9px;">${slot.period}</td>
+                    <td style="width:50px;background-color:#3498db;color:white;font-size:9px;">${slot.time}-${slot.endTime}</td>
+                    <td style="width:20px;background-color:#3498db;color:white;font-size:9px;">${slot.period}</td>
             `;
             
             for (let day = 1; day <= 5; day++) {
