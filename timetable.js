@@ -495,113 +495,129 @@ function formatMultipleClasses(lessons, isClassQuery) {
         renderTimetable(currentLessons, true);
     }
 
-    function renderTimetable(lessons, isClassQuery = false) {
-        let tableHTML = `
-            <thead>
-                <tr>
-                    <th class="time-col" style="padding: 4px;">時間</th>
-                    <th class="period-col" style="padding: 4px;">節數</th>
-                    <th style="padding: 4px;">星期一</th>
-                    <th style="padding: 4px;">星期二</th>
-                    <th style="padding: 4px;">星期三</th>
-                    <th style="padding: 4px;">星期四</th>
-                    <th style="padding: 4px;">星期五</th>
-                </tr>
-            </thead>
-            <tbody>
-        `;
-        timeSlots.forEach((slot, index) => {
-            if (slot.isBreak) {
-                tableHTML += `
-                    <tr>
-                        <td class="time-col">${slot.time}-${slot.endTime}</td>
-                        <td class="break-cell" colspan="6">${slot.label}</td>
-                    </tr>
-                `;
-                return;
-            }
+function renderTimetable(lessons, isClassQuery = false) {
+    let tableHTML = `
+        <thead>
+            <tr>
+                <th class="time-col" style="padding: 4px;">時間</th>
+                <th class="period-col" style="padding: 4px;">節數</th>
+                <th style="padding: 4px;">星期一</th>
+                <th style="padding: 4px;">星期二</th>
+                <th style="padding: 4px;">星期三</th>
+                <th style="padding: 4px;">星期四</th>
+                <th style="padding: 4px;">星期五</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    // 取目前查詢教師（如果不是班別查詢）
+    const currentTeacher = isClassQuery ? null : currentTitle.replace(' 的時間表', '').trim().toUpperCase();
+
+    timeSlots.forEach((slot, index) => {
+        if (slot.isBreak) {
             tableHTML += `
                 <tr>
                     <td class="time-col">${slot.time}-${slot.endTime}</td>
-                    <td class="period-col">${slot.period}</td>
+                    <td class="break-cell" colspan="6">${slot.label}</td>
+                </tr>
             `;
-            for (let day = 1; day <= 5; day++) {
-                const dayLessons = lessons.filter(
-                    lesson => lesson.day === day && lesson.period === parseInt(slot.period)
-                );
-                if (day === 3 && slot.period === '10') {
-                    if (dayLessons.length === 0) {
-                        tableHTML += `<td class="empty-cell">
-                            <div class="dismissal-time">(放學時間 15:30)</div>
-                        </td>`;
-                    } else {
-                        if (!isClassQuery) {
-                            tableHTML += `<td>
-                                <div class="main-lesson">${formatMultipleClasses(dayLessons, false)}</div>
-                                <div class="dismissal-time">(放學時間 15:30)</div>
-                            </td>`;
-                        } else {
-                            const firstLesson = dayLessons[0];
-                            tableHTML += `<td>
-                                <div class="main-lesson">${formatLesson(firstLesson, true)}</div>
-                                <div class="dismissal-time">(放學時間 15:30)</div>
-                            </td>`;
-                        }
-                    }
-                    continue;
-                }
+            return;
+        }
+        tableHTML += `
+            <tr>
+                <td class="time-col">${slot.time}-${slot.endTime}</td>
+                <td class="period-col">${slot.period}</td>
+        `;
+        for (let day = 1; day <= 5; day++) {
+            const dayLessons = lessons.filter(
+                lesson => lesson.day === day && lesson.period === parseInt(slot.period)
+            );
+            // 星期三第10節特殊處理
+            if (day === 3 && slot.period === '10') {
                 if (dayLessons.length === 0) {
+                    tableHTML += `<td class="empty-cell">
+                        <div class="dismissal-time">(放學時間 15:30)</div>
+                    </td>`;
+                } else {
+                    const firstLesson = dayLessons[0];
+                    tableHTML += `<td>
+                        <div class="main-lesson">${formatLesson(firstLesson, isClassQuery)}</div>
+                        <div class="dismissal-time">(放學時間 15:30)</div>
+                    </td>`;
+                }
+                continue;
+            }
+            if (dayLessons.length === 0) {
+                tableHTML += `<td class="empty-cell"></td>`;
+            } else if (isClassQuery) {
+                // 班別查詢：保持你現有的邏輯
+                const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
+                const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
+                const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
+                const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
+                if (hasChem) {
+                    tableHTML += `<td>
+                        <div class="main-lesson">
+                            <span class="subject" style="color:blue">X2</span>
+                            <span class="teacher" style="font-size:0.8em">(${teachers})</span>
+                        </div>
+                    </td>`;
+                } else if (hasIct) {
+                    tableHTML += `<td>
+                        <div class="main-lesson">
+                            <span class="subject" style="color:blue">X3</span>
+                            <span class="teacher" style="font-size:0.8em">(${teachers})</span>
+                        </div>
+                    </td>`;
+                } else if (hasMaup) {
+                    tableHTML += `<td>
+                        <div class="main-lesson">
+                            <span class="subject" style="color:blue">MAUP</span>
+                            <span class="teacher" style="font-size:0.8em">(${teachers})</span>
+                        </div>
+                    </td>`;
+                } else {
+                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                    const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
+                    tableHTML += `<td>
+                        <div class="main-lesson">
+                            <span class="subject" style="color:blue">${subjects}</span>
+                            <span class="room" style="color:#555;font-size:0.7em"> ${rooms}</span>
+                            <span class="teacher" style="font-size:0.8em">(${teachers})</span>
+                        </div>
+                    </td>`;
+                }
+            } else {
+                // 教師查詢：重點處理兼教顯示
+                // 取得目前教師自己的課程
+                const myLesson = dayLessons.find(l => l.teacher.trim().toUpperCase() === currentTeacher);
+                if (!myLesson) {
+                    // fallback（理論上不會發生）
                     tableHTML += `<td class="empty-cell"></td>`;
                 } else {
-                    if (isClassQuery) {
-                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
-                        const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
-                        const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
-                        const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
-                        if (hasChem) {
-                            tableHTML += `<td>
-                                <div class="main-lesson">
-                                    <span class="subject" style="color:blue">X2</span>
-                                    <span class="teacher" style="font-size:0.8em">(${teachers})</span>
-                                </div>
-                            </td>`;
-                        } else if (hasIct) {
-                            tableHTML += `<td>
-                                <div class="main-lesson">
-                                    <span class="subject" style="color:blue">X3</span>
-                                    <span class="teacher" style="font-size:0.8em">(${teachers})</span>
-                                </div>
-                            </td>`;
-                        } else if (hasMaup) {
-                            tableHTML += `<td>
-                                <div class="main-lesson">
-                                    <span class="subject" style="color:blue">MAUP</span>
-                                    <span class="teacher" style="font-size:0.8em">(${teachers})</span>
-                                </div>
-                            </td>`;
-                        } else {
-                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
-                            const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
-                            tableHTML += `<td>
-                                <div class="main-lesson">
-                                    <span class="subject" style="color:blue">${subjects}</span>
-                                    <span class="room" style="color:#555;font-size:0.7em"> ${rooms}</span>
-                                    <span class="teacher" style="font-size:0.8em">(${teachers})</span>
-                                </div>
-                            </td>`;
-                        }
-                    } else {
-                        tableHTML += `<td>
-                            <div class="main-lesson">${formatMultipleClasses(dayLessons, false)}</div>
-                        </td>`;
-                    }
+                    // 找出同班同科同時段的所有教師(包含自己)
+                    const coTeachers = dayLessons
+                        .filter(l => l.class.trim().toUpperCase() === myLesson.class.trim().toUpperCase()
+                                  && l.subject.trim().toUpperCase() === myLesson.subject.trim().toUpperCase())
+                        .map(l => l.teacher.trim())
+                        .filter(t => t.toUpperCase() !== currentTeacher)
+                        .join('/');
+                    // 顯示內容
+                    tableHTML += `<td>
+                        <div class="main-lesson">
+                            <span class="subject" style="color:blue">${myLesson.class} ${myLesson.subject}</span>
+                            <span class="room" style="color:#555;font-size:0.7em">(${myLesson.room})</span>
+                            ${coTeachers ? `<span class="teacher" style="font-size:0.8em">(${coTeachers})</span>` : ''}
+                        </div>
+                    </td>`;
                 }
             }
-            tableHTML += `</tr>`;
-        });
-        tableHTML += `</tbody>`;
-        timetableTable.innerHTML = tableHTML;
-    }
+        }
+        tableHTML += `</tr>`;
+    });
+    tableHTML += `</tbody>`;
+    timetableTable.innerHTML = tableHTML;
+}
 
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
