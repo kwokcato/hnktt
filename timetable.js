@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         const opt = {
-            margin: [10, 5, 10, 5], // 上下左右邊距
+            margin: [5, 5, 5, 5], // 上下左右邊距
             filename: `${currentTitle}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { 
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             jsPDF: { 
                 unit: 'mm', 
-                format: 'a3', 
+                format: 'a5',  // a3
                 orientation: 'landscape',
                 compress: true
             },
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             jsPDF: {
                 ...opt.jsPDF,
-                format: 'a2' // 使用更大的紙張尺寸
+                format: 'a5' // 使用更大的紙張尺寸
             }
         };
         
@@ -266,8 +266,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue">${subjects}</span>
-                                    <span style="color:#555;font-size:0.7em"> ${rooms}</span>
+                                    <span style="color:blue">${subjects}<br></span>
+                                    <span style="color:#555;font-size:0.7em"> ${rooms}<br></span>
                                     <span style="font-size:0.8em">(${teachers})</span>
                                 </div>
                             </td>`;
@@ -341,8 +341,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue">${classDisplay} ${firstLesson.subject}</span>
-                                    <span style="color:#555;font-size:0.7em"> ${firstLesson.room}</span>
+                                    <span style="color:blue">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span style="color:#555;font-size:0.7em"> ${firstLesson.room}<br></span>
                                     ${coTeachers ? `<span style="font-size:0.8em">(${coTeachers})</span>` : ''}
                                 </div>
                             </td>`;
