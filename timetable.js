@@ -801,8 +801,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue">${subjects}</span><br>
-                                    <span class="room" style="color:#555;font-size:0.7em"> ${rooms}</span><br>
+                                    <span class="subject" style="color:blue">${subjects}<br></span>
+                                    <span class="room" style="color:#555;font-size:0.7em"> ${rooms}<br></span>
                                     <span class="teacher" style="font-size:0.8em">(${teachers})</span>
                                 </div>
                             </td>`;
@@ -876,8 +876,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue">${classDisplay} ${firstLesson.subject}</span><br>
-                                    <span class="room" style="color:#555;font-size:0.7em"> ${firstLesson.room}</span>><br>
+                                    <span class="subject" style="color:blue">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span class="room" style="color:#555;font-size:0.7em"> ${firstLesson.room}<br></span>>
                                     ${coTeachers ? `<span class="teacher" style="font-size:0.8em">(${coTeachers})</span>` : ''}
                                 </div>
                             </td>`;
