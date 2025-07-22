@@ -15,18 +15,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 時間段定義 (true > 顯示 label, false > 不顯示 label)
     const timeSlots = [
-        { time: '8:05', period: '0', endTime: '8:20', isBreak: true, label: '早會' },
+        { time: '8:05', period: '0', endTime: '8:20', isBreak: true, label: 'ASSEMBLY' },
         { time: '8:20', period: '1', endTime: '8:55', isBreak: false },
         { time: '8:55', period: '2', endTime: '9:30', isBreak: false },
-        { time: '9:30', period: '', endTime: '9:45', isBreak: true, label: '小息' },
+        { time: '9:30', period: '', endTime: '9:45', isBreak: true, label: 'RECESS' },
         { time: '9:45', period: '3', endTime: '10:20', isBreak: false },
         { time: '10:20', period: '4', endTime: '10:55', isBreak: false },
-        { time: '10:55', period: '', endTime: '11:10', isBreak: true, label: '小息' },
+        { time: '10:55', period: '', endTime: '11:10', isBreak: true, label: 'RECESS' },
         { time: '11:10', period: '5', endTime: '11:45', isBreak: false },
         { time: '11:45', period: '6', endTime: '12:20', isBreak: false },
         { time: '12:20', period: '7', endTime: '12:55', isBreak: false },
-        { time: '12:55', period: '', endTime: '14:00', isBreak: true, label: '午膳' },
-        { time: '14:00', period: '', endTime: '14:05', isBreak: true, label: '預備節' },
+        { time: '12:55', period: '', endTime: '14:00', isBreak: true, label: 'LUNCH' },
+        { time: '14:00', period: '', endTime: '14:05', isBreak: true, label: 'ASSEMBLY' },
         { time: '14:05', period: '8', endTime: '14:40', isBreak: false },
         { time: '14:40', period: '9', endTime: '15:15', isBreak: false },
         { time: '15:15', period: '10', endTime: '15:50', isBreak: false }
