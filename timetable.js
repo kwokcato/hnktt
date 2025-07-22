@@ -266,9 +266,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:12px">${subjects}<br></span>
-                                    <span style="color:#555;font-size:8px"> ${rooms}<br></span>
-                                    <span style="font-size:8px">(${teachers})</span>
+                                    <span style="color:blue;font-size:14px">${subjects}<br></span>
+                                    <span style="color:#555;font-size:10px"> ${rooms}<br></span>
+                                    <span style="font-size:10px">(${teachers})</span>
                                 </div>
                             </td>`;
                         }
@@ -339,9 +339,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:12px">${classDisplay} ${firstLesson.subject}<br></span>
-                                    <span style="color:#555;font-size:8px"> ${firstLesson.room}<br></span>
-                                    ${coTeachers ? `<span style="font-size:8px">(${coTeachers})</span>` : ''}
+                                    <span style="color:blue;font-size:14px">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span style="color:#555;font-size:10px"> ${firstLesson.room}<br></span>
+                                    ${coTeachers ? `<span style="font-size:10px">(${coTeachers})</span>` : ''}
                                 </div>
                             </td>`;
                         }
@@ -760,9 +760,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:12px;">${subjects}<br></span>
-                                    <span class="room" style="color:#555;font-size:8px;"> ${rooms}<br></span>
-                                    <span class="teacher" style="font-size:9px;">(${teachers})</span>
+                                    <span class="subject" style="color:blue;font-size:14px;">${subjects}<br></span>
+                                    <span class="room" style="color:#555;font-size:10px;"> ${rooms}<br></span>
+                                    <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                 </div>
                             </td>`;
                         }
@@ -786,14 +786,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:12px;">${allClasses} PE</span>
+                                    <span class="subject" style="color:blue;font-size:14px;">${allClasses} PE</span>
                                     ${otherTeachers ? `<span class="teacher" style="font-size:10px;">(${otherTeachers})</span>` : ''}
                                 </div>
                             </td>`;
                         } else if (isMaup) {
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:12px;">${firstLesson.class} MAUP</span>
+                                    <span class="subject" style="color:blue;font-size:14px;">${firstLesson.class} MAUP</span>
                                 </div>
                             </td>`;
                         } else {
@@ -831,9 +831,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:12px;">${classDisplay} ${firstLesson.subject}<br></span>
-                                    <span class="room" style="color:#555;font-size:8px;"> ${firstLesson.room}<br></span>
-                                    ${coTeachers ? `<span class="teacher" style="font-size:9px;">(${coTeachers})</span>` : ''}
+                                    <span class="subject" style="color:blue;font-size:14px;">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span class="room" style="color:#555;font-size:10px;"> ${firstLesson.room}<br></span>
+                                    ${coTeachers ? `<span class="teacher" style="font-size:10px;">(${coTeachers})</span>` : ''}
                                 </div>
                             </td>`;
                         }
@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
             classDisplay = simplifiedClasses;
         }
 
-        return `<span class="subject" style="color:blue;font-size:12px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
+        return `<span class="subject" style="color:blue;font-size:14px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
     }
 
     // 自動載入 CSV 文件
