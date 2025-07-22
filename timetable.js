@@ -447,8 +447,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             // 檢查是否有MAUP科目
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             // 檢查是否有CHEM或ICT科目
-                            const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
-                            const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
+                            const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
+                            const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
                             
                             if (hasChem) {
                                 row.push(`X2 (${teachers})`);
@@ -543,8 +543,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatLessonForExport(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
-            if (subject.includes('CHEM')) subject = 'X2';
-            if (subject.includes('ICT')) subject = 'X3';
+            if (subject.includes('!CHEM')) subject = 'X2';
+            if (subject.includes('!ICT')) subject = 'X3';
             return `${subject} (${lesson.teacher})`;
         }
         if (lesson.subject === 'MAUP') {
@@ -801,9 +801,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue">${subjects}</span>
-                                    <span class="room" style="color:#555;font-size:0.7em"> ${rooms}</span>
-                                    <span class="teacher" style="font-size:0.8em">(${teachers})</span>
+                                    <span class="subject" style="color:blue">${subjects}</span><br>  //***
+                                    <span class="room" style="color:#555;font-size:0.7em"> ${rooms}</span><br> //***
+                                    <span class="teacher" style="font-size:0.8em">(${teachers})</span> //***
                                 </div>
                             </td>`;
                         }
@@ -876,8 +876,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue">${classDisplay} ${firstLesson.subject}</span>
-                                    <span class="room" style="color:#555;font-size:0.7em"> ${firstLesson.room}</span>
+                                    <span class="subject" style="color:blue">${classDisplay} ${firstLesson.subject}</span><br> //***
+                                    <span class="room" style="color:#555;font-size:0.7em"> ${firstLesson.room}</span>><br> //***
                                     ${coTeachers ? `<span class="teacher" style="font-size:0.8em">(${coTeachers})</span>` : ''}
                                 </div>
                             </td>`;
