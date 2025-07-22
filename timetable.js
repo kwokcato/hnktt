@@ -877,7 +877,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             tableHTML += `<td>
                                 <div class="main-lesson">
                                     <span class="subject" style="color:blue">${classDisplay} ${firstLesson.subject}<br></span>
-                                    <span class="room" style="color:#555;font-size:0.7em"> ${firstLesson.room}<br></span>>
+                                    <span class="room" style="color:#555;font-size:0.7em"> ${firstLesson.room}<br></span>
                                     ${coTeachers ? `<span class="teacher" style="font-size:0.8em">(${coTeachers})</span>` : ''}
                                 </div>
                             </td>`;
