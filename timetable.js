@@ -10,10 +10,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let allLessons = []; // 存儲所有課程數據
     let allTeachers = []; // 存儲所有教師名單
     let allClasses = []; // 存儲所有班別名單
-    let currentTitle = ''; // 當前顯示的時間表標題
+    let currentTitle = ''; // 當前顯示的Time表標題
     let currentLessons = []; // 當前顯示的課程數據
     
-    // 時間段定義 (true > 顯示 label, false > 不顯示 label)
+    // Time段定義 (true > 顯示 label, false > 不顯示 label)
     const timeSlots = [
         { time: '8:05', period: '0', endTime: '8:20', isBreak: true, label: 'ASSEMBLY' },
         { time: '8:20', period: '1', endTime: '8:55', isBreak: false },
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化導出按鈕
     function initExportButtons() {
         exportBtnGroup.innerHTML = `
-            <button id="printBtn" class="export-btn">列印時間表</button>
+            <button id="printBtn" class="export-btn">列印Time表</button>
             <button id="pdfBtn" class="export-btn">匯出PDF</button>
             <button id="excelBtn" class="export-btn">匯出Excel</button>
         `;
@@ -45,10 +45,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
     }
 
-    // 列印時間表
+    // 列印Time表
     function printTimetable() {
         if (!currentTitle || currentLessons.length === 0) {
-            alert('請先查詢時間表');
+            alert('請先查詢Time表');
             return;
         }
         
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 匯出PDF
     function exportToPDF() {
         if (!currentTitle || currentLessons.length === 0) {
-            alert('請先查詢時間表');
+            alert('請先查詢Time表');
             return;
         }
         
@@ -171,14 +171,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 生成時間表HTML (用於PDF和列印)
+    // 生成Time表HTML (用於PDF和列印)
     function generateTimetableHTML(lessons, isClassQuery) {
         let tableHTML = `
             <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:10px;">
                 <thead>
                     <tr>
-                        <th style="width:50px;background-color:#3498db;color:white;font-size:9px;">時間</th>  <!-- 80 -->
-                        <th style="width:20px;background-color:#3498db;color:white;font-size:9px;">節數</th>  <!-- 30 -->
+                        <th style="width:50px;background-color:#3498db;color:white;font-size:9px;">Time</th>  <!-- 80 -->
+                        <th style="width:20px;background-color:#3498db;color:white;font-size:9px;">Period</th>  <!-- 30 -->
                         <th style="background-color:#3498db;color:white;font-size:9px;">Monday</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">Tuesday</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">Wednesday</th>
@@ -215,13 +215,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td style="background-color:#f9f9f9;">
-                            <div class="dismissal-time" style="font-size:8px;">(放學時間 15:30)</div>
+                            <div class="dismissal-time" style="font-size:8px;">(放學Time 15:30)</div>
                         </td>`;
                     } else {
                         const firstLesson = dayLessons[0];
                         tableHTML += `<td>
                             <div>${formatLessonForExport(firstLesson, isClassQuery)}</div>
-                            <div class="dismissal-time" style="font-size:8px;">(放學時間 15:30)</div>
+                            <div class="dismissal-time" style="font-size:8px;">(放學Time 15:30)</div>
                         </td>`;
                     }
                     continue;
@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 匯出Excel
     function exportToExcel() {
         if (!currentTitle || currentLessons.length === 0) {
-            alert('請先查詢時間表');
+            alert('請先查詢Time表');
             return;
         }
 
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
         rows.push([currentTitle]);
         rows.push([]);
         
-        const headerRow = ['時間', '節數', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const headerRow = ['Time', 'Period', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         rows.push(headerRow);
         
         const isClassQuery = currentTitle.includes('班別');
@@ -421,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (dayLessons.length === 0) {
                         if (day === 3 && slot.period === '10') {
-                            row.push('(放學時間 15:30)');
+                            row.push('(放學Time 15:30)');
                         } else {
                             row.push('');
                         }
@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         const ws = XLSX.utils.aoa_to_sheet(rows);
-        XLSX.utils.book_append_sheet(wb, ws, '時間表');
+        XLSX.utils.book_append_sheet(wb, ws, 'Time表');
         XLSX.writeFile(wb, `${currentTitle}.xlsx`);
     }
     
@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .map(item => item.class.trim()))].sort();
                 populateDropdowns();
                 loadingDiv.style.display = 'none';
-                resultDiv.innerHTML = '<p>時間表數據已載入，請輸入教師姓名或班別(如1A)</p>';
+                resultDiv.innerHTML = '<p>Time表數據已載入，請輸入教師姓名或班別(如1A)</p>';
                 initExportButtons();
             })
             .catch(error => {
@@ -634,49 +634,49 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
     
-    // 顯示教師時間表
+    // 顯示教師Time表
     function displayTimetable(teacherName) {
         currentLessons = allLessons.filter(item => 
             item.teacher.toUpperCase() === teacherName.toUpperCase()
         );
         
         if (currentLessons.length === 0) {
-            resultDiv.innerHTML = `<p>找不到教師 ${teacherName} 的時間表</p>`;
+            resultDiv.innerHTML = `<p>找不到教師 ${teacherName} 的Time表</p>`;
             timetableTable.innerHTML = '';
             currentTitle = '';
             return;
         }
         
-        currentTitle = `${teacherName} 的時間表`;
+        currentTitle = `${teacherName} 的Time表`;
         resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons);
     }
     
-    // 顯示班別時間表
+    // 顯示班別Time表
     function displayClassTimetable(className) {
         currentLessons = allLessons.filter(item => 
             item.class.toUpperCase() === className.toUpperCase()
         );
         
         if (currentLessons.length === 0) {
-            resultDiv.innerHTML = `<p>找不到班別 ${className} 的時間表</p>`;
+            resultDiv.innerHTML = `<p>找不到班別 ${className} 的Time表</p>`;
             timetableTable.innerHTML = '';
             currentTitle = '';
             return;
         }
         
-        currentTitle = `班別 ${className} 的時間表`;
+        currentTitle = `班別 ${className} 的Time表`;
         resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons, true);
     }
     
-    // 渲染時間表 (共用函數)
+    // 渲染Time表 (共用函數)
     function renderTimetable(lessons, isClassQuery = false) {
         let tableHTML = `
             <thead>
                 <tr>
-                    <th class="time-col" style="padding: 4px;font-size:11px;">時間</th>
-                    <th class="period-col" style="padding: 4px;font-size:11px;">節數</th>
+                    <th class="time-col" style="padding: 4px;font-size:11px;">Time</th>
+                    <th class="period-col" style="padding: 4px;font-size:11px;">Period</th>
                     <th style="padding: 4px;font-size:11px;">Monday</th>
                     <th style="padding: 4px;font-size:11px;">Tuesday</th>
                     <th style="padding: 4px;font-size:11px;">Wednesday</th>
@@ -712,13 +712,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td class="empty-cell">
-                            <div class="dismissal-time" style="font-size:10px;">(放學時間 15:30)</div>
+                            <div class="dismissal-time" style="font-size:10px;">(放學Time 15:30)</div>
                         </td>`;
                     } else {
                         const firstLesson = dayLessons[0];
                         tableHTML += `<td>
                             <div class="main-lesson">${formatLesson(firstLesson, isClassQuery)}</div>
-                            <div class="dismissal-time" style="font-size:10px;">(放學時間 15:30)</div>
+                            <div class="dismissal-time" style="font-size:10px;">(放學Time 15:30)</div>
                         </td>`;
                     }
                     continue;
