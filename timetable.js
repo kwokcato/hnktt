@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
         { time: '15:15', period: '10', endTime: '15:50', isBreak: false }
     ];
 
-    // 初始化導出按鈕
     function initExportButtons() {
         exportBtnGroup.innerHTML = `
             <button id="printBtn" class="export-btn">列印時間表</button>
@@ -44,7 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
     }
 
-    // 列印時間表
     function printTimetable() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('請先查詢時間表');
@@ -88,7 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
         printWindow.document.close();
     }
 
-    // 匯出PDF
     function exportToPDF() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('請先查詢時間表');
@@ -134,7 +131,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 生成時間表HTML (用於PDF和列印)
     function generateTimetableHTML(lessons, isClassQuery) {
         let tableHTML = `
             <table style="width:100%;border-collapse:collapse;margin-top:20px;">
@@ -178,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         if (!isClassQuery) {
                             tableHTML += `<td>
-                                <div>${formatMultipleClasses(dayLessons, false)}</div>
+                                <div>${formatMultipleClassesWithCoTeachers(dayLessons, false)}</div>
                                 <div class="dismissal-time">(放學時間 15:30)</div>
                             </td>`;
                         } else {
@@ -233,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     } else {
                         tableHTML += `<td>
-                            <div>${formatMultipleClasses(dayLessons, false)}</div>
+                            <div>${formatMultipleClassesWithCoTeachers(dayLessons, false)}</div>
                         </td>`;
                     }
                 }
@@ -244,7 +240,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return tableHTML;
     }
 
-    // 匯出Excel
     function exportToExcel() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('請先查詢時間表');
@@ -294,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 row.push(`${subjects} ${rooms} (${teachers})`);
                             }
                         } else {
-                            row.push(formatMultipleClassesText(dayLessons));
+                            row.push(formatMultipleClassesWithCoTeachersText(dayLessons));
                         }
                     }
                 }
@@ -306,15 +301,32 @@ document.addEventListener('DOMContentLoaded', function() {
         XLSX.writeFile(wb, `${currentTitle}.xlsx`);
     }
 
-    // 教師查詢：同一時段多班顯示（5A/B/C/D ICT CR1）
-    function formatMultipleClasses(lessons, isClassQuery) {
+    // 這是關鍵修正版：同班同科多教師，顯示所有教師及房間
+    function formatMultipleClassesWithCoTeachers(lessons, isClassQuery) {
         if (isClassQuery) {
             return formatLesson(lessons[0], true);
         }
         if (!lessons || lessons.length === 0) return '';
+        const first = lessons[0];
+        // 是否為同班同科多教師
+        const isMultiTeacherSameClassSubject =
+            lessons.every(l => l.class === first.class && l.subject === first.subject)
+            && lessons.length > 1;
+        if (isMultiTeacherSameClassSubject) {
+            // 取得所有教師，將自己放前，房間為自己的
+            const me = first.teacher;
+            const otherTeachers = lessons.map(l => l.teacher).filter(t => t !== me);
+            let text = `<span class="subject" style="color:blue">${first.class} ${first.subject}</span>`;
+            text += ` <span class="room" style="color:#555;font-size:0.7em">(${first.room})</span>`;
+            if (otherTeachers.length) {
+                text += ` <span class="teacher" style="font-size:0.8em">(${otherTeachers.join('/')})</span>`;
+            }
+            return text;
+        }
+        // 其他情況（合班）維持原本格式
         const classList = [...new Set(lessons.map(l => l.class))].sort((a,b)=>a.localeCompare(b, 'zh-Hant'));
-        const subject = lessons[0].subject;
-        const room = lessons[0].room;
+        const subject = first.subject;
+        const room = first.room;
         if(subject === 'MAUP') {
             return `<span class="subject" style="color:blue">${classList.join('/')} MAUP</span>`;
         }
@@ -323,12 +335,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return `<span class="subject" style="color:blue">${classList.join('/')} ${subject}</span> <span class="room" style="color:#555;font-size:0.7em">${room}</span>`;
     }
-    // Excel用文字版本
-    function formatMultipleClassesText(lessons) {
+    // Excel 用文字版本
+    function formatMultipleClassesWithCoTeachersText(lessons) {
         if (!lessons || lessons.length === 0) return '';
+        const first = lessons[0];
+        const isMultiTeacherSameClassSubject =
+            lessons.every(l => l.class === first.class && l.subject === first.subject)
+            && lessons.length > 1;
+        if (isMultiTeacherSameClassSubject) {
+            const me = first.teacher;
+            const otherTeachers = lessons.map(l => l.teacher).filter(t => t !== me);
+            let text = `${first.class} ${first.subject} (${first.room})`;
+            if (otherTeachers.length) {
+                text += ` (${otherTeachers.join('/')})`;
+            }
+            return text;
+        }
+        // 其他合班格式
         const classList = [...new Set(lessons.map(l => l.class))].sort((a,b)=>a.localeCompare(b, 'zh-Hant'));
-        const subject = lessons[0].subject;
-        const room = lessons[0].room;
+        const subject = first.subject;
+        const room = first.room;
         if(subject === 'MAUP') {
             return `${classList.join('/')} MAUP`;
         }
@@ -338,7 +364,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${classList.join('/')} ${subject} ${room}`;
     }
 
-    // 格式化課程顯示 (用於PDF/列印)
     function formatLessonForExport(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -352,7 +377,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${lesson.class} ${lesson.subject} ${lesson.room}`;
     }
 
-    // 按 Enter 鍵查詢
     teacherNameInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const query = teacherNameInput.value.trim();
@@ -446,7 +470,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
 
-    // 顯示教師時間表
     function displayTimetable(teacherName) {
         currentLessons = allLessons.filter(item => 
             item.teacher.toUpperCase() === teacherName.toUpperCase()
@@ -461,7 +484,6 @@ document.addEventListener('DOMContentLoaded', function() {
         resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons);
     }
-    // 顯示班別時間表
     function displayClassTimetable(className) {
         currentLessons = allLessons.filter(item => 
             item.class.toUpperCase() === className.toUpperCase()
@@ -477,8 +499,10 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTimetable(currentLessons, true);
     }
 
-    // 渲染時間表 (重點修正版)
     function renderTimetable(lessons, isClassQuery = false) {
+        // ...（見前述，已經覆蓋）...
+        // 這裡呼叫的就是 formatMultipleClassesWithCoTeachers
+        // 內容已按新需求修正
         let tableHTML = `
             <thead>
                 <tr>
@@ -520,7 +544,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         if (!isClassQuery) {
                             tableHTML += `<td>
-                                <div class="main-lesson">${formatMultipleClasses(dayLessons, false)}</div>
+                                <div class="main-lesson">${formatMultipleClassesWithCoTeachers(dayLessons, false)}</div>
                                 <div class="dismissal-time">(放學時間 15:30)</div>
                             </td>`;
                         } else {
@@ -575,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     } else {
                         tableHTML += `<td>
-                            <div class="main-lesson">${formatMultipleClasses(dayLessons, false)}</div>
+                            <div class="main-lesson">${formatMultipleClassesWithCoTeachers(dayLessons, false)}</div>
                         </td>`;
                     }
                 }
@@ -586,7 +610,6 @@ document.addEventListener('DOMContentLoaded', function() {
         timetableTable.innerHTML = tableHTML;
     }
 
-    // 格式化課程顯示
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -600,6 +623,5 @@ document.addEventListener('DOMContentLoaded', function() {
         return `<span class="subject" style="color:blue">${lesson.class} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:0.7em">${lesson.room}</span>`;
     }
 
-    // 自動載入 CSV 文件
     loadCSV();
 });
