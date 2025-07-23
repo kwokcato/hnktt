@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 使用html2pdf.js庫
         const element = document.createElement('div');
-        element.style.width = '98%'; //100%
+        element.style.width = '100%'; //100%
         element.innerHTML = `
             <h1 style="text-align:center;font-family:Arial;margin-bottom:10px;font-size:16px;">${currentTitle}</h1>
             <div style="font-size:10px;">
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         const opt = {
-            margin: [5, 5, 5, 5], // 上下左右邊距
+            margin: [5, 5, 2, 2], // 上下左右邊距 5,5,5,5
             filename: `${currentTitle}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { 
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:11px">${subjects}<br></span>
+                                    <span style="color:blue;font-size:9px">${subjects}<br></span>
                                     <span style="color:#555;font-size:9px"> ${rooms}<br></span>
                                     <span style="font-size:9px">(${teachers})</span>
                                 </div>
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:11px">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span style="color:blue;font-size:9px">${classDisplay} ${firstLesson.subject}<br></span>
                                     <span style="color:#555;font-size:9px"> ${firstLesson.room}<br></span>
                                     ${coTeachers ? `<span style="font-size:9px">(${coTeachers})</span>` : ''}
                                 </div>
