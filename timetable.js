@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:10px;">
                 <thead>
                     <tr>
-                        <th style="width:50px;background-color:#3498db;color:white;font-size:9px;">Time</th>  <!-- 80 -->
+                        <th style="width:60px;background-color:#3498db;color:white;font-size:9px;">Time</th>  <!-- 80 -->
                         <th style="width:20px;background-color:#3498db;color:white;font-size:9px;">Period</th>  <!-- 30 -->
                         <th style="background-color:#3498db;color:white;font-size:9px;">Monday</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">Tuesday</th>
