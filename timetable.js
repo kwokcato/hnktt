@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <thead>
                     <tr>
                         <th style="width:40px;background-color:#3498db;color:white;font-size:9px;">Time</th>  <!-- 80 -->
-                        <th style="width:20px;background-color:#3498db;color:white;font-size:9px;">Period</th>  <!-- 30 -->
+                        <th style="width:15px;background-color:#3498db;color:white;font-size:9px;">Period</th>  <!-- 30 -->
                         <th style="background-color:#3498db;color:white;font-size:9px;">Monday</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">Tuesday</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">Wednesday</th>
@@ -267,8 +267,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue;font-size:9px">${subjects}<br></span>
-                                    <span style="color:#555;font-size:9px"> ${rooms}<br></span>
-                                    <span style="font-size:9px">(${teachers})</span>
+                                    <span style="color:#555;font-size:7px"> ${rooms}<br></span>
+                                    <span style="font-size:7px">(${teachers})</span>
                                 </div>
                             </td>`;
                         }
@@ -340,8 +340,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue;font-size:9px">${classDisplay} ${firstLesson.subject}<br></span>
-                                    <span style="color:#555;font-size:9px"> ${firstLesson.room}<br></span>
-                                    ${coTeachers ? `<span style="font-size:9px">(${coTeachers})</span>` : ''}
+                                    <span style="color:#555;font-size:7px"> ${firstLesson.room}<br></span>
+                                    ${coTeachers ? `<span style="font-size:7px">(${coTeachers})</span>` : ''}
                                 </div>
                             </td>`;
                         }
