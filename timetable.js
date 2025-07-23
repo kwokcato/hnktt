@@ -266,9 +266,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:14px">${subjects}<br></span>
-                                    <span style="color:#555;font-size:10px"> ${rooms}<br></span>
-                                    <span style="font-size:10px">(${teachers})</span>
+                                    <span style="color:blue;font-size:11px">${subjects}<br></span>
+                                    <span style="color:#555;font-size:9px"> ${rooms}<br></span>
+                                    <span style="font-size:9px">(${teachers})</span>
                                 </div>
                             </td>`;
                         }
@@ -339,9 +339,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:14px">${classDisplay} ${firstLesson.subject}<br></span>
-                                    <span style="color:#555;font-size:10px"> ${firstLesson.room}<br></span>
-                                    ${coTeachers ? `<span style="font-size:10px">(${coTeachers})</span>` : ''}
+                                    <span style="color:blue;font-size:11px">${classDisplay} ${firstLesson.subject}<br></span>
+                                    <span style="color:#555;font-size:9px"> ${firstLesson.room}<br></span>
+                                    ${coTeachers ? `<span style="font-size:9px">(${coTeachers})</span>` : ''}
                                 </div>
                             </td>`;
                         }
