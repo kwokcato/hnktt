@@ -239,6 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // 檢查是否有CHEM或ICT科目
                         const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
+                        const hasBM = dayLessons.some(l => l.subject.includes('BM'));
                         
                         if (hasChem) {
                             tableHTML += `<td>
@@ -254,7 +255,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <span style="font-size:8px">(${teachers})</span>
                                 </div>
                             </td>`;
-                        } else if (hasMaup) {
+                        } else if (hasBM) {
+                            tableHTML += `<td>
+                                <div>
+                                    <span style="color:blue;font-size:9px">X1<br></span>
+                                    <span style="font-size:8px">(${teachers})</span>
+                                </div>
+                            </td>`;
+                        }else if (hasMaup) {
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue;font-size:9px">MAUP</span>
@@ -450,11 +458,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
+                            const hasBM = dayLessons.some(l => l.subject.includes('BM'));
                             
                             if (hasChem) {
                                 row.push(`X2 (${teachers})`);
                             } else if (hasIct) {
                                 row.push(`X3 (${teachers})`);
+                            } else if (hasBM) {
+                                row.push(`X1 (${teachers})`);
                             } else if (hasMaup) {
                                 row.push(`MAUP (${teachers})`);
                             } else {
@@ -535,6 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatLessonForExport(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
+            if (subject.includes('BM')) subject = 'X1';
             if (subject.includes('CHEM')) subject = 'X2';
             if (subject.includes('ICT')) subject = 'X3';
             return `<span style="color:blue;font-size:12px">${subject}<br></span> <span style="font-size:8px">(${lesson.teacher})</span>`;
@@ -749,6 +761,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
                         
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
+                        const hasBM = dayLessons.some(l => l.subject.includes('BM'));
                         const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                         
@@ -763,6 +776,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             tableHTML += `<td>
                                 <div class="main-lesson">
                                     <span class="subject" style="color:blue;font-size:11px;">X3<br></span>
+                                    <span class="teacher" style="font-size:10px;">(${teachers})</span>
+                                </div>
+                            </td>`;
+                        } else if (hasBM) {
+                            tableHTML += `<td>
+                                <div class="main-lesson">
+                                    <span class="subject" style="color:blue;font-size:11px;">X1<br></span>
                                     <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                 </div>
                             </td>`;
@@ -890,6 +910,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
+            if (subject.includes('BM')) subject = 'X1';
             if (subject.includes('CHEM')) subject = 'X2';
             if (subject.includes('ICT')) subject = 'X3';
             return `<span class="subject" style="color:blue;font-size:12px;">${subject}</span> <span class="teacher" style="font-size:10px;">(${lesson.teacher})</span>`;
