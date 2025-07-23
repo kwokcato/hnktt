@@ -353,6 +353,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         tableHTML += `</tbody></table>`;
+
+        // Add subject information for Forms 4-6 in exports
+        if (currentTitle.includes('班別') && /^[4-6][A-D]$/i.test(currentTitle.split(' ')[1])) {
+            tableHTML += `
+                <div style="text-align:left;margin-top:10px;font-size:9px;">
+                    <strong>選修科目組合:</strong><br>
+                    <strong>Form 4:</strong><br>
+                    X1: PHY/BM/ACC/ERS/VAD<br>
+                    X2: CHEM/CHIS/ECON/VAD/HMSC<br>
+                    X3: BIO3/ERS3/ICT/MAM2/THS/VAD3<br><br>
+                    <strong>Form 5 & 6:</strong><br>
+                    X1: BIO/PHY/BM/ACC/ERS<br>
+                    X2: CHEM/CHIS/ECON/VAD/HMSC<br>
+                    X3: BIO3/ERS3/ICT/MAM2/THS/VAD3
+                </div>
+            `;
+        }
+        
         return tableHTML;
     }
 
@@ -845,8 +863,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         tableHTML += `</tbody>`;
+        
+        // Add subject information for Forms 4-6
+        if (currentTitle.includes('班別') && /^[4-6][A-D]$/i.test(currentTitle.split(' ')[1])) {
+            tableHTML += `
+                <tfoot>
+                    <tr><td colspan="7" style="text-align:left;padding:10px;background-color:#f5f5f5;">
+                        <strong>選修科目組合:</strong><br>
+                        <strong>Form 4:</strong><br>
+                        X1: PHY/BM/ACC/ERS/VAD<br>
+                        X2: CHEM/CHIS/ECON/VAD/HMSC<br>
+                        X3: BIO3/ERS3/ICT/MAM2/THS/VAD3<br><br>
+                        <strong>Form 5 & 6:</strong><br>
+                        X1: BIO/PHY/BM/ACC/ERS<br>
+                        X2: CHEM/CHIS/ECON/VAD/HMSC<br>
+                        X3: BIO3/ERS3/ICT/MAM2/THS/VAD3
+                    </td></tr>
+                </tfoot>
+            `;
+        }
+        
         timetableTable.innerHTML = tableHTML;
-
     }
     
     // 格式化課程顯示
