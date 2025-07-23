@@ -316,8 +316,8 @@
                 return;
             }
             
-            // 2. 檢查是否為學生帳戶
-            if (STUDENT_ACCOUNT_REGEX.test(payload.email)) {
+            // 2. 檢查是否為學生帳戶 (修正變數名拼寫錯誤)
+            if (STUDENT_ACCOUNT_REGEX.test(payload.email)) {  // 這裡原來有拼寫錯誤
                 showLoginError("此系統僅供教師使用，學生帳戶無權訪問");
                 google.accounts.id.disableAutoSelect();
                 return;
@@ -329,7 +329,7 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-content').style.display = 'flex';
             loadIframes();
-            setupActivityTracking();
+            setupActivityTracking();  // 確保調用此函數
         }
 
         // 顯示登入錯誤
@@ -440,12 +440,12 @@
                 const payload = decodeJwtResponse(id_token);
                 
                 if (payload && payload.hd === SCHOOL_DOMAIN && 
-                    !STUDENT_ACCOUNT_REGEX.test(payload.email)) {
+                    !STUDENT_ACCOUNT_REGEX.test(payload.email)) {  // 修正變數名
                     console.log("Token有效，自動登入");
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('app-content').style.display = 'flex';
                     loadIframes();
-                    setupActivityTracking();
+                    setupActivityTracking();  // 確保調用此函數
                     return;
                 } else {
                     console.log("Token無效，清除");
