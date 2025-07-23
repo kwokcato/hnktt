@@ -898,36 +898,46 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tableHTML += `</tbody>`;
         
-        // Add subject information for Forms 4-6 in exports
+        // Add subject information for Forms 4-6
         if (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) {
             tableHTML += `
-                <div style="text-align:left;margin-top:10px;font-size:9px;">
+                <tfoot>
+                    <tr><td colspan="7" style="text-align:left;padding:10px;background-color:#f5f5f5;">
+                        <strong>選修科目組合:</strong><br>
                         <strong>Form 4:</strong><br>
-                        X1: PHY<sub>(PHY)</sub>/BM<sub>(R204)</sub> / ACC<sub>(R203)</sub> / ERS<sub>(R401)</sub> / VAD<sub>(AD)</sub><br>
+                        X1: PHY<sub>(PHY)</sub> / BM<sub>(R204)</sub> / ACC<sub>(R203)</sub> / ERS<sub>(R401)</sub> / VAD<sub>(AD)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R204)</sub> / ECON<sub>(R203)</sub> / HMSC<sub>(R401)</sub><br>
                         X3: BIO3<sub>(BIO/R201/BIO)</sub> / ERS3<sub>(R401)</sub> / ICT<sub>(CR2)</sub> / MAM2<sub>(R204)</sub> / THS<sub>(R203)</sub> / VAD3<sub>(DF)</sub><br><br>
-                </div>
+                        
+                    </td></tr>
+                </tfoot>
             `;
         } else if (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) {
             tableHTML += `
-                <div style="text-align:left;margin-top:10px;font-size:9px;">
-                       <strong>Form 5:</strong><br>
+                <tfoot>
+                    <tr><td colspan="7" style="text-align:left;padding:10px;background-color:#f5f5f5;">
+                        <strong>選修科目組合:</strong><br>
+                        <strong>Form 5:</strong><br>
                         X1: BIO<sub>(BIO/R314/BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R413)</sub> / ACC<sub>(R414)</sub> / ERS<sub>(R412)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R412)</sub> / ECON<sub>(R414)</sub> / VAD<sub>(AD)</sub> / HMSC<sub>(R413)</sub><br>
                         X3: BIO3<sub>(BIO/R402/BIO)</sub> / ERS3<sub>(R412)</sub> / ICT<sub>(CR1)</sub> / MAM2<sub>(R413)</sub> / THS<sub>(R414)</sub> / VAD3<sub>(AD)</sub><br><br>
-                </div>
+        
+                    </td></tr>
+                </tfoot>
             `;
-
         } else {
             tableHTML += `
-                <div style="text-align:left;margin-top:10px;font-size:9px;">
+                <tfoot>
+                    <tr><td colspan="7" style="text-align:left;padding:10px;background-color:#f5f5f5;">
+                        <strong>選修科目組合:</strong><br>
                         <strong>Form 6:</strong><br>
                         X1: BIO<sub>(BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R403)</sub> / ACC<sub>(R404)</sub> / ERS<sub>(R411)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R403)</sub> / ECON<sub>(R404)</sub> / VAD<sub>(AD)</sub> / HMS<sub>(R411)</sub>C<br>
                         X3: BIO3/ERS3<sub>(R411)</sub> / ICT<sub>(CR3)</sub> / MAM2<sub>(R403)</sub> / THS<sub>(R404)</sub> / VAD3<sub>(DF)</sub>
-                </div>
+                    </td></tr>
+                </tfoot>
             `;
-        }  
+        }
         
         timetableTable.innerHTML = tableHTML;
     }
