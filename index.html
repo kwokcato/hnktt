@@ -141,6 +141,28 @@
         #google-signin-button {
             margin: 10px 0;
         }
+        #inactivity-warning {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-align: center;
+        }
+        #inactivity-warning button {
+            margin-top: 15px;
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
     </style>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -222,6 +244,14 @@
             <p>© <span id="spanYear"></span> 佛教何南金中學 - 時間表查詢系統 | 版本 1.0</p>
         </div>
     </div>
+
+    <!-- Inactivity warning modal -->
+    <div id="inactivity-warning">
+        <h3>閒置警告</h3>
+        <p>由於長時間無活動，系統將在 <span id="countdown">60</span> 秒後自動登出。</p>
+        <p>請點擊下方按鈕繼續使用系統。</p>
+        <button onclick="resetInactivityTimer(true)">繼續使用</button>
+    </div>
     
     <script>
         // 學校網域名稱
@@ -229,6 +259,13 @@
         
         // 學生帳戶識別規則 (s + 7個任意字符 + @bhnkc.edu.hk)
         const STUDENT_ACCOUNT_REGEX = /^s[a-zA-Z0-9]{7}@bhnkc\.edu\.hk$/i;
+
+        // Auto-logout variables
+        let inactivityTimer;
+        let warningTimer;
+        let countdownInterval;
+        const WARNING_TIME = 60; // Show warning 60 seconds before logout
+        const LOGOUT_TIME = 1800000; // 30 minutes in milliseconds
 
         // 載入 iframe 內容
         function loadIframes() {
@@ -248,7 +285,7 @@
                 var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
                 var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
                     return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
+                }).join('');
                 return JSON.parse(jsonPayload);
             } catch (e) {
                 console.error("JWT解碼失敗:", e);
@@ -292,6 +329,7 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-content').style.display = 'flex';
             loadIframes();
+            setupActivityTracking();
         }
 
         // 顯示登入錯誤
@@ -311,6 +349,11 @@
         // 登出功能
         function logout() {
             console.log("用戶登出");
+            // Clear all timers
+            clearTimeout(inactivityTimer);
+            clearTimeout(warningTimer);
+            clearInterval(countdownInterval);
+            
             // 清除存儲的token
             sessionStorage.removeItem('google_id_token');
             // 完全登出Google帳戶
@@ -320,6 +363,70 @@
             });
             // 重新載入頁面
             location.reload();
+        }
+
+        // Auto-logout functions
+        function resetInactivityTimer(closeWarning = false) {
+            // Clear existing timers
+            clearTimeout(inactivityTimer);
+            clearTimeout(warningTimer);
+            clearInterval(countdownInterval);
+            
+            // Hide warning if shown
+            if (closeWarning) {
+                document.getElementById('inactivity-warning').style.display = 'none';
+            }
+            
+            // Set new timers
+            inactivityTimer = setTimeout(showInactivityWarning, LOGOUT_TIME - (WARNING_TIME * 1000));
+            warningTimer = setTimeout(logoutDueToInactivity, LOGOUT_TIME);
+        }
+
+        function showInactivityWarning() {
+            document.getElementById('inactivity-warning').style.display = 'block';
+            document.getElementById('countdown').textContent = WARNING_TIME;
+            
+            // Start countdown
+            let seconds = WARNING_TIME;
+            countdownInterval = setInterval(() => {
+                seconds--;
+                document.getElementById('countdown').textContent = seconds;
+                if (seconds <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+
+        function logoutDueToInactivity() {
+            console.log("自動登出：30分鐘無活動");
+            alert("由於30分鐘無活動，系統已自動登出以確保安全。");
+            logout();
+        }
+
+        // Track user activity
+        function setupActivityTracking() {
+            // Reset timer on any of these events
+            window.addEventListener('mousemove', resetInactivityTimer);
+            window.addEventListener('keypress', resetInactivityTimer);
+            window.addEventListener('click', resetInactivityTimer);
+            window.addEventListener('scroll', resetInactivityTimer);
+            
+            // Also track iframe activity
+            document.getElementById('ttFrame').addEventListener('load', function() {
+                this.contentWindow.addEventListener('mousemove', resetInactivityTimer);
+            });
+            document.getElementById('roomFrame').addEventListener('load', function() {
+                this.contentWindow.addEventListener('mousemove', resetInactivityTimer);
+            });
+            document.getElementById('freeFrame').addEventListener('load', function() {
+                this.contentWindow.addEventListener('mousemove', resetInactivityTimer);
+            });
+            document.getElementById('meetingFrame').addEventListener('load', function() {
+                this.contentWindow.addEventListener('mousemove', resetInactivityTimer);
+            });
+            
+            // Start the timer initially
+            resetInactivityTimer();
         }
 
         // 頁面載入初始化
@@ -338,6 +445,7 @@
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('app-content').style.display = 'flex';
                     loadIframes();
+                    setupActivityTracking();
                     return;
                 } else {
                     console.log("Token無效，清除");
