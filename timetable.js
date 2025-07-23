@@ -243,14 +243,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (hasChem) {
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:9px">X2</span>
+                                    <span style="color:blue;font-size:9px">X2<br></span>
                                     <span style="font-size:8px">(${teachers})</span>
                                 </div>
                             </td>`;
                         } else if (hasIct) {
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:9px">X3</span>
+                                    <span style="color:blue;font-size:9px">X3<br></span>
                                     <span style="font-size:8px">(${teachers})</span>
                                 </div>
                             </td>`;
@@ -537,12 +537,12 @@ document.addEventListener('DOMContentLoaded', function() {
             let subject = lesson.subject;
             if (subject.includes('CHEM')) subject = 'X2';
             if (subject.includes('ICT')) subject = 'X3';
-            return `<span style="color:blue;font-size:12px">${subject}</span> <span style="font-size:8px">(${lesson.teacher})</span>`;
+            return `<span style="color:blue;font-size:12px">${subject}<br></span> <span style="font-size:8px">(${lesson.teacher})</span>`;
         }
         if (lesson.subject === 'MAUP') {
             return `<span style="color:blue;font-size:9px">${lesson.class} MAUP</span>`;
         }
-        return `<span style="color:blue;font-size:12px">${lesson.class} ${lesson.subject}</span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
+        return `<span style="color:blue;font-size:12px">${lesson.class} ${lesson.subject}<br></span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
     }
 
     // 按 Enter 鍵查詢
@@ -755,14 +755,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (hasChem) {
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:11px;">X2</span>
+                                    <span class="subject" style="color:blue;font-size:11px;">X2<bR></span>
                                     <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                 </div>
                             </td>`;
                         } else if (hasIct) {
                             tableHTML += `<td>
                                 <div class="main-lesson">
-                                    <span class="subject" style="color:blue;font-size:11px;">X3</span>
+                                    <span class="subject" style="color:blue;font-size:11px;">X3<br></span>
                                     <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                 </div>
                             </td>`;
