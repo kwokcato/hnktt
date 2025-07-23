@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 使用html2pdf.js庫
         const element = document.createElement('div');
-        element.style.width = '90%'; //100%
+        element.style.width = '98%'; //100%
         element.innerHTML = `
             <h1 style="text-align:center;font-family:Arial;margin-bottom:10px;font-size:16px;">${currentTitle}</h1>
             <div style="font-size:10px;">
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <table style="width:95%;border-collapse:collapse;margin-top:10px;font-size:10px;"> <!-- 100% -->
                 <thead>
                     <tr>
-                        <th style="width:30px;background-color:#3498db;color:white;font-size:9px;">Time</th>  <!-- 80 -->
+                        <th style="width:40px;background-color:#3498db;color:white;font-size:9px;">Time</th>  <!-- 80 -->
                         <th style="width:20px;background-color:#3498db;color:white;font-size:9px;">Period</th>  <!-- 30 -->
                         <th style="background-color:#3498db;color:white;font-size:9px;">Monday</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">Tuesday</th>
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (slot.isBreak) {
                 tableHTML += `
                     <tr>
-                        <td style="width:30px;background-color:#3498db;color:white;font-size:9px;">${slot.time}-${slot.endTime}</td>
+                        <td style="width:40px;background-color:#3498db;color:white;font-size:9px;">${slot.time}-${slot.endTime}</td>
                         <td style="background-color:#e6e6e6;color:#777;font-style:italic;font-size:9px;" colspan="6">${slot.label}</td>
                     </tr>
                 `;
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             tableHTML += `
                 <tr>
-                    <td style="width:30px;background-color:#3498db;color:white;font-size:9px;">${slot.time}-${slot.endTime}</td>
+                    <td style="width:40px;background-color:#3498db;color:white;font-size:9px;">${slot.time}-${slot.endTime}</td>
                     <td style="width:20px;background-color:#3498db;color:white;font-size:9px;">${slot.period}</td>
             `;
             
