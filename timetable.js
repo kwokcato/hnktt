@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <strong>選修科目組合:</strong><br>
                     <strong>Form 4:</strong><br>
                     X1: PHY/BM/ACC/ERS/VAD<br>
-                    X2: CHEM/CHIS/ECON/VAD/HMSC<br>
+                    X2: CHEM/CHIS/ECON/HMSC<br>
                     X3: BIO3/ERS3/ICT/MAM2/THS/VAD3<br><br>
                     <strong>Form 5 & 6:</strong><br>
                     X1: BIO/PHY/BM/ACC/ERS<br>
@@ -871,8 +871,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <tr><td colspan="7" style="text-align:left;padding:10px;background-color:#f5f5f5;">
                         <strong>選修科目組合:</strong><br>
                         <strong>Form 4:</strong><br>
-                        X1: PHY/BM/ACC/ERS/VAD<br>
-                        X2: CHEM/CHIS/ECON/VAD/HMSC<br>
+                        X1: PHY<sub>(PHY)</sub>/BM<sub>(R204)</sub>/ACC<sub>(R203)</sub>/ERS<sub>(R401)</sub>/VAD<sub>(AD)</sub><br>
+                        X2: CHEM/CHIS/ECON/HMSC<br>
                         X3: BIO3/ERS3/ICT/MAM2/THS/VAD3<br><br>
                         <strong>Form 5 & 6:</strong><br>
                         X1: BIO/PHY/BM/ACC/ERS<br>
