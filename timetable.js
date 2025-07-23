@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>Form 4:</strong><br>
                         X1: PHY<sub>(PHY)</sub>/BM<sub>(R204)</sub>/ACC<sub>(R203)</sub>/ERS<sub>(R401)</sub>/VAD<sub>(AD)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub>/CHIS<sub>(R204)</sub>/ECON<sub>(R203)</sub>/HMSC<sub>(R401)</sub><br>
-                        X3: BIO3<sub>(BIO/R201/BIO)</sub>/ERS3<sub>(R401)</sub>/ICT<sub>(CR2)</sub>/MAM2<sub>(R204)</sub>/THS<sub>(PHY)</sub>/VAD3<sub>(DF)</sub><br><br>
+                        X3: BIO3<sub>(BIO/R201/BIO)</sub>/ERS3<sub>(R401)</sub>/ICT<sub>(CR2)</sub>/MAM2<sub>(R204)</sub>/THS<sub>(R203)</sub>/VAD3<sub>(DF)</sub><br><br>
                         <strong>Form 5:</strong><br>
                         X1: BIO<sub>(BIO/R314/BIO)</sub>/PHY<sub>(PHY)</sub>/BM<sub>(R413)</sub>/ACC<sub>(R414)</sub>/ERS<sub>(R412)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub>/CHIS<sub>(R412)</sub>/ECON<sub>(R414)</sub>/VAD<sub>(AD)</sub>/HMSC<sub>(R413)</sub><br>
@@ -896,7 +896,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>Form 4:</strong><br>
                         X1: PHY<sub>(PHY)</sub>/BM<sub>(R204)</sub>/ACC<sub>(R203)</sub>/ERS<sub>(R401)</sub>/VAD<sub>(AD)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub>/CHIS<sub>(R204)</sub>/ECON<sub>(R203)</sub>/HMSC<sub>(R401)</sub><br>
-                        X3: BIO3<sub>(BIO/R201/BIO)</sub>/ERS3<sub>(R401)</sub>/ICT<sub>(CR2)</sub>/MAM2<sub>(R204)</sub>/THS<sub>(PHY)</sub>/VAD3<sub>(DF)</sub><br><br>
+                        X3: BIO3<sub>(BIO/R201/BIO)</sub>/ERS3<sub>(R401)</sub>/ICT<sub>(CR2)</sub>/MAM2<sub>(R204)</sub>/THS<sub>(R203)</sub>/VAD3<sub>(DF)</sub><br><br>
                         <strong>Form 5:</strong><br>
                         X1: BIO<sub>(BIO/R314/BIO)</sub>/PHY<sub>(PHY)</sub>/BM<sub>(R413)</sub>/ACC<sub>(R414)</sub>/ERS<sub>(R412)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub>/CHIS<sub>(R412)</sub>/ECON<sub>(R414)</sub>/VAD<sub>(AD)</sub>/HMSC<sub>(R413)</sub><br>
