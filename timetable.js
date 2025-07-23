@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
 
-        } else {
+        } else if (currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) {
             tableHTML += `
                 <div style="text-align:left;margin-top:10px;font-size:9px;">
                         <strong>Form 6:</strong><br>
@@ -925,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td></tr>
                 </tfoot>
             `;
-        } else {
+        } else if (currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1]))  {
             tableHTML += `
                 <tfoot>
                     <tr><td colspan="7" style="text-align:left;padding:10px;background-color:#f5f5f5;">
