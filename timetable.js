@@ -877,11 +877,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return `<span class="subject" style="color:blue;font-size:14px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
     }
-    <Table border=1>
-            <tr>
-            <td> TEST</TD>
-            </tr>
-    </Table>
+
 
     // 自動載入 CSV 文件
     loadCSV();
