@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>Form 5:</strong><br>
                         X1: BIO<sub>(BIO/R314/BIO)</sub>/PHY<sub>(PHY)</sub>/BM<sub>(R413)</sub>/ACC<sub>(R414)</sub>/ERS<sub>(R412)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub>/CHIS<sub>(R412)</sub>/ECON<sub>(R414)</sub>/VAD<sub>(AD)</sub>/HMSC<sub>(R413)</sub><br>
-                        X3: BIO3<sub>(BIO/R402/BIO)</sub>/ERS3<sub>(R412)</sub>/ICT<sub>(CR1)</sub>/MAM2<sub>(R413)</sub>/THS<sub>(R414)</sub>/VAD3<sub>(AD)</sub>
+                        X3: BIO3<sub>(BIO/R402/BIO)</sub>/ERS3<sub>(R412)</sub>/ICT<sub>(CR1)</sub>/MAM2<sub>(R413)</sub>/THS<sub>(R414)</sub>/VAD3<sub>(AD)</sub><br><br>
                         <strong>Form 6:</strong><br>
                         X1: BIO<sub>(BIO)</sub>/PHY<sub>(PHY)</sub>/BM<sub>(R403)</sub>/ACC<sub>(R404)</sub>/ERS<sub>(R411)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub>/CHIS<sub>(R403)</sub>/ECON<sub>(R404)</sub>/VAD<sub>(AD)</sub>/HMS<sub>(R411)</sub>C<br>
@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>Form 5:</strong><br>
                         X1: BIO<sub>(BIO/R314/BIO)</sub>/PHY<sub>(PHY)</sub>/BM<sub>(R413)</sub>/ACC<sub>(R414)</sub>/ERS<sub>(R412)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub>/CHIS<sub>(R412)</sub>/ECON<sub>(R414)</sub>/VAD<sub>(AD)</sub>/HMSC<sub>(R413)</sub><br>
-                        X3: BIO3<sub>(BIO/R402/BIO)</sub>/ERS3<sub>(R412)</sub>/ICT<sub>(CR1)</sub>/MAM2<sub>(R413)</sub>/THS<sub>(R414)</sub>/VAD3<sub>(AD)</sub>
+                        X3: BIO3<sub>(BIO/R402/BIO)</sub>/ERS3<sub>(R412)</sub>/ICT<sub>(CR1)</sub>/MAM2<sub>(R413)</sub>/THS<sub>(R414)</sub>/VAD3<sub>(AD)</sub><br><br>
                         <strong>Form 6:</strong><br>
                         X1: BIO<sub>(BIO)</sub>/PHY<sub>(PHY)</sub>/BM<sub>(R403)</sub>/ACC<sub>(R404)</sub>/ERS<sub>(R411)</sub><br>
                         X2: CHEM<sub>(CHEM)</sub>/CHIS<sub>(R403)</sub>/ECON<sub>(R404)</sub>/VAD<sub>(AD)</sub>/HMS<sub>(R411)</sub>C<br>
