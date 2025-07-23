@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -334,12 +333,12 @@
             // 篩選出該房間的所有課程
             const roomData = csvData.filter(item => item.room === room);
             
-            // 組織數據結構：week -> period -> 課程資料
+            // 組織數據結構：week -> period -> 課程資料 (現在可以有多個課程)
             const scheduleData = {};
             for (let week = 1; week <= 5; week++) {
                 scheduleData[week] = {};
                 for (let period = 1; period <= 10; period++) {
-                    scheduleData[week][period] = null; // 初始化為空
+                    scheduleData[week][period] = []; // 初始化為空陣列
                 }
             }
             
@@ -348,11 +347,11 @@
                 const week = parseInt(item.week);
                 const period = parseInt(item.period);
                 if (week >= 1 && week <= 5 && period >= 1 && period <= 10) {
-                    scheduleData[week][period] = {
+                    scheduleData[week][period].push({
                         className: item.className,
                         subject: item.subject,
                         teacher: item.teacher
-                    };
+                    });
                 }
             });
             
@@ -368,19 +367,46 @@
                 
                 for (let week = 1; week <= 5; week++) {
                     const cell = row.insertCell(week);
-                    const classInfo = scheduleData[week][period];
+                    const classInfos = scheduleData[week][period];
                     
                     // 判斷是否為星期三第十節
                     const isWedPeriod10 = (week === 3 && period === 10);
                     if (isWedPeriod10) {
                         cell.className = 'wed-period10';
                         cell.innerHTML = '<div>(CPA 14:40 - 15:30)</div>';
-                    } else if (classInfo) {
-                        cell.innerHTML = `
-                            <div>${classInfo.className} ${classInfo.subject} ${classInfo.teacher}</div>
-                        `;
+                    } else if (classInfos.length > 0) {
+                        // 將相同科目但不同班別的課程分組
+                        const groupedBySubject = {};
+                        classInfos.forEach(info => {
+                            if (!groupedBySubject[info.subject]) {
+                                groupedBySubject[info.subject] = {
+                                    classes: [],
+                                    teachers: new Set()
+                                };
+                            }
+                            groupedBySubject[info.subject].classes.push(info.className);
+                            groupedBySubject[info.subject].teachers.add(info.teacher);
+                        });
+                        
+                        // 建立顯示內容
+                        let content = '';
+                        Object.entries(groupedBySubject).forEach(([subject, data]) => {
+                            if (content) content += '<br>'; // 不同科目間換行
+                            content += `${data.classes.join('/')} ${subject}`;
+                            
+                            // 如果所有教師都相同，只顯示一次
+                            const teachers = Array.from(data.teachers);
+                            if (teachers.length === 1) {
+                                content += ` (${teachers[0]})`;
+                            } else {
+                                // 如果有多個教師，顯示所有教師
+                                content += ` (${teachers.join('/')})`;
+                            }
+                        });
+                        
+                        cell.innerHTML = `<div>${content}</div>`;
                     } else {
-                        cell.innerHTML = '<div class="free-slot">空閒</div>';
+                        cell.innerHTML = '<div class="free-slot"></div>';
                     }
                 }
                 
