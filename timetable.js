@@ -387,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="text-align:left;margin-top:10px;font-size:9px;">
                         <strong>Form 6:</strong><br>
                         X1: BIO<sub>(BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R403)</sub> / ACC<sub>(R404)</sub> / ERS<sub>(R411)</sub><br>
-                        X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R403)</sub> / ECON<sub>(R404)</sub> / VAD<sub>(AD)</sub> / HMS<sub>(R411)</sub>C<br>
+                        X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R403)</sub> / ECON<sub>(R404)</sub> / VAD<sub>(AD)</sub> / HMSC<sub>(R411)</sub><br>
                         X3: BIO3/ERS3<sub>(R411)</sub> / ICT<sub>(CR3)</sub> / MAM2<sub>(R403)</sub> / THS<sub>(R404)</sub> / VAD3<sub>(DF)</sub>
                 </div>
             `;
@@ -932,7 +932,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>選修科目組合:</strong><br>
                         <strong>Form 6:</strong><br>
                         X1: BIO<sub>(BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R403)</sub> / ACC<sub>(R404)</sub> / ERS<sub>(R411)</sub><br>
-                        X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R403)</sub> / ECON<sub>(R404)</sub> / VAD<sub>(AD)</sub> / HMS<sub>(R411)</sub>C<br>
+                        X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R403)</sub> / ECON<sub>(R404)</sub> / VAD<sub>(AD)</sub> / HMSC<sub>(R411)</sub><br>
                         X3: BIO3/ERS3<sub>(R411)</sub> / ICT<sub>(CR3)</sub> / MAM2<sub>(R403)</sub> / THS<sub>(R404)</sub> / VAD3<sub>(DF)</sub>
                     </td></tr>
                 </tfoot>
