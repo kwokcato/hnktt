@@ -241,6 +241,36 @@
             z-index: 1;
             color: #999 !important;
         }
+        /* 新增列印和匯出按鈕樣式 */
+        .export-btn-group {
+            margin: 15px 0;
+            text-align: center;
+        }
+        .export-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 5px;
+        }
+        .export-btn:hover {
+            background-color: #0b7dda;
+        }
+        #printBtn {
+            background-color: #4CAF50;
+        }
+        #printBtn:hover {
+            background-color: #45a049;
+        }
+        #pdfBtn {
+            background-color: #f44336;
+        }
+        #pdfBtn:hover {
+            background-color: #da190b;
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -302,6 +332,11 @@
         
         <div id="loading" class="loading" style="display: none;">載入中，請稍候...</div>
         
+        <div class="export-btn-group" id="exportBtnGroup" style="display: none;">
+            <button id="printBtn" class="export-btn">列印時間表</button>
+            <button id="pdfBtn" class="export-btn">匯出PDF</button>
+        </div>
+        
         <div id="timetableContainer">
             <!-- 時間表將在這裡顯示 -->
         </div>
@@ -322,6 +357,9 @@
             const loading = document.getElementById('loading');
             const toggleTeachersBtn = document.getElementById('toggleTeachersBtn');
             const teachersCollapsible = document.getElementById('teachersCollapsible');
+            const exportBtnGroup = document.getElementById('exportBtnGroup');
+            const printBtn = document.getElementById('printBtn');
+            const pdfBtn = document.getElementById('pdfBtn');
             
             let timetableData = [];
             let subjects = [];
@@ -329,6 +367,7 @@
             let allTeachers = new Set();
             let groupData = {};
             let allGroups = new Set();
+            let currentTitle = '';
             
             // 固定星期和節數
             const allWeeks = [1, 2, 3, 4, 5]; // 星期一至五
@@ -349,6 +388,138 @@
                 }, 1000);
             });
             
+            // 初始化導出按鈕
+            function initExportButtons() {
+                printBtn.addEventListener('click', printTimetable);
+                pdfBtn.addEventListener('click', exportToPDF);
+            }
+            
+            // 列印時間表
+            function printTimetable() {
+                if (!currentTitle) {
+                    errorMsg.textContent = '請先生成時間表';
+                    return;
+                }
+                
+                const printWindow = window.open('', '', 'width=1000,height=600');
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>${currentTitle}</title>
+                            <style>
+                                body { font-family: Arial; margin: 10px; }
+                                h1 { text-align: center; font-size: 18px; margin-bottom: 10px; }
+                                table { width: 100%; border-collapse: collapse; font-size: 10px; }
+                                th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
+                                th { background-color: #3498db; color: white; }
+                                .time-col { width: 80px; background-color: #3498db; color: white; font-size: 9px; }
+                                .period-col { width: 30px; background-color: #3498db; color: white; font-size: 9px; }
+                                .break-cell { background-color: #f2f2f2; font-style: italic; }
+                                .empty-cell { background-color: #f9f9f9; }
+                                .subject { color: blue; font-size: 9px; }
+                                .room { color: #555; font-size: 8px; }
+                                .teacher { font-size: 8px; }
+                                .dismissal-time { font-size: 8px; color: #666; font-style: italic; }
+                                @page { size: A4 portrait; margin: 5mm; }
+                            </style>
+                        </head>
+                        <body>
+                            <h1>${currentTitle}</h1>
+                            ${timetableContainer.innerHTML}
+                            <script>
+                                window.onload = function() {
+                                    setTimeout(function() {
+                                        window.print();
+                                        window.close();
+                                    }, 200);
+                                };
+                            </script>
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            }
+            
+            // 匯出PDF
+            function exportToPDF() {
+                if (!currentTitle) {
+                    errorMsg.textContent = '請先生成時間表';
+                    return;
+                }
+                
+                // 使用html2pdf.js庫
+                const element = document.createElement('div');
+                element.style.width = '100%';
+                element.innerHTML = `
+                    <h1 style="text-align:center;font-family:Arial;margin-bottom:10px;font-size:16px;">${currentTitle}</h1>
+                    <div style="font-size:10px;">
+                        ${timetableContainer.innerHTML}
+                    </div>
+                `;
+                
+                const opt = {
+                    margin: [5, 5, 2, 2],
+                    filename: `${currentTitle}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { 
+                        scale: 2, 
+                        logging: true, 
+                        useCORS: true,
+                        scrollY: 0,
+                        windowHeight: timetableContainer.scrollHeight + 200
+                    },
+                    jsPDF: { 
+                        unit: 'mm', 
+                        format: 'a4',
+                        orientation: 'portrait',
+                        compress: true
+                    },
+                    pagebreak: { 
+                        mode: ['avoid-all', 'css', 'legacy'] 
+                    }
+                };
+                
+                // 引入html2pdf庫
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                script.onload = function() {
+                    setTimeout(() => {
+                        html2pdf().set(opt).from(element).save()
+                            .then(() => {
+                                console.log('PDF generated successfully');
+                            })
+                            .catch(err => {
+                                console.error('PDF generation error:', err);
+                                backupPDFGeneration(element, opt);
+                            });
+                    }, 500);
+                };
+                document.head.appendChild(script);
+            }
+
+            // 備用PDF生成方法
+            function backupPDFGeneration(element, opt) {
+                const backupOpt = {
+                    ...opt,
+                    html2canvas: {
+                        ...opt.html2canvas,
+                        scale: 1,
+                        windowHeight: timetableContainer.scrollHeight + 500
+                    },
+                    jsPDF: {
+                        ...opt.jsPDF,
+                        format: 'a4'
+                    }
+                };
+                
+                try {
+                    html2pdf().set(backupOpt).from(element).save();
+                } catch (err) {
+                    console.error('Backup PDF generation failed:', err);
+                    alert('PDF生成失敗，請嘗試列印功能或聯繫管理員');
+                }
+            }
+            
             // 載入CSV文件
             function loadCSV() {
                 loading.style.display = 'block';
@@ -357,7 +528,6 @@
                 
                 Promise.all([
                     fetchCSV('tt.csv'),
-                    //fetchCSV('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV'),
                     fetchCSV('agroup.csv')
                 ])
                 .then(([ttData, agroupData]) => {
@@ -702,7 +872,8 @@
                 const teachers = Array.from(subjectTeachersMap[subject] || []);
                 const subjectEntries = timetableData.filter(entry => entry.subject === subject);
                 
-                let html = `<h2>${subject} 共同時間表</h2>`;
+                currentTitle = `${subject} 共同時間表`;
+                let html = `<h2>${currentTitle}</h2>`;
                 html += `<p>教師: ${teachers.join(', ')}</p>`;
                 
                 html += '<div style="overflow-x: auto;"><table>';
@@ -747,13 +918,16 @@
                 
                 html += '</tbody></table></div>';
                 timetableContainer.innerHTML = html;
+                exportBtnGroup.style.display = 'block';
+                initExportButtons();
             }
             
             // 按教師生成時間表HTML
             function generateTimetableByTeachers(teachers) {
                 const teacherEntries = timetableData.filter(entry => teachers.includes(entry.teacher));
                 
-                let html = `<h2>${teachers.join(', ')} 教師組合時間表</h2>`;
+                currentTitle = `${teachers.join(', ')} 教師組合時間表`;
+                let html = `<h2>${currentTitle}</h2>`;
                 html += '<div style="overflow-x: auto;"><table>';
                 html += '<thead><tr><th>節/星期</th>';
                 allWeeks.forEach(week => {
@@ -804,6 +978,8 @@
                 
                 html += '</tbody></table></div>';
                 timetableContainer.innerHTML = html;
+                exportBtnGroup.style.display = 'block';
+                initExportButtons();
             }
             
             // 初始載入CSV
