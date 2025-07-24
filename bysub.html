@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="hnkstyle.css">
     <title>共同時間表</title>
+    <!-- Add jsPDF library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
     // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
     const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 假設的網域名稱，請務必修改
@@ -175,7 +178,6 @@
             min-width: 100px;
             background-color: #f9f0eb;
         }
-        /*
         .refresh-btn {
             position: fixed;
             top: 20px;
@@ -198,7 +200,6 @@
             background-repeat: no-repeat;
             background-position: center;
         }
-        */
         .collapsible {
             max-height: 0;
             overflow: hidden;
@@ -240,6 +241,33 @@
             position: relative;
             z-index: 1;
             color: #999 !important;
+        }
+        /* 新增列印和PDF按鈕樣式 */
+        .export-buttons {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .print-btn {
+            background-color: #2196F3;
+        }
+        .pdf-btn {
+            background-color: #f44336;
+        }
+        @media print {
+            .form-group, .refresh-btn, .export-buttons {
+                display: none;
+            }
+            body {
+                margin: 0;
+                padding: 10px;
+            }
+            table {
+                width: 100%;
+                font-size: 12px;
+            }
+            th, td {
+                padding: 5px;
+            }
         }
     </style>
 </head>
@@ -305,9 +333,18 @@
         <div id="timetableContainer">
             <!-- 時間表將在這裡顯示 -->
         </div>
+
+        <!-- 新增列印和PDF導出按鈕 -->
+        <div id="exportButtons" class="export-buttons" style="display: none;">
+            <button id="printTimetableBtn" class="print-btn">列印時間表</button>
+            <button id="exportPdfBtn" class="pdf-btn">匯出 PDF</button>
+        </div>
     </div>
 
     <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+
         document.addEventListener('DOMContentLoaded', function() {
             const subjectSelect = document.getElementById('subject');
             const groupSelect = document.getElementById('group');
@@ -322,6 +359,9 @@
             const loading = document.getElementById('loading');
             const toggleTeachersBtn = document.getElementById('toggleTeachersBtn');
             const teachersCollapsible = document.getElementById('teachersCollapsible');
+            const printTimetableBtn = document.getElementById('printTimetableBtn');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const exportButtons = document.getElementById('exportButtons');
             
             let timetableData = [];
             let subjects = [];
@@ -349,15 +389,50 @@
                 }, 1000);
             });
             
+            // 列印時間表
+            printTimetableBtn.addEventListener('click', function() {
+                window.print();
+            });
+            
+            // 匯出PDF
+            exportPdfBtn.addEventListener('click', function() {
+                const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
+                
+                // 使用html2canvas捕獲時間表
+                html2canvas(timetableContainer).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'mm'
+                    });
+                    
+                    // 計算PDF頁面尺寸和圖像尺寸
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const imgWidth = pageWidth - 20; // 左右各留10mm邊距
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    // 添加標題
+                    pdf.setFontSize(16);
+                    pdf.text(title, 10, 10);
+                    
+                    // 添加時間表圖像
+                    pdf.addImage(imgData, 'PNG', 10, 15, imgWidth, imgHeight);
+                    
+                    // 保存PDF
+                    pdf.save(`${title}.pdf`);
+                });
+            });
+            
             // 載入CSV文件
             function loadCSV() {
                 loading.style.display = 'block';
                 errorMsg.textContent = '';
                 timetableContainer.innerHTML = '';
+                exportButtons.style.display = 'none';
                 
                 Promise.all([
                     fetchCSV('tt.csv'),
-                    //fetchCSV('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV'),
                     fetchCSV('agroup.csv')
                 ])
                 .then(([ttData, agroupData]) => {
@@ -590,10 +665,12 @@
                 
                 errorMsg.textContent = '';
                 loading.style.display = 'block';
+                exportButtons.style.display = 'none';
                 
                 setTimeout(() => {
                     generateTimetableBySubject(selectedSubject);
                     loading.style.display = 'none';
+                    exportButtons.style.display = 'block';
                     timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
@@ -609,10 +686,12 @@
                 
                 errorMsg.textContent = '';
                 loading.style.display = 'block';
+                exportButtons.style.display = 'none';
                 
                 setTimeout(() => {
                     generateTimetableByTeachers(selectedTeachers);
                     loading.style.display = 'none';
+                    exportButtons.style.display = 'block';
                     timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
@@ -628,6 +707,7 @@
                 
                 errorMsg.textContent = '';
                 loading.style.display = 'block';
+                exportButtons.style.display = 'none';
                 
                 setTimeout(() => {
                     const groupTeachers = [];
@@ -645,6 +725,7 @@
                     
                     generateTimetableByTeachers(groupTeachers);
                     loading.style.display = 'none';
+                    exportButtons.style.display = 'block';
                     timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
