@@ -244,29 +244,29 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (hasChem) {
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:14px">X2<br></span>
+                                    <span style="color:blue;font-size:12px">X2<br></span>
                                     <span style="font-size:8px">(${teachers})</span>
                                 </div>
                             </td>`;
                         } else if (hasIct) {
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:14px">X3<br></span>
-                                    <span style="font-size:8px">(${teachers})</span>
+                                    <span style="color:blue;font-size:12px">X3<br></span>
+                                    <span style="font-size:7px">(${teachers})</span>
                                 </div>
                             </td>`;
                         } else if (hasBM && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
                             tableHTML += `<td>
                                 <div>
-                                    <span style="color:blue;font-size:14px">X1<br></span>
-                                    <span style="font-size:8px">(${teachers})</span>
+                                    <span style="color:blue;font-size:12px">X1<br></span>
+                                    <span style="font-size:7px">(${teachers})</span>
                                 </div>
                             </td>`;
                         }else if (hasMaup) {
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue;font-size:9px">MAUP</span>
-                                    <span style="font-size:8px">(${teachers})</span>
+                                    <span style="font-size:7px">(${teachers})</span>
                                 </div>
                             </td>`;
                         } else {
@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .map(item => item.class.trim()))].sort();
                 populateDropdowns();
                 loadingDiv.style.display = 'none';
-                resultDiv.innerHTML = '<p>時間表數據已載入，請輸入教師姓名或班別(如1A)</p>';
+                resultDiv.innerHTML = '<p>時間表數據已載入，請輸入教師姓名或班別</p>';
                 initExportButtons();
             })
             .catch(error => {
