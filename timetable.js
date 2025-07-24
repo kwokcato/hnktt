@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     // 處理班別查詢的多科目情況
                     if (isClassQuery) {
-                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
+                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(','); // '/'
                         
                         // 檢查是否有MAUP科目
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
@@ -270,8 +270,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </td>`;
                         } else {
-                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
-                            const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
+                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join(','); // '/'
+                            const rooms = [...new Set(dayLessons.map(l => l.room))].join(',');
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue;font-size:9px">${subjects}<br></span>
@@ -293,11 +293,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                          lesson.subject === 'PE'
                             );
                             
-                            const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
+                            const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join(','); // '/'
                             const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
                                 .filter(t => t !== firstLesson.teacher)
                                 .sort()
-                                .join('/');
+                                .join(','); // '/'
                             
                             tableHTML += `<td>
                                 <div>
@@ -327,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
                                     .filter(t => t !== firstLesson.teacher)
                                     .sort()
-                                    .join('/');
+                                    .join(','); // '/'
                             }
 
                             // 檢查是否有合併班別情況
@@ -417,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
         for (const grade in gradeMap) {
             const letters = gradeMap[grade];
             if (letters.length > 1) {
-                result.push(`${grade}${letters[0]}/${letters.slice(1).join('/')}`);
+                result.push(`${grade}${letters[0]}/${letters.slice(1).join(',')}`); // '/'
             } else {
                 result.push(`${grade}${letters[0]}`);
             }
@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     } else {
                         if (isClassQuery) {
-                            const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
+                            const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(','); // '/'
                             
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
@@ -483,8 +483,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             } else if (hasMaup) {
                                 row.push(`MAUP (${teachers})`);
                             } else {
-                                const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
-                                const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
+                                const subjects = [...new Set(dayLessons.map(l => l.subject))].join(','); // '/'
+                                const rooms = [...new Set(dayLessons.map(l => l.room))].join(','); // '/'
                                 row.push(`${subjects} ${rooms} (${teachers})`);
                             }
                         } else {
@@ -499,11 +499,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                              lesson.subject === 'PE'
                                 );
                                 
-                                const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
+                                const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join(','); // '/'
                                 const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
                                     .filter(t => t !== firstLesson.teacher)
                                     .sort()
-                                    .join('/');
+                                    .join(','); // '/'
                                 
                                 row.push(`${allClasses} PE${otherTeachers ? ` (${otherTeachers})` : ''}`);
                             } else if (isMaup) {
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
                                         .filter(t => t !== firstLesson.teacher)
                                         .sort()
-                                        .join('/');
+                                        .join(','); // '/'
                                 }
 
                                 const groupedLessons = allLessons.filter(
@@ -772,7 +772,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tableHTML += `<td class="empty-cell"></td>`;
                 } else {
                     if (isClassQuery) {
-                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
+                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(','); // '/'
                         
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                         const hasBM = dayLessons.some(l => l.subject.includes('BM'));
@@ -808,8 +808,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </td>`;
                         } else {
-                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
-                            const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
+                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join(','); // '/'
+                            const rooms = [...new Set(dayLessons.map(l => l.room))].join(','); // '/'
                             tableHTML += `<td>
                                 <div class="main-lesson">
                                     <span class="subject" style="color:blue;font-size:14px;">${subjects}<br></span>
@@ -830,11 +830,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                          lesson.subject === 'PE'
                             );
                             
-                            const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
+                            const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join(','); // '/'
                             const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
                                 .filter(t => t !== firstLesson.teacher)
                                 .sort()
-                                .join('/');
+                                .join(','); // '/'
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
@@ -864,7 +864,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
                                     .filter(t => t !== firstLesson.teacher)
                                     .sort()
-                                    .join('/');
+                                    .join(','); // '/'
                             }
 
                             const groupedLessons = allLessons.filter(
