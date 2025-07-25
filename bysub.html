@@ -309,13 +309,7 @@
             <select id="group">
                 <option value="">-- 請選擇組別 --</option>
             </select>
-            <button id="generateByGroupBtn">按組別生成時間表</button>
-            
-            <!-- 新增列印和PDF導出按鈕 -->
-            <div id="exportButtons" class="export-buttons" style="display: none;">
-                <button id="printTimetableBtn" class="print-btn">列印時間表</button>
-                <button id="exportPdfBtn" class="pdf-btn">匯出 PDF</button>
-            </div>          
+            <button id="generateByGroupBtn">按組別生成時間表</button>     
             
             <div id="teacherSelection">
                 <span id="toggleTeachersBtn" class="toggle-teachers">▼ 選擇教師</span>
@@ -331,6 +325,12 @@
                 </div>
             </div>
         </div>
+        
+        <!-- 新增列印和PDF導出按鈕 -->
+            <div id="exportButtons" class="export-buttons" style="display: none;">
+                <button id="printTimetableBtn" class="print-btn">列印時間表</button>
+                <button id="exportPdfBtn" class="pdf-btn">匯出 PDF</button>
+            </div>     
         
         <div id="errorMsg" class="error"></div>
         
@@ -471,6 +471,12 @@
     
     // 開始捕獲過程
     setTimeout(captureAndAddPage, 500);
+    
+    setTimeout(() => {
+        html2canvas(container).then(canvas => {
+        // 處理canvas
+        });
+    }, 1000);
 });
             
             // 載入CSV文件
