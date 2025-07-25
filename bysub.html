@@ -10,8 +10,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-    // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
-    const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 假設的網域名稱，請務必修改
+    
+    const SCHOOL_DOMAIN = "bhnkc.edu.hk";
 
     // 解碼 JWT
     function decodeJwtResponse(token) {
@@ -42,7 +42,8 @@
     // 如果未通過驗證，則導向到主登入頁面
     if (!is_authenticated) {
         // 使用 window.top 來確保是整個視窗跳轉，而不是只有 iframe 跳轉
-        window.top.location.href = 'index.html';
+        // window.top.location.href = 'index.html';
+        window.top.location.href = '/';
     }
     </script>
  
@@ -305,7 +306,7 @@
                 <option value="">-- 請選擇科目 --</option>
             </select>
             <button id="generateBySubjectBtn">按科目生成時間表</button>
-            
+            或
             <!-- <label for="group">選擇組別:</label> -->
             <select id="group">
                 <option value="">-- 請選擇組別 --</option>
@@ -325,7 +326,7 @@
                     </div>
                 </div>
             </div>
-            <!-- 新增列印和PDF導出按鈕 -->
+            <!-- 列印和PDF導出按鈕 -->
             <div id="exportButtons" class="export-buttons" style="display: none;">
                 <button id="printTimetableBtn" class="print-btn">列印時間表</button>
                 <button id="exportPdfBtn" class="pdf-btn">匯出 PDF</button>
