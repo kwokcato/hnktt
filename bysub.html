@@ -311,6 +311,12 @@
             </select>
             <button id="generateByGroupBtn">按組別生成時間表</button>
             
+            <!-- 新增列印和PDF導出按鈕 -->
+            <div id="exportButtons" class="export-buttons" style="display: none;">
+                <button id="printTimetableBtn" class="print-btn">列印時間表</button>
+                <button id="exportPdfBtn" class="pdf-btn">匯出 PDF</button>
+            </div>          
+            
             <div id="teacherSelection">
                 <span id="toggleTeachersBtn" class="toggle-teachers">▼ 選擇教師</span>
                 <div id="teachersCollapsible" class="collapsible">
@@ -333,17 +339,11 @@
         <div id="timetableContainer">
             <!-- 時間表將在這裡顯示 -->
         </div>
-
-        <!-- 新增列印和PDF導出按鈕 -->
-        <div id="exportButtons" class="export-buttons" style="display: none;">
-            <button id="printTimetableBtn" class="print-btn">列印時間表</button>
-            <button id="exportPdfBtn" class="pdf-btn">匯出 PDF</button>
-        </div>
     </div>
 
     <script>
-        // Initialize jsPDF
-        const { jsPDF } = window.jspdf;
+        
+        const { jsPDF } = window.jspdf; // Initialize jsPDF
 
         document.addEventListener('DOMContentLoaded', function() {
             const subjectSelect = document.getElementById('subject');
