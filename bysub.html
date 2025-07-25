@@ -254,6 +254,20 @@
         .pdf-btn {
             background-color: #f44336;
         }
+        /* 新增教師輸入框樣式 */
+        #teacherInput {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 8px;
+        }
+        #teacherInput:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
         @media print {
             .form-group, .refresh-btn, .export-buttons {
                 display: none;
@@ -316,6 +330,9 @@
                 <span id="toggleTeachersBtn" class="toggle-teachers">▼ 選擇教師</span>
                 <div id="teachersCollapsible" class="collapsible">
                     <label>選擇教師:</label>
+                    <div style="margin-bottom: 10px;">
+                        <input type="text" id="teacherInput" placeholder="輸入教師名稱 (可用逗號或空格分隔)">
+                    </div>
                     <div id="teachersCheckboxContainer" class="teachers-container"></div>
                     
                     <div class="action-buttons">
@@ -364,6 +381,7 @@
             const printTimetableBtn = document.getElementById('printTimetableBtn');
             const exportPdfBtn = document.getElementById('exportPdfBtn');
             const exportButtons = document.getElementById('exportButtons');
+            const teacherInput = document.getElementById('teacherInput');
             
             let timetableData = [];
             let subjects = [];
@@ -397,82 +415,142 @@
             });
             
             // 匯出PDF
-exportPdfBtn.addEventListener('click', function() {
-    const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
-    
-    // 使用html2canvas捕獲時間表
-    html2canvas(timetableContainer, {
-        scale: 2, // 使用1倍縮放以確保清晰度
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: timetableContainer.scrollWidth,
-        windowHeight: timetableContainer.scrollHeight
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'portrait', // 保持橫向以容納更多內容 landscape
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        // 計算PDF頁面尺寸
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        
-        // 計算圖像尺寸，保持比例並適應A4紙張
-        const imgWidth = pageWidth - 20; // 左右各留10mm邊距
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        // 檢查是否需要分頁
-        let position = 15; // 初始Y位置
-        
-        // 添加標題
-        // pdf.setFontSize(16);
-        // pdf.text(title, 10, 10);
-        
-        // 如果圖像高度超過頁面高度，則分割圖像
-        if (imgHeight > (pageHeight - position)) {
-            // 計算分割比例
-            const ratio = (pageHeight - position) / imgHeight;
-            const splitHeight = canvas.height * ratio;
-            
-            // 添加第一頁
-            pdf.addImage({
-                imageData: imgData,
-                x: 10,
-                y: position,
-                width: imgWidth,
-                height: (splitHeight * imgWidth) / canvas.width,
-                format: 'PNG',
-                alias: 'timetable_part1'
+            exportPdfBtn.addEventListener('click', function() {
+                const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
+                
+                // 使用html2canvas捕獲時間表
+                html2canvas(timetableContainer, {
+                    scale: 2, // 使用1倍縮放以確保清晰度
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: timetableContainer.scrollWidth,
+                    windowHeight: timetableContainer.scrollHeight
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'portrait', // 保持橫向以容納更多內容 landscape
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+                    
+                    // 計算PDF頁面尺寸
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    
+                    // 計算圖像尺寸，保持比例並適應A4紙張
+                    const imgWidth = pageWidth - 20; // 左右各留10mm邊距
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    // 檢查是否需要分頁
+                    let position = 15; // 初始Y位置
+                    
+                    // 添加標題
+                    // pdf.setFontSize(16);
+                    // pdf.text(title, 10, 10);
+                    
+                    // 如果圖像高度超過頁面高度，則分割圖像
+                    if (imgHeight > (pageHeight - position)) {
+                        // 計算分割比例
+                        const ratio = (pageHeight - position) / imgHeight;
+                        const splitHeight = canvas.height * ratio;
+                        
+                        // 添加第一頁
+                        pdf.addImage({
+                            imageData: imgData,
+                            x: 10,
+                            y: position,
+                            width: imgWidth,
+                            height: (splitHeight * imgWidth) / canvas.width,
+                            format: 'PNG',
+                            alias: 'timetable_part1'
+                        });
+                        
+                        // 添加第二頁
+                        pdf.addPage();
+                        pdf.addImage({
+                            imageData: imgData,
+                            x: 10,
+                            y: 10, // 從頂部開始
+                            width: imgWidth,
+                            height: imgHeight - (splitHeight * imgWidth) / canvas.width,
+                            format: 'PNG',
+                            alias: 'timetable_part2'
+                        });
+                    } else {
+                        // 單頁添加完整圖像
+                        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                    }
+                    
+                    // 保存PDF
+                    pdf.save(`${title}.pdf`);
+                }).catch(error => {
+                    console.error('生成PDF失敗:', error);
+                    errorMsg.textContent = '生成PDF時發生錯誤';
+                });
             });
             
-            // 添加第二頁
-            pdf.addPage();
-            pdf.addImage({
-                imageData: imgData,
-                x: 10,
-                y: 10, // 從頂部開始
-                width: imgWidth,
-                height: imgHeight - (splitHeight * imgWidth) / canvas.width,
-                format: 'PNG',
-                alias: 'timetable_part2'
+            // Handle teacher input
+            teacherInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const inputText = this.value.trim();
+                    if (inputText) {
+                        // Split by comma or space
+                        const inputTeachers = inputText.split(/[, ]+/).filter(t => t.trim() !== '');
+                        
+                        // Clear all first
+                        document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(checkbox => {
+                            checkbox.checked = false;
+                            checkbox.parentElement.classList.remove('highlighted');
+                        });
+                        
+                        // Check matching teachers
+                        let foundAny = false;
+                        inputTeachers.forEach(teacher => {
+                            // Try to find exact match first
+                            let checkbox = document.querySelector(`#teachersCheckboxContainer input[value="${teacher}"]`);
+                            
+                            // If not found, try case-insensitive partial match
+                            if (!checkbox) {
+                                const checkboxes = document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]');
+                                for (let cb of checkboxes) {
+                                    if (cb.value.toLowerCase().includes(teacher.toLowerCase())) {
+                                        checkbox = cb;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (checkbox) {
+                                checkbox.checked = true;
+                                checkbox.parentElement.classList.add('highlighted');
+                                foundAny = true;
+                            }
+                        });
+                        
+                        if (foundAny) {
+                            // Generate timetable automatically
+                            const selectedTeachers = getSelectedTeachers();
+                            errorMsg.textContent = '';
+                            loading.style.display = 'block';
+                            exportButtons.style.display = 'none';
+                            
+                            setTimeout(() => {
+                                generateTimetableByTeachers(selectedTeachers);
+                                loading.style.display = 'none';
+                                exportButtons.style.display = 'block';
+                                timetableContainer.scrollIntoView({ behavior: 'smooth' });
+                            }, 100);
+                        } else {
+                            errorMsg.textContent = '沒有找到匹配的教師';
+                        }
+                        
+                        this.value = '';
+                    }
+                }
             });
-        } else {
-            // 單頁添加完整圖像
-            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        }
-        
-        // 保存PDF
-        pdf.save(`${title}.pdf`);
-    }).catch(error => {
-        console.error('生成PDF失敗:', error);
-        errorMsg.textContent = '生成PDF時發生錯誤';
-    });
-});
             
             // 載入CSV文件
             function loadCSV() {
