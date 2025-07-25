@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="hnkstyle.css">
     <title>共同時間表</title>
-    <!-- 添加 html2pdf 和 jsPDF 庫 -->
+    <!-- Add jsPDF library for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
     // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
     const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 假設的網域名稱，請務必修改
@@ -343,6 +342,9 @@
     </div>
 
     <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+
         document.addEventListener('DOMContentLoaded', function() {
             const subjectSelect = document.getElementById('subject');
             const groupSelect = document.getElementById('group');
@@ -389,152 +391,38 @@
             
             // 列印時間表
             printTimetableBtn.addEventListener('click', function() {
-                if (!timetableContainer.innerHTML) {
-                    errorMsg.textContent = '請先生成時間表';
-                    return;
-                }
-                
-                const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
-                const printWindow = window.open('', '', 'width=1000,height=600');
-                printWindow.document.write(`
-                    <html>
-                        <head>
-                            <title>${title}</title>
-                            <style>
-                                body { font-family: Arial; margin: 10px; }
-                                h1 { text-align: center; font-size: 18px; margin-bottom: 10px; }
-                                table { width: 100%; border-collapse: collapse; font-size: 10px; }
-                                th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
-                                th { background-color: #3498db; color: white; }
-                                .time-col { width: 80px; background-color: #3498db; color: white; font-size: 9px; }
-                                .period-col { width: 30px; background-color: #3498db; color: white; font-size: 9px; }
-                                .break-cell { background-color: #f2f2f2; font-style: italic; }
-                                .empty-cell { background-color: #f9f9f9; }
-                                .subject { color: blue; font-size: 9px; }
-                                .room { color: #555; font-size: 8px; }
-                                .teacher { font-size: 8px; }
-                                .dismissal-time { font-size: 8px; color: #666; font-style: italic; }
-                                @page { size: A4 portrait; margin: 5mm; }
-                            </style>
-                        </head>
-                        <body>
-                            <h1>${title}</h1>
-                            ${timetableContainer.innerHTML}
-                            <script>
-                                window.onload = function() {
-                                    setTimeout(function() {
-                                        window.print();
-                                        window.close();
-                                    }, 200);
-                                };
-                            </script>
-                        </body>
-                    </html>
-                `);
-                printWindow.document.close();
+                window.print();
             });
             
             // 匯出PDF
             exportPdfBtn.addEventListener('click', function() {
-    const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
-    const container = timetableContainer;
-    
-    // 顯示載入指示器
-    const originalContent = container.innerHTML;
-    container.innerHTML = '<div style="text-align:center;padding:20px;">正在生成PDF，請稍候...</div>';
-    
-    // 設置PDF選項
-    const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm'
-    });
-    
-    // 計算表格總高度
-    const tableHeight = container.scrollHeight;
-    const pageHeight = pdf.internal.pageSize.getHeight() - 20; // 留出邊距
-    
-    // 分段捕獲和添加內容
-    let position = 0;
-    const captureAndAddPage = () => {
-        // 恢復原始內容
-        container.innerHTML = originalContent;
-        
-        // 設置滾動位置以捕獲當前部分
-        container.scrollTop = position;
-        
-        // 使用html2canvas捕獲當前可見部分
-        html2canvas(container, {
-            scrollY: -position,
-            height: pageHeight,
-            windowHeight: container.scrollHeight,
-            scale: 1, // 降低縮放比例以提高性能
-            useCORS: true,
-            allowTaint: true,
-            logging: false
-        }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const imgWidth = pdf.internal.pageSize.getWidth() - 20;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            // 添加新頁面（如果是第一頁則不需要）
-            if (position > 0) {
-                pdf.addPage();
-            }
-            
-            // 添加標題（只在第一頁）
-            if (position === 0) {
-                pdf.setFontSize(16);
-                pdf.text(title, 10, 10);
-            }
-            
-            // 添加圖像
-            pdf.addImage(imgData, 'PNG', 10, position === 0 ? 15 : 10, imgWidth, imgHeight);
-            
-            // 更新位置
-            position += pageHeight;
-            
-            // 如果還有更多內容，繼續捕獲
-            if (position < tableHeight) {
-                setTimeout(captureAndAddPage, 500); // 添加延遲以避免渲染問題
-            } else {
-                // 保存PDF
-                pdf.save(`${title}.pdf`);
-                // 恢復原始內容
-                container.innerHTML = originalContent;
-            }
-        }).catch(error => {
-            console.error('生成PDF失敗:', error);
-            container.innerHTML = originalContent;
-            alert('生成PDF時發生錯誤，請重試或縮小瀏覽器縮放比例後再試。');
-        });
-    };
-    
-    // 開始捕獲過程
-    setTimeout(captureAndAddPage, 500);
-});
-
-            // 備用PDF生成方法
-            function backupPDFGeneration(element, opt) {
-                const backupOpt = {
-                    ...opt,
-                    html2canvas: {
-                        ...opt.html2canvas,
-                        scale: 1,
-                        windowHeight: timetableContainer.scrollHeight + 500
-                    },
-                    jsPDF: {
-                        ...opt.jsPDF,
-                        format: 'a4'
-                    }
-                };
+                const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
                 
-                try {
-                    html2pdf().set(backupOpt).from(element).save();
-                } catch (err) {
-                    console.error('Backup PDF generation failed:', err);
-                    alert('PDF生成失敗，請嘗試列印功能或聯繫管理員');
-                }
-            }
+                // 使用html2canvas捕獲時間表
+                html2canvas(timetableContainer).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'mm'
+                    });
+                    
+                    // 計算PDF頁面尺寸和圖像尺寸
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const imgWidth = pageWidth - 20; // 左右各留10mm邊距
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    // 添加標題
+                    pdf.setFontSize(16);
+                    pdf.text(title, 10, 10);
+                    
+                    // 添加時間表圖像
+                    pdf.addImage(imgData, 'PNG', 10, 15, imgWidth, imgHeight);
+                    
+                    // 保存PDF
+                    pdf.save(`${title}.pdf`);
+                });
+            });
             
             // 載入CSV文件
             function loadCSV() {
