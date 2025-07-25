@@ -399,18 +399,79 @@
             // 匯出PDF
 exportPdfBtn.addEventListener('click', function() {
     const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
-    const container = timetableContainer;
-
-    // 選擇你要匯出的 DOM 區塊（可自行調整）
-    const opt = {
-        margin:       0.5, // 英吋
-        filename:     `${title}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
-    };
-
-    html2pdf().set(opt).from(container).save();
+    
+    // 使用html2canvas捕獲時間表
+    html2canvas(timetableContainer, {
+        scale: 1, // 使用1倍縮放以確保清晰度
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: timetableContainer.scrollWidth,
+        windowHeight: timetableContainer.scrollHeight
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'landscape', // 保持橫向以容納更多內容
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        // 計算PDF頁面尺寸
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        
+        // 計算圖像尺寸，保持比例並適應A4紙張
+        const imgWidth = pageWidth - 20; // 左右各留10mm邊距
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // 檢查是否需要分頁
+        let position = 15; // 初始Y位置
+        
+        // 添加標題
+        pdf.setFontSize(16);
+        pdf.text(title, 10, 10);
+        
+        // 如果圖像高度超過頁面高度，則分割圖像
+        if (imgHeight > (pageHeight - position)) {
+            // 計算分割比例
+            const ratio = (pageHeight - position) / imgHeight;
+            const splitHeight = canvas.height * ratio;
+            
+            // 添加第一頁
+            pdf.addImage({
+                imageData: imgData,
+                x: 10,
+                y: position,
+                width: imgWidth,
+                height: (splitHeight * imgWidth) / canvas.width,
+                format: 'PNG',
+                alias: 'timetable_part1'
+            });
+            
+            // 添加第二頁
+            pdf.addPage();
+            pdf.addImage({
+                imageData: imgData,
+                x: 10,
+                y: 10, // 從頂部開始
+                width: imgWidth,
+                height: imgHeight - (splitHeight * imgWidth) / canvas.width,
+                format: 'PNG',
+                alias: 'timetable_part2'
+            });
+        } else {
+            // 單頁添加完整圖像
+            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        }
+        
+        // 保存PDF
+        pdf.save(`${title}.pdf`);
+    }).catch(error => {
+        console.error('生成PDF失敗:', error);
+        errorMsg.textContent = '生成PDF時發生錯誤';
+    });
 });
             
             // 載入CSV文件
