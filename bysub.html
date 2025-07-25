@@ -396,33 +396,82 @@
             
             // 匯出PDF
             exportPdfBtn.addEventListener('click', function() {
-                const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
-                
-                // 使用html2canvas捕獲時間表
-                html2canvas(timetableContainer).then(canvas => {
-                    const imgData = canvas.toDataURL('image/png');
-                    const pdf = new jsPDF({
-                        orientation: 'landscape',
-                        unit: 'mm'
-                    });
-                    
-                    // 計算PDF頁面尺寸和圖像尺寸
-                    const pageWidth = pdf.internal.pageSize.getWidth();
-                    const pageHeight = pdf.internal.pageSize.getHeight();
-                    const imgWidth = pageWidth - 20; // 左右各留10mm邊距
-                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                    
-                    // 添加標題
-                    pdf.setFontSize(16);
-                    pdf.text(title, 10, 10);
-                    
-                    // 添加時間表圖像
-                    pdf.addImage(imgData, 'PNG', 10, 15, imgWidth, imgHeight);
-                    
-                    // 保存PDF
-                    pdf.save(`${title}.pdf`);
-                });
-            });
+    const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
+    const container = timetableContainer;
+    
+    // 顯示載入指示器
+    const originalContent = container.innerHTML;
+    container.innerHTML = '<div style="text-align:center;padding:20px;">正在生成PDF，請稍候...</div>';
+    
+    // 設置PDF選項
+    const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm'
+    });
+    
+    // 計算表格總高度
+    const tableHeight = container.scrollHeight;
+    const pageHeight = pdf.internal.pageSize.getHeight() - 20; // 留出邊距
+    
+    // 分段捕獲和添加內容
+    let position = 0;
+    const captureAndAddPage = () => {
+        // 恢復原始內容
+        container.innerHTML = originalContent;
+        
+        // 設置滾動位置以捕獲當前部分
+        container.scrollTop = position;
+        
+        // 使用html2canvas捕獲當前可見部分
+        html2canvas(container, {
+            scrollY: -position,
+            height: pageHeight,
+            windowHeight: container.scrollHeight,
+            scale: 1, // 降低縮放比例以提高性能
+            useCORS: true,
+            allowTaint: true,
+            logging: false
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = pdf.internal.pageSize.getWidth() - 20;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // 添加新頁面（如果是第一頁則不需要）
+            if (position > 0) {
+                pdf.addPage();
+            }
+            
+            // 添加標題（只在第一頁）
+            if (position === 0) {
+                pdf.setFontSize(16);
+                pdf.text(title, 10, 10);
+            }
+            
+            // 添加圖像
+            pdf.addImage(imgData, 'PNG', 10, position === 0 ? 15 : 10, imgWidth, imgHeight);
+            
+            // 更新位置
+            position += pageHeight;
+            
+            // 如果還有更多內容，繼續捕獲
+            if (position < tableHeight) {
+                setTimeout(captureAndAddPage, 500); // 添加延遲以避免渲染問題
+            } else {
+                // 保存PDF
+                pdf.save(`${title}.pdf`);
+                // 恢復原始內容
+                container.innerHTML = originalContent;
+            }
+        }).catch(error => {
+            console.error('生成PDF失敗:', error);
+            container.innerHTML = originalContent;
+            alert('生成PDF時發生錯誤，請重試或縮小瀏覽器縮放比例後再試。');
+        });
+    };
+    
+    // 開始捕獲過程
+    setTimeout(captureAndAddPage, 500);
+});
             
             // 載入CSV文件
             function loadCSV() {
