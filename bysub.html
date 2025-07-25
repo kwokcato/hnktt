@@ -402,7 +402,7 @@ exportPdfBtn.addEventListener('click', function() {
     
     // 使用html2canvas捕獲時間表
     html2canvas(timetableContainer, {
-        scale: 1, // 使用1倍縮放以確保清晰度
+        scale: 2, // 使用1倍縮放以確保清晰度
         logging: false,
         useCORS: true,
         allowTaint: true,
@@ -413,7 +413,7 @@ exportPdfBtn.addEventListener('click', function() {
     }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
-            orientation: 'landscape', // 保持橫向以容納更多內容
+            orientation: 'portrait', // 保持橫向以容納更多內容 landscape
             unit: 'mm',
             format: 'a4'
         });
