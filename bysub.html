@@ -436,64 +436,82 @@
             
             // 匯出PDF
             exportPdfBtn.addEventListener('click', function() {
-                if (!timetableContainer.innerHTML) {
-                    errorMsg.textContent = '請先生成時間表';
-                    return;
-                }
-
-                const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
-                const element = document.createElement('div');
-                element.style.width = '100%';
-                element.innerHTML = `
-                    <h1 style="text-align:center;font-family:Arial;margin-bottom:10px;font-size:16px;">${title}</h1>
-                    <div style="font-size:10px;">
-                        ${timetableContainer.innerHTML}
-                    </div>
-                `;
-                
-                const opt = {
-                    margin: [5, 5, 2, 2],
-                    filename: `${title}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { 
-                        scale: 2, 
-                        logging: true, 
-                        useCORS: true,
-                        scrollY: 0,
-                        windowHeight: timetableContainer.scrollHeight + 200
-                    },
-                    jsPDF: { 
-                        unit: 'mm', 
-                        format: 'a4',
-                        orientation: 'portrait',
-                        compress: true
-                    },
-                    pagebreak: { 
-                        mode: ['avoid-all', 'css', 'legacy'] 
-                    }
-                };
-                
-                // 顯示載入訊息
-                const originalLoadingDisplay = loading.style.display;
-                loading.style.display = 'block';
-                loading.textContent = '正在生成PDF，請稍候...';
-                
-                setTimeout(() => {
-                    html2pdf().set(opt).from(element).save()
-                        .then(() => {
-                            console.log('PDF generated successfully');
-                            loading.style.display = originalLoadingDisplay;
-                        })
-                        .catch(err => {
-                            console.error('PDF generation error:', err);
-                            loading.textContent = 'PDF生成失敗，請重試';
-                            setTimeout(() => {
-                                loading.style.display = originalLoadingDisplay;
-                            }, 2000);
-                            backupPDFGeneration(element, opt);
-                        });
-                }, 500);
-            });
+    const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
+    const container = timetableContainer;
+    
+    // 顯示載入指示器
+    const originalContent = container.innerHTML;
+    container.innerHTML = '<div style="text-align:center;padding:20px;">正在生成PDF，請稍候...</div>';
+    
+    // 設置PDF選項
+    const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm'
+    });
+    
+    // 計算表格總高度
+    const tableHeight = container.scrollHeight;
+    const pageHeight = pdf.internal.pageSize.getHeight() - 20; // 留出邊距
+    
+    // 分段捕獲和添加內容
+    let position = 0;
+    const captureAndAddPage = () => {
+        // 恢復原始內容
+        container.innerHTML = originalContent;
+        
+        // 設置滾動位置以捕獲當前部分
+        container.scrollTop = position;
+        
+        // 使用html2canvas捕獲當前可見部分
+        html2canvas(container, {
+            scrollY: -position,
+            height: pageHeight,
+            windowHeight: container.scrollHeight,
+            scale: 1, // 降低縮放比例以提高性能
+            useCORS: true,
+            allowTaint: true,
+            logging: false
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = pdf.internal.pageSize.getWidth() - 20;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // 添加新頁面（如果是第一頁則不需要）
+            if (position > 0) {
+                pdf.addPage();
+            }
+            
+            // 添加標題（只在第一頁）
+            if (position === 0) {
+                pdf.setFontSize(16);
+                pdf.text(title, 10, 10);
+            }
+            
+            // 添加圖像
+            pdf.addImage(imgData, 'PNG', 10, position === 0 ? 15 : 10, imgWidth, imgHeight);
+            
+            // 更新位置
+            position += pageHeight;
+            
+            // 如果還有更多內容，繼續捕獲
+            if (position < tableHeight) {
+                setTimeout(captureAndAddPage, 500); // 添加延遲以避免渲染問題
+            } else {
+                // 保存PDF
+                pdf.save(`${title}.pdf`);
+                // 恢復原始內容
+                container.innerHTML = originalContent;
+            }
+        }).catch(error => {
+            console.error('生成PDF失敗:', error);
+            container.innerHTML = originalContent;
+            alert('生成PDF時發生錯誤，請重試或縮小瀏覽器縮放比例後再試。');
+        });
+    };
+    
+    // 開始捕獲過程
+    setTimeout(captureAndAddPage, 500);
+});
 
             // 備用PDF生成方法
             function backupPDFGeneration(element, opt) {
