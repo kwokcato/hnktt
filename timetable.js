@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
     const teacherNameInput = document.getElementById('teacherName');
     const teacherDropdown = document.getElementById('teacherDropdown');
     const classDropdown = document.getElementById('classDropdown');
@@ -7,14 +8,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const timetableTable = document.getElementById('timetable');
     const exportBtnGroup = document.getElementById('exportBtnGroup');
     
-    let allLessons = []; // Store all lesson data
-    let allTeachers = []; // Store all teacher names
-    let allClasses = []; // Store all class names
-    let currentTitle = ''; // Current timetable title
-    let currentLessons = []; // Current displayed lessons
-    let currentFontSize = 100; // Current font size percentage (default 100%)
+    // Data Storage
+    let allLessons = [];
+    let allTeachers = [];
+    let allClasses = [];
+    let currentTitle = '';
+    let currentLessons = [];
+    let currentFontSize = 100;
     
-    // Time slots definition
+    // Time Slots Configuration
     const timeSlots = [
         { time: '8:05', period: '0', endTime: '8:20', isBreak: true, label: 'ASSEMBLY' },
         { time: '8:20', period: '1', endTime: '8:55', isBreak: false },
@@ -33,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         { time: '15:15', period: '10', endTime: '15:50', isBreak: false }
     ];
 
-    // Cookie functions
+    // Cookie Management Functions
     function setCookie(name, value, days) {
         const date = new Date();
         date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -57,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return "";
     }
     
-    // Initialize export buttons
+    // Initialize Export Buttons
     function initExportButtons() {
         exportBtnGroup.innerHTML = `
             <button id="printBtn" class="export-btn">Print Timetable</button>
@@ -73,53 +75,49 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('increaseFontBtn').addEventListener('click', increaseFontSize);
         document.getElementById('decreaseFontBtn').addEventListener('click', decreaseFontSize);
 
-        // Load saved font size from cookie
+        // Load saved font size preference
         const savedFontSize = getCookie('timetableFontSize');
         if (savedFontSize) {
             currentFontSize = parseInt(savedFontSize);
         }
     }
 
-    // Increase font size
+    // Font Size Adjustment Functions
     function increaseFontSize() {
-        currentFontSize = Math.min(currentFontSize + 10, 150); // Max 150%
-        setCookie('timetableFontSize', currentFontSize, 30); // Save for 30 days
+        currentFontSize = Math.min(currentFontSize + 10, 150);
+        setCookie('timetableFontSize', currentFontSize, 30);
         updateTimetableFontSize();
     }
 
-    // Decrease font size
     function decreaseFontSize() {
-        currentFontSize = Math.max(currentFontSize - 10, 70); // Min 70%
-        setCookie('timetableFontSize', currentFontSize, 30); // Save for 30 days
+        currentFontSize = Math.max(currentFontSize - 10, 70);
+        setCookie('timetableFontSize', currentFontSize, 30);
         updateTimetableFontSize();
     }
 
-    // Update timetable font size
     function updateTimetableFontSize() {
         if (!timetableTable) return;
         
-        // Calculate actual font size (based on 11px default)
         const baseSize = 11;
         const newSize = baseSize * (currentFontSize / 100);
         
-        // Update all text elements in the table
         const elements = timetableTable.querySelectorAll('td, th, span, div');
         elements.forEach(el => {
             if (el.classList.contains('time-col') || el.classList.contains('period-col')) {
-                el.style.fontSize = `${newSize - 1}px`; // Slightly smaller for time/period
+                el.style.fontSize = `${newSize - 1}px`;
             } else if (el.classList.contains('subject')) {
-                el.style.fontSize = `${newSize + 2}px`; // Slightly larger for subjects
+                el.style.fontSize = `${newSize + 2}px`;
             } else if (el.classList.contains('room') || el.classList.contains('teacher')) {
-                el.style.fontSize = `${newSize - 1}px`; // Slightly smaller for room/teacher
+                el.style.fontSize = `${newSize - 1}px`;
             } else if (el.classList.contains('dismissal-time')) {
-                el.style.fontSize = `${newSize - 1}px`; // Slightly smaller for dismissal time
+                el.style.fontSize = `${newSize - 1}px`;
             } else {
-                el.style.fontSize = `${newSize}px`; // Normal size for other elements
+                el.style.fontSize = `${newSize}px`;
             }
         });
     }
 
-    // Print timetable
+    // Print Timetable Function
     function printTimetable() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('Please search for a timetable first');
@@ -165,46 +163,49 @@ document.addEventListener('DOMContentLoaded', function() {
         printWindow.document.close();
     }
     
-    // Export to PDF
+    // Export to PDF Function (Revised)
     function exportToPDF() {
         if (!currentTitle || currentLessons.length === 0) {
             alert('Please search for a timetable first');
             return;
         }
         
-        // Using html2pdf.js library
+        // Create optimized container for PDF
         const element = document.createElement('div');
         element.style.width = '100%';
+        element.style.fontSize = '8px';
+        
         element.innerHTML = `
-            <h1 style="text-align:center;font-family:Arial;margin-bottom:10px;font-size:16px;">${currentTitle}</h1>
-            <div style="font-size:10px;">
-                ${generateTimetableHTML(currentLessons, currentTitle.includes('Class'))}
+            <h1 style="text-align:center;font-family:Arial;margin-bottom:5px;font-size:12px;">${currentTitle}</h1>
+            <div style="width:100%;">
+                ${generatePDFOptimizedTimetable(currentLessons, currentTitle.includes('Class'))}
             </div>
         `;
         
         const opt = {
-            margin: [5, 5, 2, 2],
+            margin: [5, 5, 5, 5],
             filename: `${currentTitle}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { 
-                scale: 2, 
-                logging: true, 
+                scale: 2,
+                letterRendering: true,
                 useCORS: true,
                 scrollY: 0,
                 windowHeight: document.getElementById('timetable').scrollHeight + 200
             },
             jsPDF: { 
-                unit: 'mm', 
+                unit: 'mm',
                 format: 'a4',
-                orientation: 'portrait',
+                orientation: 'landscape',
                 compress: true
             },
             pagebreak: { 
-                mode: ['avoid-all', 'css', 'legacy'] 
+                mode: ['avoid-all', 'css', 'legacy'],
+                avoid: ['tr', 'td', 'th']
             }
         };
         
-        // Load html2pdf library
+        // Load html2pdf library dynamically
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
         script.onload = function() {
@@ -222,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(script);
     }
 
-    // Backup PDF generation method
+    // Backup PDF Generation
     function backupPDFGeneration(element, opt) {
         const backupOpt = {
             ...opt,
@@ -230,10 +231,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 ...opt.html2canvas,
                 scale: 1,
                 windowHeight: document.getElementById('timetable').scrollHeight + 500
-            },
-            jsPDF: {
-                ...opt.jsPDF,
-                format: 'a4'
             }
         };
         
@@ -245,7 +242,216 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Generate timetable HTML (for PDF and print)
+    // Generate PDF-Optimized Timetable HTML
+    function generatePDFOptimizedTimetable(lessons, isClassQuery) {
+        let tableHTML = `
+            <table style="width:100%;border-collapse:collapse;font-size:7px;">
+                <thead>
+                    <tr>
+                        <th style="width:50px;background-color:#3498db;color:white;padding:2px;">Time</th>
+                        <th style="width:20px;background-color:#3498db;color:white;padding:2px;">Period</th>
+                        <th style="background-color:#3498db;color:white;padding:2px;">Monday</th>
+                        <th style="background-color:#3498db;color:white;padding:2px;">Tuesday</th>
+                        <th style="background-color:#3498db;color:white;padding:2px;">Wednesday</th>
+                        <th style="background-color:#3498db;color:white;padding:2px;">Thursday</th>
+                        <th style="background-color:#3498db;color:white;padding:2px;">Friday</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        timeSlots.forEach(slot => {
+            if (slot.isBreak) {
+                tableHTML += `
+                    <tr>
+                        <td style="width:50px;background-color:#3498db;color:white;padding:2px;">${slot.time}-${slot.endTime}</td>
+                        <td style="background-color:#e6e6e6;color:#777;font-style:italic;padding:2px;" colspan="6">${slot.label}</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tableHTML += `
+                <tr>
+                    <td style="width:50px;background-color:#3498db;color:white;padding:2px;">${slot.time}-${slot.endTime}</td>
+                    <td style="width:20px;background-color:#3498db;color:white;padding:2px;">${slot.period}</td>
+            `;
+            
+            for (let day = 1; day <= 5; day++) {
+                const dayLessons = lessons.filter(
+                    lesson => lesson.day === day && lesson.period === parseInt(slot.period)
+                );
+                
+                // Wednesday period 10 special handling
+                if (day === 3 && slot.period === '10') {
+                    if (dayLessons.length === 0) {
+                        tableHTML += `<td style="background-color:#f9f9f9;padding:2px;">
+                            <div style="font-size:6px;">(Dismissal 15:30)</div>
+                        </td>`;
+                    } else {
+                        const firstLesson = dayLessons[0];
+                        tableHTML += `<td style="padding:2px;">
+                            <div style="font-size:6px;">${formatForPDF(firstLesson, isClassQuery)}</div>
+                            <div style="font-size:6px;">(Dismissal 15:30)</div>
+                        </td>`;
+                    }
+                    continue;
+                }
+                
+                if (dayLessons.length === 0) {
+                    tableHTML += `<td style="background-color:#f9f9f9;padding:2px;"></td>`;
+                } else {
+                    if (isClassQuery) {
+                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
+                        
+                        const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
+                        const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
+                        const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
+                        
+                        if (hasChem) {
+                            tableHTML += `<td style="padding:2px;">
+                                <div style="font-size:6px;">
+                                    <span style="color:blue;">X2</span>
+                                    <span>(${teachers})</span>
+                                </div>
+                            </td>`;
+                        } else if (hasIct) {
+                            tableHTML += `<td style="padding:2px;">
+                                <div style="font-size:6px;">
+                                    <span style="color:blue;">X3</span>
+                                    <span>(${teachers})</span>
+                                </div>
+                            </td>`;
+                        } else if (hasMaup) {
+                            tableHTML += `<td style="padding:2px;">
+                                <div style="font-size:6px;">
+                                    <span style="color:blue;">MAUP</span>
+                                    <span>(${teachers})</span>
+                                </div>
+                            </td>`;
+                        } else {
+                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                            const rooms = [...new Set(dayLessons.map(l => l.room))].join('/');
+                            tableHTML += `<td style="padding:2px;">
+                                <div style="font-size:6px;">
+                                    <span style="color:blue;">${subjects}</span>
+                                    <span style="color:#555;"> ${rooms}</span>
+                                    <span>(${teachers})</span>
+                                </div>
+                            </td>`;
+                        }
+                    } else {
+                        const firstLesson = dayLessons[0];
+                        const isPE = firstLesson.subject === 'PE';
+                        const isMaup = firstLesson.subject === 'MAUP';
+                        
+                        if (isPE) {
+                            const allPELessons = allLessons.filter(
+                                lesson => lesson.day === day && 
+                                         lesson.period === parseInt(slot.period) &&
+                                         lesson.subject === 'PE'
+                            );
+                            
+                            const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
+                            const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
+                                .filter(t => t !== firstLesson.teacher)
+                                .sort()
+                                .join('/');
+                            
+                            tableHTML += `<td style="padding:2px;">
+                                <div style="font-size:6px;">
+                                    <span style="color:blue;">${allClasses} PE</span>
+                                    ${otherTeachers ? `<span>(${otherTeachers})</span>` : ''}
+                                </div>
+                            </td>`;
+                        } else if (isMaup) {
+                            tableHTML += `<td style="padding:2px;">
+                                <div style="font-size:6px;">
+                                    <span style="color:blue;">${firstLesson.class} MAUP</span>
+                                </div>
+                            </td>`;
+                        } else {
+                            const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
+                            const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
+                            let coTeachers = '';
+                            
+                            if (shouldShowCoTeachers) {
+                                const sameLessons = allLessons.filter(
+                                    lesson => lesson.day === day && 
+                                             lesson.period === parseInt(slot.period) &&
+                                             lesson.class === firstLesson.class &&
+                                             lesson.subject === firstLesson.subject
+                                );
+                                
+                                coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
+                                    .filter(t => t !== firstLesson.teacher)
+                                    .sort()
+                                    .join('/');
+                            }
+
+                            const groupedLessons = allLessons.filter(
+                                lesson => lesson.day === day && 
+                                         lesson.period === parseInt(slot.period) &&
+                                         lesson.subject === firstLesson.subject &&
+                                         lesson.teacher === firstLesson.teacher
+                            );
+
+                            let classDisplay = firstLesson.class;
+                            if (groupedLessons.length > 1) {
+                                const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+                                const simplifiedClasses = simplifyClassNames(allClasses);
+                                classDisplay = simplifiedClasses;
+                            }
+                            
+                            tableHTML += `<td style="padding:2px;">
+                                <div style="font-size:6px;">
+                                    <span style="color:blue;">${classDisplay} ${firstLesson.subject}</span>
+                                    <span style="color:#555;"> ${firstLesson.room}</span>
+                                    ${coTeachers ? `<span>(${coTeachers})</span>` : ''}
+                                </div>
+                            </td>`;
+                        }
+                    }
+                }
+            }
+            
+            tableHTML += `</tr>`;
+        });
+        
+        tableHTML += `</tbody></table>`;
+        return tableHTML;
+    }
+
+    // Format Lesson for PDF Export
+    function formatForPDF(lesson, isClassQuery) {
+        if (isClassQuery) {
+            let subject = lesson.subject;
+            if (subject.includes('!CHEM')) subject = 'X2';
+            if (subject.includes('!ICT')) subject = 'X3';
+            return `<span style="color:blue;">${subject}</span> <span>(${lesson.teacher})</span>`;
+        }
+        if (lesson.subject === 'MAUP') {
+            return `<span style="color:blue;">${lesson.class} MAUP</span>`;
+        }
+
+        const groupedLessons = allLessons.filter(
+            l => l.day === lesson.day && 
+                 l.period === lesson.period && 
+                 l.subject === lesson.subject && 
+                 l.teacher === lesson.teacher
+        );
+
+        let classDisplay = lesson.class;
+        if (groupedLessons.length > 1) {
+            const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+            const simplifiedClasses = simplifyClassNames(allClasses);
+            classDisplay = simplifiedClasses;
+        }
+
+        return `<span style="color:blue;">${classDisplay} ${lesson.subject}</span> <span style="color:#555;">${lesson.room}</span>`;
+    }
+
+    // Generate Regular Timetable HTML
     function generateTimetableHTML(lessons, isClassQuery) {
         let tableHTML = `
             <table style="width:95%;border-collapse:collapse;margin-top:10px;font-size:10px;">
@@ -285,17 +491,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                 );
                 
-                // Wednesday period 10 special handling
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td style="background-color:#f9f9f9;">
-                            <div class="dismissal-time" style="font-size:8px;">(CPA 14:40 -  15:30)</div>
+                            <div class="dismissal-time" style="font-size:8px;">(Dismissal time 15:30)</div>
                         </td>`;
                     } else {
                         const firstLesson = dayLessons[0];
                         tableHTML += `<td>
                             <div>${formatLessonForExport(firstLesson, isClassQuery)}</div>
-                            <div class="dismissal-time" style="font-size:8px;">(CPA 14:40 -  15:30)</div>
+                            <div class="dismissal-time" style="font-size:8px;">(Dismissal time 15:30)</div>
                         </td>`;
                     }
                     continue;
@@ -425,7 +630,21 @@ document.addEventListener('DOMContentLoaded', function() {
         return tableHTML;
     }
 
-    // Simplify class names display
+    // Format Lesson for Export
+    function formatLessonForExport(lesson, isClassQuery) {
+        if (isClassQuery) {
+            let subject = lesson.subject;
+            if (subject.includes('!CHEM')) subject = 'X2';
+            if (subject.includes('!ICT')) subject = 'X3';
+            return `<span style="color:blue;font-size:12px">${subject}</span> <span style="font-size:8px">(${lesson.teacher})</span>`;
+        }
+        if (lesson.subject === 'MAUP') {
+            return `<span style="color:blue;font-size:9px">${lesson.class} MAUP</span>`;
+        }
+        return `<span style="color:blue;font-size:12px">${lesson.class} ${lesson.subject}</span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
+    }
+
+    // Simplify Class Names
     function simplifyClassNames(classNames) {
         if (classNames.length <= 1) return classNames[0];
         
@@ -490,7 +709,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (dayLessons.length === 0) {
                         if (day === 3 && slot.period === '10') {
-                            row.push('(CPA 14:40 -  15:30)');
+                            row.push('(Dismissal time 15:30)');
                         } else {
                             row.push('');
                         }
@@ -581,22 +800,8 @@ document.addEventListener('DOMContentLoaded', function() {
         XLSX.utils.book_append_sheet(wb, ws, 'Timetable');
         XLSX.writeFile(wb, `${currentTitle}.xlsx`);
     }
-    
-    // Format lesson for export
-    function formatLessonForExport(lesson, isClassQuery) {
-        if (isClassQuery) {
-            let subject = lesson.subject;
-            if (subject.includes('!CHEM')) subject = 'X2';
-            if (subject.includes('!ICT')) subject = 'X3';
-            return `<span style="color:blue;font-size:12px">${subject}</span> <span style="font-size:8px">(${lesson.teacher})</span>`;
-        }
-        if (lesson.subject === 'MAUP') {
-            return `<span style="color:blue;font-size:9px">${lesson.class} MAUP</span>`;
-        }
-        return `<span style="color:blue;font-size:12px">${lesson.class} ${lesson.subject}</span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
-    }
 
-    // Search on Enter key
+    // Search on Enter Key
     teacherNameInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const query = teacherNameInput.value.trim();
@@ -610,11 +815,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Clear Input on Click
     teacherNameInput.addEventListener('click', function() {
         this.value = '';
     });
 
-    // Teacher dropdown selection
+    // Teacher Dropdown Selection
     teacherDropdown.addEventListener('change', function() {
         const teacherName = teacherDropdown.value;
         if (teacherName) {
@@ -624,7 +830,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Class dropdown selection
+    // Class Dropdown Selection
     classDropdown.addEventListener('change', function() {
         const className = classDropdown.value;
         if (className) {
@@ -634,12 +840,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Check if query is for a class
+    // Check if Query is for a Class
     function isClassQuery(query) {
         return /^[1-6][A-D]$/i.test(query);
     }
     
-    // Load CSV file
+    // Load CSV File
     function loadCSV() {
         fetch('tt.csv?' + new Date().getTime())
             .then(response => {
@@ -664,7 +870,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // Populate dropdowns
+    // Populate Dropdowns
     function populateDropdowns() {
         teacherDropdown.innerHTML = '<option value="">Select teacher...</option>';
         allTeachers.forEach(teacher => {
@@ -677,7 +883,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Parse CSV
+    // Parse CSV Data
     function parseCSV(csv) {
         const lines = csv.split('\n');
         const result = [];
@@ -703,7 +909,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
     
-    // Display teacher timetable
+    // Display Teacher Timetable
     function displayTimetable(teacherName) {
         currentLessons = allLessons.filter(item => 
             item.teacher.toUpperCase() === teacherName.toUpperCase()
@@ -721,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTimetable(currentLessons);
     }
     
-    // Display class timetable
+    // Display Class Timetable
     function displayClassTimetable(className) {
         currentLessons = allLessons.filter(item => 
             item.class.toUpperCase() === className.toUpperCase()
@@ -739,7 +945,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTimetable(currentLessons, true);
     }
     
-    // Render timetable (shared function)
+    // Render Timetable (shared function)
     function renderTimetable(lessons, isClassQuery = false) {
         // Load saved font size from cookie, default to 100%
         const savedFontSize = getCookie('timetableFontSize');
@@ -785,13 +991,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td class="empty-cell">
-                            <div class="dismissal-time" style="font-size:10px;">(CPA 14:40 -  15:30)</div>
+                            <div class="dismissal-time" style="font-size:10px;">(Dismissal time 15:30)</div>
                         </td>`;
                     } else {
                         const firstLesson = dayLessons[0];
                         tableHTML += `<td>
                             <div class="main-lesson">${formatLesson(firstLesson, isClassQuery)}</div>
-                            <div class="dismissal-time" style="font-size:10px;">(CPA 14:40 -  15:30)</div>
+                            <div class="dismissal-time" style="font-size:10px;">(Dismissal time 15:30)</div>
                         </td>`;
                     }
                     continue;
@@ -919,10 +1125,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tableHTML += `</tbody>`;
         timetableTable.innerHTML = tableHTML;
-        updateTimetableFontSize(); // Apply the correct font size on initial render
+        updateTimetableFontSize();
     }
     
-    // Format lesson display
+    // Format Lesson Display
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
