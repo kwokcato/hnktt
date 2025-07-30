@@ -39,10 +39,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <button id="printBtn" class="export-btn">列印時間表</button>
             <button id="pdfBtn" class="export-btn">匯出PDF</button>
             <button id="excelBtn" class="export-btn">匯出Excel</button>
-            <div class="font-size-controls">
+            <!-- <div class="font-size-controls"> -->
                 <button id="decreaseFontBtn" class="export-btn">-</button> <!-- class="font-size-btn" -->
                 <button id="increaseFontBtn" class="export-btn">+</button> <!-- class="font-size-btn" -->
-            </div>
+            <!-- </div> -->
         `;
         
         document.getElementById('printBtn').addEventListener('click', printTimetable);
