@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let allClasses = []; // 存儲所有班別名單
     let currentTitle = ''; // 當前顯示的時間表標題
     let currentLessons = []; // 當前顯示的課程數據
+    let currentFontSize = 100; // 當前字體大小百分比 (默認100%)
     
     // Time段定義 (true > 顯示 label, false > 不顯示 label)
     const timeSlots = [
@@ -32,19 +33,120 @@ document.addEventListener('DOMContentLoaded', function() {
         { time: '15:15', period: '10', endTime: '15:50', isBreak: false }
     ];
     
-    // 初始化導出按鈕
+    // 初始化導出按鈕和字體大小控制
     function initExportButtons() {
         exportBtnGroup.innerHTML = `
             <button id="printBtn" class="export-btn">列印時間表</button>
             <button id="pdfBtn" class="export-btn">匯出PDF</button>
             <button id="excelBtn" class="export-btn">匯出Excel</button>
+            <div class="font-size-controls">
+                <button id="decreaseFontBtn" class="font-size-btn">-</button>
+                <span id="fontSizeDisplay">100%</span>
+                <button id="increaseFontBtn" class="font-size-btn">+</button>
+            </div>
         `;
         
         document.getElementById('printBtn').addEventListener('click', printTimetable);
         document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+        
+        // 從Cookie讀取保存的字體大小
+        const savedFontSize = getCookie('timetableFontSize');
+        if (savedFontSize) {
+            currentFontSize = parseInt(savedFontSize);
+            updateFontSizeDisplay();
+            applyFontSizeToTimetable();
+        }
+        
+        // 字體大小控制按鈕事件
+        document.getElementById('increaseFontBtn').addEventListener('click', increaseFontSize);
+        document.getElementById('decreaseFontBtn').addEventListener('click', decreaseFontSize);
     }
-
+    
+    // 增加字體大小
+    function increaseFontSize() {
+        if (currentFontSize < 150) { // 限制最大150%
+            currentFontSize += 10;
+            updateFontSizeDisplay();
+            applyFontSizeToTimetable();
+            setCookie('timetableFontSize', currentFontSize, 30); // 保存30天
+        }
+    }
+    
+    // 減少字體大小
+    function decreaseFontSize() {
+        if (currentFontSize > 70) { // 限制最小70%
+            currentFontSize -= 10;
+            updateFontSizeDisplay();
+            applyFontSizeToTimetable();
+            setCookie('timetableFontSize', currentFontSize, 30); // 保存30天
+        }
+    }
+    
+    // 更新字體大小顯示
+    function updateFontSizeDisplay() {
+        const display = document.getElementById('fontSizeDisplay');
+        if (display) {
+            display.textContent = `${currentFontSize}%`;
+        }
+    }
+    
+    // 應用字體大小到時間表
+    function applyFontSizeToTimetable() {
+        const baseFontSize = 14; // 基準字體大小 (px)
+        const calculatedSize = baseFontSize * (currentFontSize / 100);
+        
+        // 調整時間表內所有文字大小
+        const timetableCells = timetableTable.querySelectorAll('td, th');
+        timetableCells.forEach(cell => {
+            cell.style.fontSize = `${calculatedSize}px`;
+        });
+        
+        // 調整特定元素的字體大小 (保持比例)
+        const subjects = timetableTable.querySelectorAll('.subject');
+        subjects.forEach(subject => {
+            const originalSize = parseFloat(subject.style.fontSize || '14px');
+            subject.style.fontSize = `${originalSize * (currentFontSize / 100)}px`;
+        });
+        
+        const rooms = timetableTable.querySelectorAll('.room');
+        rooms.forEach(room => {
+            const originalSize = parseFloat(room.style.fontSize || '10px');
+            room.style.fontSize = `${originalSize * (currentFontSize / 100)}px`;
+        });
+        
+        const teachers = timetableTable.querySelectorAll('.teacher');
+        teachers.forEach(teacher => {
+            const originalSize = parseFloat(teacher.style.fontSize || '10px');
+            teacher.style.fontSize = `${originalSize * (currentFontSize / 100)}px`;
+        });
+    }
+    
+    // 設置Cookie
+    function setCookie(name, value, days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        const expires = "expires=" + date.toUTCString();
+        document.cookie = name + "=" + value + ";" + expires + ";path=/";
+    }
+    
+    // 獲取Cookie
+    function getCookie(name) {
+        const cookieName = name + "=";
+        const decodedCookie = decodeURIComponent(document.cookie);
+        const cookieArray = decodedCookie.split(';');
+        for(let i = 0; i < cookieArray.length; i++) {
+            let cookie = cookieArray[i];
+            while (cookie.charAt(0) === ' ') {
+                cookie = cookie.substring(1);
+            }
+            if (cookie.indexOf(cookieName) === 0) {
+                return cookie.substring(cookieName.length, cookie.length);
+            }
+        }
+        return "";
+    }
+    
     // 列印時間表
     function printTimetable() {
         if (!currentTitle || currentLessons.length === 0) {
@@ -940,6 +1042,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         timetableTable.innerHTML = tableHTML;
+        applyFontSizeToTimetable(); // 應用當前字體大小
     }
     
     // 格式化課程顯示
