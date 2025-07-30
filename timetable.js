@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <button id="pdfBtn" class="export-btn">匯出PDF</button>
             <button id="excelBtn" class="export-btn">匯出Excel</button>
             <div class="font-size-controls">
-                <button id="decreaseFontBtn" class="font-size-btn">-</button>
-                <button id="increaseFontBtn" class="font-size-btn">+</button>
+                <button id="decreaseFontBtn" class="export-btn">-</button> //class="font-size-btn"
+                <button id="increaseFontBtn" class="export-btn">+</button> //class="font-size-btn"
             </div>
         `;
         
