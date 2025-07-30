@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let allClasses = []; // 存儲所有班別名單
     let currentTitle = ''; // 當前顯示的時間表標題
     let currentLessons = []; // 當前顯示的課程數據
-    let currentFontSize = 100; // 當前字體大小百分比 (默認100%)
+    let currentFontSize = 100; // 當前字體大小百分比 (預設100%)
     
     // Time段定義 (true > 顯示 label, false > 不顯示 label)
     const timeSlots = [
@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <button id="excelBtn" class="export-btn">匯出Excel</button>
             <div class="font-size-controls">
                 <button id="decreaseFontBtn" class="font-size-btn">-</button>
-                <span id="fontSizeDisplay">100%</span>
                 <button id="increaseFontBtn" class="font-size-btn">+</button>
             </div>
         `;
@@ -50,25 +49,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
         
+        // 添加字體大小控制事件
+        document.getElementById('increaseFontBtn').addEventListener('click', increaseFontSize);
+        document.getElementById('decreaseFontBtn').addEventListener('click', decreaseFontSize);
+        
         // 從Cookie讀取保存的字體大小
         const savedFontSize = getCookie('timetableFontSize');
         if (savedFontSize) {
             currentFontSize = parseInt(savedFontSize);
-            updateFontSizeDisplay();
-            applyFontSizeToTimetable();
+            applyFontSize();
         }
-        
-        // 字體大小控制按鈕事件
-        document.getElementById('increaseFontBtn').addEventListener('click', increaseFontSize);
-        document.getElementById('decreaseFontBtn').addEventListener('click', decreaseFontSize);
     }
     
     // 增加字體大小
     function increaseFontSize() {
         if (currentFontSize < 150) { // 限制最大150%
             currentFontSize += 10;
-            updateFontSizeDisplay();
-            applyFontSizeToTimetable();
+            applyFontSize();
             setCookie('timetableFontSize', currentFontSize, 30); // 保存30天
         }
     }
@@ -77,48 +74,31 @@ document.addEventListener('DOMContentLoaded', function() {
     function decreaseFontSize() {
         if (currentFontSize > 70) { // 限制最小70%
             currentFontSize -= 10;
-            updateFontSizeDisplay();
-            applyFontSizeToTimetable();
+            applyFontSize();
             setCookie('timetableFontSize', currentFontSize, 30); // 保存30天
         }
     }
     
-    // 更新字體大小顯示
-    function updateFontSizeDisplay() {
-        const display = document.getElementById('fontSizeDisplay');
-        if (display) {
-            display.textContent = `${currentFontSize}%`;
-        }
-    }
-    
-    // 應用字體大小到時間表
-    function applyFontSizeToTimetable() {
-        const baseFontSize = 14; // 基準字體大小 (px)
-        const calculatedSize = baseFontSize * (currentFontSize / 100);
+    // 應用當前字體大小到表格
+    function applyFontSize() {
+        const table = document.getElementById('timetable');
+        if (!table) return;
         
-        // 調整時間表內所有文字大小
-        const timetableCells = timetableTable.querySelectorAll('td, th');
-        timetableCells.forEach(cell => {
-            cell.style.fontSize = `${calculatedSize}px`;
+        // 計算基礎字體大小 (基於原始大小的百分比)
+        const baseSize = currentFontSize / 100;
+        
+        // 更新表格內所有文字元素的字體大小
+        table.querySelectorAll('td, th').forEach(el => {
+            el.style.fontSize = `${baseSize * 11}px`; // 基礎大小11px
         });
         
-        // 調整特定元素的字體大小 (保持比例)
-        const subjects = timetableTable.querySelectorAll('.subject');
-        subjects.forEach(subject => {
-            const originalSize = parseFloat(subject.style.fontSize || '14px');
-            subject.style.fontSize = `${originalSize * (currentFontSize / 100)}px`;
+        // 更新特定類別的文字大小
+        table.querySelectorAll('.subject').forEach(el => {
+            el.style.fontSize = `${baseSize * 14}px`; // 原始14px
         });
         
-        const rooms = timetableTable.querySelectorAll('.room');
-        rooms.forEach(room => {
-            const originalSize = parseFloat(room.style.fontSize || '10px');
-            room.style.fontSize = `${originalSize * (currentFontSize / 100)}px`;
-        });
-        
-        const teachers = timetableTable.querySelectorAll('.teacher');
-        teachers.forEach(teacher => {
-            const originalSize = parseFloat(teacher.style.fontSize || '10px');
-            teacher.style.fontSize = `${originalSize * (currentFontSize / 100)}px`;
+        table.querySelectorAll('.room, .teacher, .dismissal-time').forEach(el => {
+            el.style.fontSize = `${baseSize * 10}px`; // 原始10px
         });
     }
     
@@ -132,19 +112,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 獲取Cookie
     function getCookie(name) {
-        const cookieName = name + "=";
-        const decodedCookie = decodeURIComponent(document.cookie);
-        const cookieArray = decodedCookie.split(';');
-        for(let i = 0; i < cookieArray.length; i++) {
-            let cookie = cookieArray[i];
-            while (cookie.charAt(0) === ' ') {
-                cookie = cookie.substring(1);
-            }
-            if (cookie.indexOf(cookieName) === 0) {
-                return cookie.substring(cookieName.length, cookie.length);
-            }
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
         }
-        return "";
+        return null;
     }
     
     // 列印時間表
@@ -1042,7 +1017,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         timetableTable.innerHTML = tableHTML;
-        applyFontSizeToTimetable(); // 應用當前字體大小
+        applyFontSize(); // 確保新渲染的表格應用當前字體大小
     }
     
     // 格式化課程顯示
@@ -1074,7 +1049,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return `<span class="subject" style="color:blue;font-size:14px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
     }
-
 
     // 自動載入 CSV 文件
     loadCSV();
