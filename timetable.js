@@ -7,14 +7,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const timetableTable = document.getElementById('timetable');
     const exportBtnGroup = document.getElementById('exportBtnGroup');
     
-    let allLessons = []; // 存儲所有課程數據
-    let allTeachers = []; // 存儲所有教師名單
-    let allClasses = []; // 存儲所有班別名單
-    let currentTitle = ''; // 當前顯示的時間表標題
-    let currentLessons = []; // 當前顯示的課程數據
-    let currentFontSize = 100; // 當前字體大小百分比 (初始100%)
+    let allLessons = []; // Store all lesson data
+    let allTeachers = []; // Store all teacher names
+    let allClasses = []; // Store all class names
+    let currentTitle = ''; // Current timetable title
+    let currentLessons = []; // Current displayed lessons
+    let currentFontSize = 100; // Current font size percentage (default 100%)
     
-    // Time段定義 (true > 顯示 label, false > 不顯示 label)
+    // Time slots definition
     const timeSlots = [
         { time: '8:05', period: '0', endTime: '8:20', isBreak: true, label: 'ASSEMBLY' },
         { time: '8:20', period: '1', endTime: '8:55', isBreak: false },
@@ -32,13 +32,37 @@ document.addEventListener('DOMContentLoaded', function() {
         { time: '14:40', period: '9', endTime: '15:15', isBreak: false },
         { time: '15:15', period: '10', endTime: '15:50', isBreak: false }
     ];
+
+    // Cookie functions
+    function setCookie(name, value, days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        const expires = "expires=" + date.toUTCString();
+        document.cookie = name + "=" + value + ";" + expires + ";path=/";
+    }
+
+    function getCookie(name) {
+        const cookieName = name + "=";
+        const decodedCookie = decodeURIComponent(document.cookie);
+        const cookieArray = decodedCookie.split(';');
+        for(let i = 0; i < cookieArray.length; i++) {
+            let cookie = cookieArray[i];
+            while (cookie.charAt(0) === ' ') {
+                cookie = cookie.substring(1);
+            }
+            if (cookie.indexOf(cookieName) === 0) {
+                return cookie.substring(cookieName.length, cookie.length);
+            }
+        }
+        return "";
+    }
     
-    // 初始化導出按鈕
+    // Initialize export buttons
     function initExportButtons() {
         exportBtnGroup.innerHTML = `
-            <button id="printBtn" class="export-btn">列印時間表</button>
-            <button id="pdfBtn" class="export-btn">匯出PDF</button>
-            <button id="excelBtn" class="export-btn">匯出Excel</button>
+            <button id="printBtn" class="export-btn">Print Timetable</button>
+            <button id="pdfBtn" class="export-btn">Export PDF</button>
+            <button id="excelBtn" class="export-btn">Export Excel</button>
             <button id="increaseFontBtn" class="export-btn">＋</button>
             <button id="decreaseFontBtn" class="export-btn">－</button>
         `;
@@ -48,49 +72,57 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
         document.getElementById('increaseFontBtn').addEventListener('click', increaseFontSize);
         document.getElementById('decreaseFontBtn').addEventListener('click', decreaseFontSize);
+
+        // Load saved font size from cookie
+        const savedFontSize = getCookie('timetableFontSize');
+        if (savedFontSize) {
+            currentFontSize = parseInt(savedFontSize);
+        }
     }
 
-    // 增加字體大小
+    // Increase font size
     function increaseFontSize() {
-        currentFontSize = Math.min(currentFontSize + 10, 150); // 最大150%
+        currentFontSize = Math.min(currentFontSize + 10, 150); // Max 150%
+        setCookie('timetableFontSize', currentFontSize, 30); // Save for 30 days
         updateTimetableFontSize();
     }
 
-    // 減少字體大小
+    // Decrease font size
     function decreaseFontSize() {
-        currentFontSize = Math.max(currentFontSize - 10, 70); // 最小70%
+        currentFontSize = Math.max(currentFontSize - 10, 70); // Min 70%
+        setCookie('timetableFontSize', currentFontSize, 30); // Save for 30 days
         updateTimetableFontSize();
     }
 
-    // 更新時間表字體大小
+    // Update timetable font size
     function updateTimetableFontSize() {
         if (!timetableTable) return;
         
-        // 計算實際字體大小 (基於11px的默認大小)
+        // Calculate actual font size (based on 11px default)
         const baseSize = 11;
         const newSize = baseSize * (currentFontSize / 100);
         
-        // 更新表格內所有文字元素
+        // Update all text elements in the table
         const elements = timetableTable.querySelectorAll('td, th, span, div');
         elements.forEach(el => {
             if (el.classList.contains('time-col') || el.classList.contains('period-col')) {
-                el.style.fontSize = `${newSize - 1}px`; // 時間和節數稍小
+                el.style.fontSize = `${newSize - 1}px`; // Slightly smaller for time/period
             } else if (el.classList.contains('subject')) {
-                el.style.fontSize = `${newSize + 2}px`; // 科目稍大
+                el.style.fontSize = `${newSize + 2}px`; // Slightly larger for subjects
             } else if (el.classList.contains('room') || el.classList.contains('teacher')) {
-                el.style.fontSize = `${newSize - 1}px`; // 房間和教師稍小
+                el.style.fontSize = `${newSize - 1}px`; // Slightly smaller for room/teacher
             } else if (el.classList.contains('dismissal-time')) {
-                el.style.fontSize = `${newSize - 1}px`; // 放學時間稍小
+                el.style.fontSize = `${newSize - 1}px`; // Slightly smaller for dismissal time
             } else {
-                el.style.fontSize = `${newSize}px`; // 其他元素正常大小
+                el.style.fontSize = `${newSize}px`; // Normal size for other elements
             }
         });
     }
 
-    // 列印時間表
+    // Print timetable
     function printTimetable() {
         if (!currentTitle || currentLessons.length === 0) {
-            alert('請先查詢時間表');
+            alert('Please search for a timetable first');
             return;
         }
         
@@ -118,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </head>
                 <body>
                     <h1>${currentTitle}</h1>
-                    ${generateTimetableHTML(currentLessons, currentTitle.includes('班別'))}
+                    ${generateTimetableHTML(currentLessons, currentTitle.includes('Class'))}
                     <script>
                         window.onload = function() {
                             setTimeout(function() {
@@ -133,20 +165,20 @@ document.addEventListener('DOMContentLoaded', function() {
         printWindow.document.close();
     }
     
-    // 匯出PDF
+    // Export to PDF
     function exportToPDF() {
         if (!currentTitle || currentLessons.length === 0) {
-            alert('請先查詢時間表');
+            alert('Please search for a timetable first');
             return;
         }
         
-        // 使用html2pdf.js庫
+        // Using html2pdf.js library
         const element = document.createElement('div');
         element.style.width = '100%';
         element.innerHTML = `
             <h1 style="text-align:center;font-family:Arial;margin-bottom:10px;font-size:16px;">${currentTitle}</h1>
             <div style="font-size:10px;">
-                ${generateTimetableHTML(currentLessons, currentTitle.includes('班別'))}
+                ${generateTimetableHTML(currentLessons, currentTitle.includes('Class'))}
             </div>
         `;
         
@@ -172,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         
-        // 引入html2pdf庫
+        // Load html2pdf library
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
         script.onload = function() {
@@ -190,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(script);
     }
 
-    // 備用PDF生成方法
+    // Backup PDF generation method
     function backupPDFGeneration(element, opt) {
         const backupOpt = {
             ...opt,
@@ -209,11 +241,11 @@ document.addEventListener('DOMContentLoaded', function() {
             html2pdf().set(backupOpt).from(element).save();
         } catch (err) {
             console.error('Backup PDF generation failed:', err);
-            alert('PDF生成失敗，請嘗試列印功能或聯繫管理員');
+            alert('PDF generation failed, please try printing or contact administrator');
         }
     }
     
-    // 生成時間表HTML (用於PDF和列印)
+    // Generate timetable HTML (for PDF and print)
     function generateTimetableHTML(lessons, isClassQuery) {
         let tableHTML = `
             <table style="width:95%;border-collapse:collapse;margin-top:10px;font-size:10px;">
@@ -253,17 +285,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                 );
                 
-                // Wednesday第10節特殊處理
+                // Wednesday period 10 special handling
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td style="background-color:#f9f9f9;">
-                            <div class="dismissal-time" style="font-size:8px;">(放學時間 15:30)</div>
+                            <div class="dismissal-time" style="font-size:8px;">(Dismissal time 15:30)</div>
                         </td>`;
                     } else {
                         const firstLesson = dayLessons[0];
                         tableHTML += `<td>
                             <div>${formatLessonForExport(firstLesson, isClassQuery)}</div>
-                            <div class="dismissal-time" style="font-size:8px;">(放學時間 15:30)</div>
+                            <div class="dismissal-time" style="font-size:8px;">(Dismissal time 15:30)</div>
                         </td>`;
                     }
                     continue;
@@ -272,13 +304,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (dayLessons.length === 0) {
                     tableHTML += `<td style="background-color:#f9f9f9;"></td>`;
                 } else {
-                    // 處理班別查詢的多科目情況
                     if (isClassQuery) {
                         const teachers = [...new Set(dayLessons.map(l => l.teacher))].join('/');
                         
-                        // 檢查是否有MAUP科目
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
-                        // 檢查是否有CHEM或ICT科目
                         const hasChem = dayLessons.some(l => l.subject.includes('!CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('!ICT'));
                         
@@ -315,7 +344,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             </td>`;
                         }
                     } else {
-                        // 教師查詢保持原樣
                         const firstLesson = dayLessons[0];
                         const isPE = firstLesson.subject === 'PE';
                         const isMaup = firstLesson.subject === 'MAUP';
@@ -364,7 +392,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     .join('/');
                             }
 
-                            // 檢查是否有合併班別情況
                             const groupedLessons = allLessons.filter(
                                 lesson => lesson.day === day && 
                                          lesson.period === parseInt(slot.period) &&
@@ -398,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return tableHTML;
     }
 
-    // 簡化班別名稱顯示
+    // Simplify class names display
     function simplifyClassNames(classNames) {
         if (classNames.length <= 1) return classNames[0];
         
@@ -428,10 +455,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return result.join(' ');
     }
     
-    // 匯出Excel
+    // Export to Excel
     function exportToExcel() {
         if (!currentTitle || currentLessons.length === 0) {
-            alert('請先查詢時間表');
+            alert('Please search for a timetable first');
             return;
         }
 
@@ -444,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const headerRow = ['Time', 'Period', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         rows.push(headerRow);
         
-        const isClassQuery = currentTitle.includes('班別');
+        const isClassQuery = currentTitle.includes('Class');
         
         timeSlots.forEach(slot => {
             const row = [];
@@ -463,7 +490,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (dayLessons.length === 0) {
                         if (day === 3 && slot.period === '10') {
-                            row.push('(放學時間 15:30)');
+                            row.push('(Dismissal time 15:30)');
                         } else {
                             row.push('');
                         }
@@ -551,11 +578,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         const ws = XLSX.utils.aoa_to_sheet(rows);
-        XLSX.utils.book_append_sheet(wb, ws, '時間表');
+        XLSX.utils.book_append_sheet(wb, ws, 'Timetable');
         XLSX.writeFile(wb, `${currentTitle}.xlsx`);
     }
     
-    // 格式化課程顯示 (用於導出)
+    // Format lesson for export
     function formatLessonForExport(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -569,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return `<span style="color:blue;font-size:12px">${lesson.class} ${lesson.subject}</span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
     }
 
-    // 按 Enter 鍵查詢
+    // Search on Enter key
     teacherNameInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const query = teacherNameInput.value.trim();
@@ -587,7 +614,7 @@ document.addEventListener('DOMContentLoaded', function() {
         this.value = '';
     });
 
-    // 教師下拉選單選擇
+    // Teacher dropdown selection
     teacherDropdown.addEventListener('change', function() {
         const teacherName = teacherDropdown.value;
         if (teacherName) {
@@ -597,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // 班別下拉選單選擇
+    // Class dropdown selection
     classDropdown.addEventListener('change', function() {
         const className = classDropdown.value;
         if (className) {
@@ -607,16 +634,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // 判斷是否為班別查詢
+    // Check if query is for a class
     function isClassQuery(query) {
         return /^[1-6][A-D]$/i.test(query);
     }
     
-    // 載入 CSV 文件
+    // Load CSV file
     function loadCSV() {
         fetch('tt.csv?' + new Date().getTime())
             .then(response => {
-                if (!response.ok) throw new Error('網絡響應不正常');
+                if (!response.ok) throw new Error('Network response was not ok');
                 return response.text();
             })
             .then(data => {
@@ -627,30 +654,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     .map(item => item.class.trim()))].sort();
                 populateDropdowns();
                 loadingDiv.style.display = 'none';
-                resultDiv.innerHTML = '<p>時間表數據已載入，請輸入教師姓名或班別(如1A)</p>';
+                resultDiv.innerHTML = '<p>Timetable data loaded, please enter teacher name or class (e.g. 1A)</p>';
                 initExportButtons();
             })
             .catch(error => {
-                console.error('載入CSV文件時出錯:', error);
-                loadingDiv.innerHTML = `<p style="color:red">錯誤: ${error.message}</p>`;
+                console.error('Error loading CSV file:', error);
+                loadingDiv.innerHTML = `<p style="color:red">Error: ${error.message}</p>`;
                 setTimeout(loadCSV, 1000);
             });
     }
     
-    // 填充下拉選單
+    // Populate dropdowns
     function populateDropdowns() {
-        teacherDropdown.innerHTML = '<option value="">選擇教師...</option>';
+        teacherDropdown.innerHTML = '<option value="">Select teacher...</option>';
         allTeachers.forEach(teacher => {
             teacherDropdown.innerHTML += `<option value="${teacher}">${teacher}</option>`;
         });
         
-        classDropdown.innerHTML = '<option value="">選擇班別...</option>';
+        classDropdown.innerHTML = '<option value="">Select class...</option>';
         allClasses.forEach(cls => {
             classDropdown.innerHTML += `<option value="${cls}">${cls}</option>`;
         });
     }
     
-    // 解析 CSV
+    // Parse CSV
     function parseCSV(csv) {
         const lines = csv.split('\n');
         const result = [];
@@ -676,45 +703,47 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
     
-    // 顯示教師時間表
+    // Display teacher timetable
     function displayTimetable(teacherName) {
         currentLessons = allLessons.filter(item => 
             item.teacher.toUpperCase() === teacherName.toUpperCase()
         );
         
         if (currentLessons.length === 0) {
-            resultDiv.innerHTML = `<p>找不到教師 ${teacherName} 的時間表</p>`;
+            resultDiv.innerHTML = `<p>No timetable found for teacher ${teacherName}</p>`;
             timetableTable.innerHTML = '';
             currentTitle = '';
             return;
         }
         
-        currentTitle = `${teacherName} 的時間表`;
+        currentTitle = `${teacherName}'s Timetable`;
         resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons);
     }
     
-    // 顯示班別時間表
+    // Display class timetable
     function displayClassTimetable(className) {
         currentLessons = allLessons.filter(item => 
             item.class.toUpperCase() === className.toUpperCase()
         );
         
         if (currentLessons.length === 0) {
-            resultDiv.innerHTML = `<p>找不到班別 ${className} 的時間表</p>`;
+            resultDiv.innerHTML = `<p>No timetable found for class ${className}</p>`;
             timetableTable.innerHTML = '';
             currentTitle = '';
             return;
         }
         
-        currentTitle = `班別 ${className} 的時間表`;
+        currentTitle = `Class ${className} Timetable`;
         resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
         renderTimetable(currentLessons, true);
     }
     
-    // 渲染時間表 (共用函數)
+    // Render timetable (shared function)
     function renderTimetable(lessons, isClassQuery = false) {
-        currentFontSize = 100; // 重置字體大小為100%每次重新渲染
+        // Load saved font size from cookie, default to 100%
+        const savedFontSize = getCookie('timetableFontSize');
+        currentFontSize = savedFontSize ? parseInt(savedFontSize) : 100;
         
         let tableHTML = `
             <thead>
@@ -756,13 +785,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (day === 3 && slot.period === '10') {
                     if (dayLessons.length === 0) {
                         tableHTML += `<td class="empty-cell">
-                            <div class="dismissal-time" style="font-size:10px;">(放學時間 15:30)</div>
+                            <div class="dismissal-time" style="font-size:10px;">(Dismissal time 15:30)</div>
                         </td>`;
                     } else {
                         const firstLesson = dayLessons[0];
                         tableHTML += `<td>
                             <div class="main-lesson">${formatLesson(firstLesson, isClassQuery)}</div>
-                            <div class="dismissal-time" style="font-size:10px;">(放學時間 15:30)</div>
+                            <div class="dismissal-time" style="font-size:10px;">(Dismissal time 15:30)</div>
                         </td>`;
                     }
                     continue;
@@ -890,10 +919,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tableHTML += `</tbody>`;
         timetableTable.innerHTML = tableHTML;
-        updateTimetableFontSize(); // 確保初始渲染時應用正確的字體大小
+        updateTimetableFontSize(); // Apply the correct font size on initial render
     }
     
-    // 格式化課程顯示
+    // Format lesson display
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
@@ -922,6 +951,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return `<span class="subject" style="color:blue;font-size:14px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
     }
 
-    // 自動載入 CSV 文件
+    // Automatically load CSV file
     loadCSV();
 });
