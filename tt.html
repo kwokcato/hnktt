@@ -183,7 +183,7 @@
 
     <!-- 如 timetable.js 需要 XLSX，保留 CDN 載入（可依需求改成按需載入） -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-
+<!--
     <script nonce="r4nd0m123">
         // 使用固定版本參數取代 document.write 與時間戳，利於快取與版本管理
         (function loadTimetable() {
@@ -193,6 +193,10 @@
             s.defer = true;
             document.head.appendChild(s);
         })();
+    </script>
+-->
+    <script>
+        document.write('<script src="timetable.js?t=' + new Date().getTime() + '"><\/script>');
     </script>
 </body>
 </html>
