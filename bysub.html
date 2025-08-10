@@ -34,7 +34,8 @@
     if (id_token) {
         const payload = decodeJwtResponse(id_token);
         // 檢查憑證是否存在、網域是否正確，以及憑證是否已過期
-        if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp * 1000 > Date.now()) {
+        // if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp * 1000 > Date.now()) {
+        if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp && (payload.exp * 1000) > Date.now()) {
             is_authenticated = true;
         }
     }
