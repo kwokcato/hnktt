@@ -225,29 +225,19 @@
     <script>
         // 學校網域名稱
         const SCHOOL_DOMAIN = "bhnkc.edu.hk";
+        const TOKEN_SKEW_MS = 60 * 1000; // 時間偏移保險（1分鐘）
         
         // 學生帳戶識別規則 (s + 7個任意字符 + @bhnkc.edu.hk)
         const STUDENT_ACCOUNT_REGEX = /^s[a-zA-Z0-9]{7}@bhnkc\.edu\.hk$/i;
 
-        // Auto-logout variables
-        let inactivityTimer;
-        let warningTimer;
-        let countdownInterval;
-        const WARNING_TIME = 60; // Show warning 60 seconds before logout
-        const LOGOUT_TIME = 18000000; // 5 hrs (18000000) 30 minutes in milliseconds (1800000)
+        // Auto-logout variables（以「絕對時限」為主，避免背景分頁計時器被暫停）
+        let inactivityTimer;      // 備用（前景時的UI倒數）
+        let warningTimer;         // 備用（前景時的UI倒數）
+        let countdownInterval;    // 警告視窗倒數
+        const WARNING_TIME = 60;          // 60 秒前顯示警告
+        const LOGOUT_TIME = 1800000;      // 30 分鐘（毫秒）
 
-        // 載入 iframe 內容
-        function loadIframes() {
-            console.log("開始載入iframe內容...");
-            if (!document.getElementById('ttFrame').src) {
-                document.getElementById('ttFrame').src = "tt.html";
-                document.getElementById('roomFrame').src = "room.html";
-                document.getElementById('freeFrame').src = "free.html";
-                document.getElementById('meetingFrame').src = "bysub.html";
-            }
-        }
-
-        // 解碼 JWT
+        // 取得 / 驗證 Token
         function decodeJwtResponse(token) {
             try {
                 var base64Url = token.split('.')[1];
@@ -261,51 +251,77 @@
                 return null;
             }
         }
+        function isTokenValid(token) {
+            const payload = decodeJwtResponse(token);
+            if (!payload) return false;
+            if (payload.hd !== SCHOOL_DOMAIN) return false;
+            if (STUDENT_ACCOUNT_REGEX.test(payload.email)) return false;
+            if (!payload.exp) return false;
+            const expMs = payload.exp * 1000;
+            if (Date.now() >= (expMs - TOKEN_SKEW_MS)) return false;
+            return true;
+        }
 
-        // 登出功能
+        // 安全登出
         function logout() {
             console.log("用戶登出");
-            // Clear all timers
+            // 清除計時器
             clearTimeout(inactivityTimer);
             clearTimeout(warningTimer);
             clearInterval(countdownInterval);
-            // 清除存儲的token
+            // 清除存儲的token與閒置時間
             sessionStorage.removeItem('google_id_token');
-            // 完全登出Google帳戶
-            if (typeof google !== 'undefined' && google.accounts) {
+            sessionStorage.removeItem('inactivity.logoutAt');
+            sessionStorage.removeItem('inactivity.warningAt');
+            sessionStorage.removeItem('inactivity.lastActiveAt');
+            // 完全登出Google帳戶（避免自動選取）
+            if (typeof google !== 'undefined' && google.accounts?.id) {
                 google.accounts.id.disableAutoSelect();
             }
             // 跳轉回登入頁面
             window.location.href = "index.html";
         }
 
-        // Auto-logout functions
+        // 設定/重置「絕對」閒置門檻（同時可選擇關閉警告視窗）
         function resetInactivityTimer(closeWarning = false) {
-            // Clear existing timers
+            // 設置新門檻（寫入 sessionStorage，避免背景時計時中斷）
+            const now = Date.now();
+            const logoutAt = now + LOGOUT_TIME;
+            const warningAt = logoutAt - (WARNING_TIME * 1000);
+            sessionStorage.setItem('inactivity.lastActiveAt', String(now));
+            sessionStorage.setItem('inactivity.logoutAt', String(logoutAt));
+            sessionStorage.setItem('inactivity.warningAt', String(warningAt));
+
+            // 清除前景用的暫時計時器
             clearTimeout(inactivityTimer);
             clearTimeout(warningTimer);
             clearInterval(countdownInterval);
-            
-            // Hide warning if shown
+
             if (closeWarning) {
                 document.getElementById('inactivity-warning').style.display = 'none';
             }
-            
-            // Set new timers
+
+            // 前景時提供 UI 體驗（非必要，但保留）
             inactivityTimer = setTimeout(showInactivityWarning, LOGOUT_TIME - (WARNING_TIME * 1000));
             warningTimer = setTimeout(logoutDueToInactivity, LOGOUT_TIME);
         }
 
         function showInactivityWarning() {
+            const logoutAt = parseInt(sessionStorage.getItem('inactivity.logoutAt') || '0', 10);
+            const now = Date.now();
+            let remainingMs = Math.max(0, logoutAt - now);
+            let seconds = Math.ceil(remainingMs / 1000);
+
             document.getElementById('inactivity-warning').style.display = 'block';
-            document.getElementById('countdown').textContent = WARNING_TIME;
-            
-            // Start countdown
-            let seconds = WARNING_TIME;
+            document.getElementById('countdown').textContent = seconds;
+
+            clearInterval(countdownInterval);
             countdownInterval = setInterval(() => {
-                seconds--;
-                document.getElementById('countdown').textContent = seconds;
-                if (seconds <= 0) {
+                const nowInner = Date.now();
+                const remain = Math.max(0, logoutAt - nowInner);
+                const s = Math.ceil(remain / 1000);
+                document.getElementById('countdown').textContent = s;
+                if (remain <= 0) {
                     clearInterval(countdownInterval);
                 }
             }, 1000);
@@ -317,29 +333,71 @@
             logout();
         }
 
-        // Track user activity
+        // 分頁從背景回到前景或獲得焦點時，馬上檢查是否逾時或需顯示警告
+        function checkResumeState() {
+            // 先驗證 Token 是否仍有效
+            const id_token = sessionStorage.getItem('google_id_token');
+            if (!id_token || !isTokenValid(id_token)) {
+                // Token 無效/過期，立即登出
+                logout();
+                return;
+            }
+
+            // 再檢查閒置「絕對門檻」
+            const logoutAt = parseInt(sessionStorage.getItem('inactivity.logoutAt') || '0', 10);
+            const warningAt = parseInt(sessionStorage.getItem('inactivity.warningAt') || '0', 10);
+            const now = Date.now();
+
+            if (logoutAt && now >= logoutAt) {
+                logoutDueToInactivity();
+                return;
+            }
+
+            if (warningAt && now >= warningAt) {
+                // 進入警告期，立刻顯示剩餘倒數
+                showInactivityWarning();
+            }
+        }
+
+        // 載入 iframe 內容
+        function loadIframes() {
+            console.log("開始載入iframe內容...");
+            if (!document.getElementById('ttFrame').src) {
+                document.getElementById('ttFrame').src = "tt.html";
+                document.getElementById('roomFrame').src = "room.html";
+                document.getElementById('freeFrame').src = "free.html";
+                document.getElementById('meetingFrame').src = "bysub.html";
+            }
+        }
+
+        // 登出功能（供按鈕使用）已定義為 logout()
+
+        // 追蹤使用者互動（任何互動都重置絕對門檻）
         function setupActivityTracking() {
-            // Reset timer on any of these events
-            window.addEventListener('mousemove', resetInactivityTimer);
-            window.addEventListener('keypress', resetInactivityTimer);
-            window.addEventListener('click', resetInactivityTimer);
-            window.addEventListener('scroll', resetInactivityTimer);
-            
-            // Also track iframe activity
-            document.getElementById('ttFrame').addEventListener('load', function() {
-                this.contentWindow.addEventListener('mousemove', resetInactivityTimer);
-            });
-            document.getElementById('roomFrame').addEventListener('load', function() {
-                this.contentWindow.addEventListener('mousemove', resetInactivityTimer);
-            });
-            document.getElementById('freeFrame').addEventListener('load', function() {
-                this.contentWindow.addEventListener('mousemove', resetInactivityTimer);
-            });
-            document.getElementById('meetingFrame').addEventListener('load', function() {
-                this.contentWindow.addEventListener('mousemove', resetInactivityTimer);
-            });
-            
-            // Start the timer initially
+            const activityHandler = () => resetInactivityTimer();
+            window.addEventListener('mousemove', activityHandler);
+            window.addEventListener('keypress', activityHandler);
+            window.addEventListener('click', activityHandler);
+            window.addEventListener('scroll', activityHandler);
+
+            // 也追蹤 iframe 內的活動
+            const addIframeActivity = (frame) => {
+                try {
+                    frame.contentWindow.addEventListener('mousemove', activityHandler);
+                    frame.contentWindow.addEventListener('click', activityHandler);
+                    frame.contentWindow.addEventListener('keypress', activityHandler);
+                    frame.contentWindow.addEventListener('scroll', activityHandler);
+                } catch (e) {
+                    console.warn('無法為 iframe 綁定活動監聽：', e);
+                }
+            };
+
+            document.getElementById('ttFrame').addEventListener('load', function() { addIframeActivity(this); });
+            document.getElementById('roomFrame').addEventListener('load', function() { addIframeActivity(this); });
+            document.getElementById('freeFrame').addEventListener('load', function() { addIframeActivity(this); });
+            document.getElementById('meetingFrame').addEventListener('load', function() { addIframeActivity(this); });
+
+            // 初始設定門檻
             resetInactivityTimer();
         }
 
@@ -347,19 +405,10 @@
         window.onload = function() {
             console.log("頁面載入完成，檢查登入狀態...");
             
-            // 檢查是否已登入
+            // 檢查是否已登入且 token 未過期
             const id_token = sessionStorage.getItem('google_id_token');
-            if (!id_token) {
-                // 如果沒有token，跳轉回登入頁面
-                window.location.href = "index.html";
-                return;
-            }
-
-            const payload = decodeJwtResponse(id_token);
-            
-            if (!payload || payload.hd !== SCHOOL_DOMAIN || 
-                STUDENT_ACCOUNT_REGEX.test(payload.email)) {
-                // 如果token無效或不符合要求，清除並跳轉
+            if (!id_token || !isTokenValid(id_token)) {
+                // 如果沒有 token 或 token 無效/過期，清除並跳轉
                 sessionStorage.removeItem('google_id_token');
                 window.location.href = "index.html";
                 return;
@@ -372,6 +421,14 @@
             // 設置當前年份
             document.getElementById('spanYear').textContent = new Date().getFullYear();
         };
+
+        // 從背景回到前景時的檢查（避免因瀏覽器暫停計時器而未登出）
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                checkResumeState();
+            }
+        });
+        window.addEventListener('focus', checkResumeState);
 
         // 切換標籤頁
         function openTab(evt, tabName) {

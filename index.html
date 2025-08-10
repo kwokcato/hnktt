@@ -79,6 +79,7 @@
     <script>
         // 學校網域名稱
         const SCHOOL_DOMAIN = "bhnkc.edu.hk";
+        const TOKEN_SKEW_MS = 60 * 1000; // 時間偏移保險（1分鐘）
         
         // 學生帳戶識別規則 (s + 7個任意字符 + @bhnkc.edu.hk)
         const STUDENT_ACCOUNT_REGEX = /^s[a-zA-Z0-9]{7}@bhnkc\.edu\.hk$/i;
@@ -98,14 +99,27 @@
             }
         }
 
+        function isTokenValid(token) {
+            const payload = decodeJwtResponse(token);
+            if (!payload) return false;
+            if (payload.hd !== SCHOOL_DOMAIN) return false;
+            if (STUDENT_ACCOUNT_REGEX.test(payload.email)) return false;
+            // 檢查過期（附帶偏移）
+            if (!payload.exp) return false;
+            const expMs = payload.exp * 1000;
+            if (Date.now() >= (expMs - TOKEN_SKEW_MS)) return false;
+            return true;
+        }
+
         // 顯示登入錯誤
         function showLoginError(message) {
             console.error("登入錯誤:", message);
             const errorElement = document.getElementById('login-error');
             errorElement.innerText = message;
             errorElement.style.display = 'block';
-            google.accounts.id.disableAutoSelect();
-            
+            if (typeof google !== 'undefined' && google.accounts?.id) {
+                google.accounts.id.disableAutoSelect();
+            }
             // 5秒後自動清除錯誤訊息
             setTimeout(() => {
                 errorElement.style.display = 'none';
@@ -121,29 +135,14 @@
                 return;
             }
 
+            if (!isTokenValid(response.credential)) {
+                showLoginError(`登入失敗：請使用有效且未過期的 @${SCHOOL_DOMAIN} 教職員帳戶`);
+                return;
+            }
+            
+            // 登入成功，存儲token並跳轉到main.html
             const payload = decodeJwtResponse(response.credential);
-            console.log("解碼後的payload:", payload);
-            
-            if (!payload) {
-                showLoginError("登入失敗：無法驗證帳戶");
-                return;
-            }
-
-            // 1. 檢查是否為本校網域
-            if (payload.hd !== SCHOOL_DOMAIN) {
-                showLoginError(`請使用 @${SCHOOL_DOMAIN} 的學校帳戶登入`);
-                return;
-            }
-            
-            // 2. 檢查是否為學生帳戶
-            if (STUDENT_ACCOUNT_REGEX.test(payload.email)) {
-                showLoginError("此系統僅供教師使用，學生帳戶無權訪問");
-                google.accounts.id.disableAutoSelect();
-                return;
-            }
-            
-            // 3. 登入成功，存儲token並跳轉到main.html
-            console.log("登入成功，用戶:", payload.email);
+            console.log("登入成功，用戶:", payload?.email);
             sessionStorage.setItem('google_id_token', response.credential);
             window.location.href = "main.html";
         }
@@ -153,47 +152,46 @@
             // 設置當前年份
             document.getElementById('current-year').textContent = new Date().getFullYear();
             
-            // 檢查是否已登入
+            // 檢查是否已登入且未過期
             const id_token = sessionStorage.getItem('google_id_token');
-            if (id_token) {
-                const payload = decodeJwtResponse(id_token);
-                if (payload && payload.hd === SCHOOL_DOMAIN && 
-                    !STUDENT_ACCOUNT_REGEX.test(payload.email)) {
-                    // 如果已有有效token，直接跳轉
-                    window.location.href = "main.html";
-                    return;
-                } else {
-                    // 清除無效token
-                    sessionStorage.removeItem('google_id_token');
-                }
+            if (id_token && isTokenValid(id_token)) {
+                window.location.href = "main.html";
+                return;
+            } else {
+                // 清除無效或過期token，停留在登入頁
+                sessionStorage.removeItem('google_id_token');
             }
             
             // 初始化Google登入
-            google.accounts.id.initialize({
-                client_id: "920942611875-eikfedkn3rno9am41fi08sbqniml566c.apps.googleusercontent.com",
-                callback: handleCredentialResponse,
-                ux_mode: "popup"
-            });
-            
-            // 渲染登入按鈕
-            google.accounts.id.renderButton(
-                document.getElementById("google-signin-button"),
-                {
-                    type: "standard",
-                    theme: "outline",
-                    size: "large",
-                    text: "signin_with",
-                    shape: "rectangular",
-                    logo_alignment: "left"
-                }
-            );
-            
-            // 可選：顯示One Tap登入提示
-            google.accounts.id.prompt(notification => {
-                if (notification.isNotDisplayed() || notification.isSkipped()) {
-                    console.log("One Tap登入未顯示或已跳過");
-                }
-            });
+            if (typeof google !== 'undefined' && google.accounts?.id) {
+                google.accounts.id.initialize({
+                    client_id: "920942611875-eikfedkn3rno9am41fi08sbqniml566c.apps.googleusercontent.com",
+                    callback: handleCredentialResponse,
+                    ux_mode: "popup"
+                });
+                
+                // 渲染登入按鈕
+                google.accounts.id.renderButton(
+                    document.getElementById("google-signin-button"),
+                    {
+                        type: "standard",
+                        theme: "outline",
+                        size: "large",
+                        text: "signin_with",
+                        shape: "rectangular",
+                        logo_alignment: "left"
+                    }
+                );
+                
+                // 可選：顯示One Tap登入提示
+                google.accounts.id.prompt(notification => {
+                    if (notification.isNotDisplayed() || notification.isSkipped()) {
+                        console.log("One Tap登入未顯示或已跳過");
+                    }
+                });
+            } else {
+                showLoginError("無法載入 Google 登入服務，請稍後再試。");
+            }
         };
     </script>
 </body>
