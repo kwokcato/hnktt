@@ -2,8 +2,24 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Content Security Policy：使用 nonce 允許本頁內嵌腳本；允許 Google 登入與（若未來需要）CDN 腳本 -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'nonce-r4nd0m123' https://accounts.google.com https://cdnjs.cloudflare.com;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data:;
+      frame-src 'self' https://accounts.google.com;
+      connect-src 'self';
+      frame-ancestors 'self';
+      base-uri 'self';
+      form-action 'self';
+      object-src 'none';
+      upgrade-insecure-requests
+    ">
+
     <title>時間表查詢系統 - 佛教何南金中學</title>
     <style>
         html, body {
@@ -42,157 +58,138 @@
             color: #666;
             font-size: 12px;
         }
+        @media (prefers-color-scheme: dark) {
+            html, body { background-color: #111; color: #eee; }
+            #login-container { background-color: #1c1c1c; color: #eee; box-shadow: none; }
+        }
+        @media (max-width: 480px) {
+            #login-container { padding: 20px; }
+        }
     </style>
+
+    <!-- Google Sign-In -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body oncontextmenu="return false;">
-    
-    <script>
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-        });
-    </script>
-    <script>
-        document.addEventListener('keydown', (e) => {
-            // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
-            if (
-                e.key === 'F12' ||
-                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
-                (e.ctrlKey && e.key === 'u') ||
-                (e.ctrlKey && e.shiftKey && e.key === 'J')
-            ) {
-                e.preventDefault();
-            }
-        });
-    </script>
+<body>
     <div id="login-container">
         <h1>佛教何南金中學</h1>
         <p>請使用學校 Google 帳戶登入</p>
         <div id="google-signin-button"></div>
-        <div id="login-error"></div>
+        <div id="login-error" role="alert" aria-live="polite"></div>
     </div>
     
     <div class="footer">
         <p>© <span id="current-year"></span> 佛教何南金中學 - 時間表查詢系統</p>
     </div>
 
-    <script>
-        // 學校網域名稱
+    <script nonce="r4nd0m123">
+        // 參數設定
+        const CLIENT_ID = "920942611875-eikfedkn3rno9am41fi08sbqniml566c.apps.googleusercontent.com";
         const SCHOOL_DOMAIN = "bhnkc.edu.hk";
-        const TOKEN_SKEW_MS = 60 * 1000; // 時間偏移保險（1分鐘）
-        
-        // 學生帳戶識別規則 (s + 7個任意字符 + @bhnkc.edu.hk)
         const STUDENT_ACCOUNT_REGEX = /^s[a-zA-Z0-9]{7}@bhnkc\.edu\.hk$/i;
+        const TOKEN_SKEW_MS = 60 * 1000; // 時間偏移保險（1分鐘）
+        const ENABLE_DEVTOOLS_BLOCK = false;
 
-        // 解碼 JWT
+        // 選擇性：封鎖右鍵與開發者工具（預設關閉）
+        if (ENABLE_DEVTOOLS_BLOCK) {
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.addEventListener('keydown', e => {
+                if (e.key === 'F12' ||
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+                    (e.ctrlKey && e.key.toLowerCase() === 'u')) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
         function decodeJwtResponse(token) {
             try {
-                var base64Url = token.split('.')[1];
-                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+                    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+                ).join(''));
                 return JSON.parse(jsonPayload);
-            } catch (e) {
-                console.error("JWT解碼失敗:", e);
-                return null;
-            }
+            } catch (e) { return null; }
         }
-
         function isTokenValid(token) {
-            const payload = decodeJwtResponse(token);
-            if (!payload) return false;
-            if (payload.hd !== SCHOOL_DOMAIN) return false;
-            if (STUDENT_ACCOUNT_REGEX.test(payload.email)) return false;
-            // 檢查過期（附帶偏移）
-            if (!payload.exp) return false;
-            const expMs = payload.exp * 1000;
-            if (Date.now() >= (expMs - TOKEN_SKEW_MS)) return false;
-            return true;
+            const p = decodeJwtResponse(token);
+            if (!p) return false;
+            const issOk = p.iss === "https://accounts.google.com" || p.iss === "accounts.google.com";
+            const audOk = p.aud === CLIENT_ID;
+            const hdOk = p.hd === SCHOOL_DOMAIN;
+            const notStudent = !STUDENT_ACCOUNT_REGEX.test(p.email || "");
+            const notExpired = p.exp && Date.now() < (p.exp * 1000 - TOKEN_SKEW_MS);
+            return issOk && audOk && hdOk && notStudent && notExpired;
         }
-
-        // 顯示登入錯誤
         function showLoginError(message) {
-            console.error("登入錯誤:", message);
-            const errorElement = document.getElementById('login-error');
-            errorElement.innerText = message;
-            errorElement.style.display = 'block';
-            if (typeof google !== 'undefined' && google.accounts?.id) {
-                google.accounts.id.disableAutoSelect();
-            }
-            // 5秒後自動清除錯誤訊息
-            setTimeout(() => {
-                errorElement.style.display = 'none';
-            }, 5000);
+            const el = document.getElementById('login-error');
+            el.innerText = message;
+            el.style.display = 'block';
+            if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
+            setTimeout(() => { el.style.display = 'none'; }, 5000);
         }
-
-        // Google 登入回呼
         function handleCredentialResponse(response) {
-            console.log("收到Google登入回應:", response);
-            
-            if (!response || !response.credential) {
+            if (!response?.credential) {
                 showLoginError("登入失敗：無效的回應");
                 return;
             }
-
             if (!isTokenValid(response.credential)) {
                 showLoginError(`登入失敗：請使用有效且未過期的 @${SCHOOL_DOMAIN} 教職員帳戶`);
                 return;
             }
-            
-            // 登入成功，存儲token並跳轉到main.html
-            const payload = decodeJwtResponse(response.credential);
-            console.log("登入成功，用戶:", payload?.email);
             sessionStorage.setItem('google_id_token', response.credential);
+            // 清理任何舊的閒置計時資料
+            sessionStorage.removeItem('inactivity.logoutAt');
+            sessionStorage.removeItem('inactivity.warningAt');
+            sessionStorage.removeItem('inactivity.lastActiveAt');
             window.location.href = "main.html";
         }
 
-        // 頁面載入初始化
-        window.onload = function() {
-            // 設置當前年份
-            document.getElementById('current-year').textContent = new Date().getFullYear();
-            
-            // 檢查是否已登入且未過期
-            const id_token = sessionStorage.getItem('google_id_token');
-            if (id_token && isTokenValid(id_token)) {
+        // 初始化
+        window.addEventListener('load', () => {
+            const idToken = sessionStorage.getItem('google_id_token');
+            if (idToken && isTokenValid(idToken)) {
                 window.location.href = "main.html";
                 return;
             } else {
-                // 清除無效或過期token，停留在登入頁
                 sessionStorage.removeItem('google_id_token');
             }
-            
-            // 初始化Google登入
-            if (typeof google !== 'undefined' && google.accounts?.id) {
+            if (window.google?.accounts?.id) {
                 google.accounts.id.initialize({
-                    client_id: "920942611875-eikfedkn3rno9am41fi08sbqniml566c.apps.googleusercontent.com",
+                    client_id: CLIENT_ID,
                     callback: handleCredentialResponse,
                     ux_mode: "popup"
                 });
-                
-                // 渲染登入按鈕
                 google.accounts.id.renderButton(
                     document.getElementById("google-signin-button"),
-                    {
-                        type: "standard",
-                        theme: "outline",
-                        size: "large",
-                        text: "signin_with",
-                        shape: "rectangular",
-                        logo_alignment: "left"
-                    }
+                    { type: "standard", theme: "outline", size: "large", text: "signin_with", shape: "rectangular", logo_alignment: "left" }
                 );
-                
-                // 可選：顯示One Tap登入提示
-                google.accounts.id.prompt(notification => {
-                    if (notification.isNotDisplayed() || notification.isSkipped()) {
-                        console.log("One Tap登入未顯示或已跳過");
-                    }
+                google.accounts.id.prompt(n => {
+                    if (n.isNotDisplayed() || n.isSkipped()) console.log("One Tap 未顯示或已跳過");
                 });
             } else {
                 showLoginError("無法載入 Google 登入服務，請稍後再試。");
             }
-        };
+        });
+
+        // 回到本頁（例如上一頁）時，若 token 已過期，避免誤導
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                const idToken = sessionStorage.getItem('google_id_token');
+                if (idToken && !isTokenValid(idToken)) {
+                    sessionStorage.removeItem('google_id_token');
+                }
+            }
+        });
+        window.addEventListener('focus', () => {
+            const idToken = sessionStorage.getItem('google_id_token');
+            if (idToken && !isTokenValid(idToken)) {
+                sessionStorage.removeItem('google_id_token');
+            }
+        });
     </script>
 </body>
 </html>
