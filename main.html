@@ -2,369 +2,464 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- CSP 與 nonce -->
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self';
-      script-src 'self' 'nonce-r4nd0m123' https://accounts.google.com https://cdnjs.cloudflare.com;
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' data:;
-      frame-src 'self';
-      connect-src 'self';
-      frame-ancestors 'self';
-      base-uri 'self';
-      form-action 'self';
-      object-src 'none';
-      upgrade-insecure-requests
-    ">
-
+    <meta name="robots" content="noindex, nofollow">
     <title>時間表查詢系統 - 佛教何南金中學</title>
     <style>
         html, body {
             height: 100%;
-            margin: 0; padding: 0;
-            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* 禁用滾動條 */
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
         }
         body {
-            display: flex; flex-direction: column;
-            max-width: 95%; margin: 0 auto; padding: 10px; box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            max-width: 95%;
+            margin: 0 auto;
+            padding: 10px;
+            box-sizing: border-box;
         }
         h2 {
-            color: #2c3e50; text-align: center; margin: 0 0 20px 0; font-size: 1.0em;
-            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            color: #2c3e50;
+            text-align: center;
+            margin: 0 0 20px 0;
+            padding: 0;
+            font-size: 1.0em;
         }
-        #todayDate { font-size: 12px; margin-left: auto; }
-        #app-content { display: flex; flex-direction: column; flex: 1; overflow: hidden; height: 100%; }
-        .tab-container { display: flex; flex-direction: column; flex: 1; gap: 0; overflow: hidden; }
-        .tab-header { display: flex; border-bottom: 1px solid #ddd; justify-content: space-between; align-items: center; }
-        .tab-buttons { display: flex; }
+        #app-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+        }
+        .tab-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            gap: 0px;
+            overflow: hidden;
+        }
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tab-buttons {
+            display: flex;
+        }
         .tab-button {
-            padding: 5px 7px; background-color: #f1f1f1; border: none; cursor: pointer; font-size: 12px;
-            transition: 0.3s; border-radius: 5px 5px 0 0; margin-right: 5px;
+            padding: 5px 7px;
+            background-color: #f1f1f1;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.3s;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
         }
-        .tab-button:hover { background-color: #ddd; }
-        .tab-button.active { background-color: #3498db; color: white; }
+        .tab-button:hover {
+            background-color: #ddd;
+        }
+        .tab-button.active {
+            background-color: #3498db;
+            color: white;
+        }
         #logout-button {
-            padding: 10px 15px; background-color: #e74c3c; color: white; border: none; border-radius: 5px;
-            cursor: pointer; font-size: 14px; transition: 0.3s; margin-left: 10px;
+            padding: 10px 15px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+            margin-left: 10px;
         }
-        #logout-button:hover { background-color: #c0392b; }
+        #logout-button:hover {
+            background-color: #c0392b;
+        }
         .tab-content {
-            display: none; flex: 1; padding: 0; background: white; border-radius: 0 0 5px 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden;
+            display: none;
+            flex: 1;
+            padding: 0;
+            background-color: white;
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
-        .tab-content.active { display: flex; flex-direction: column; }
-        iframe { flex: 1; width: 100%; border: none; border-radius: 0 0 5px 5px; }
-        .loading { text-align: center; padding: 20px; font-style: italic; color: #666; }
-        .footer { text-align: center; margin-top: 2px; padding-top: 2px; border-top: 1px solid #ddd; color: #666; font-size: 10px; flex-shrink: 0; }
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 2px;
+            padding-top: 2px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
         #inactivity-warning {
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            z-index: 1000; text-align: center; width: min(90vw, 360px);
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-align: center;
         }
         #inactivity-warning button {
-            margin-top: 15px; padding: 8px 15px; background-color: #3498db; color: #fff; border: none; border-radius: 3px; cursor: pointer;
-        }
-        @media (prefers-color-scheme: dark) {
-            html, body { background-color: #111; color: #eee; }
-            .tab-content { background: #1c1c1c; box-shadow: none; }
-            .tab-button { background-color: #2a2a2a; color: #ddd; }
-            .tab-button.active { background-color: #1e6da3; color: #fff; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            * { transition: none !important; animation: none !important; }
+            margin-top: 15px;
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
         }
     </style>
 </head>
-<body>
-    <h2>
-        <span>佛教何南金中學 - 時間表查詢系統</span>
-        <span id="todayDate" aria-live="polite"></span>
-    </h2>
+<body oncontextmenu="return false;">
+    
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+    <script>
+        document.addEventListener('keydown', (e) => {
+            // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.key === 'u') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'J')
+            ) {
+                e.preventDefault();
+            }
+        });
+    </script>
+
+    <h2>佛教何南金中學 - 時間表查詢系統 <div style="text-align: right; font-size: 12px;" id="todayDate"></div></h2>
+    
+    <script>
+        const today = new Date();
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric', 
+            weekday: 'long' 
+        };
+        const dateString = today.toLocaleDateString('zh-TW', options);
+        document.getElementById("todayDate").textContent = `${dateString}`;
+    </script>
 
     <div id="app-content">
         <div class="tab-container">
             <div class="tab-header">
-                <div class="tab-buttons" role="tablist" aria-label="功能選單">
-                    <button class="tab-button active" role="tab" id="tab-teacherTimetable" aria-controls="panel-teacherTimetable" aria-selected="true" tabindex="0" onclick="openTab(event, 'teacherTimetable')">教師/班別時間表</button>
-                    <button class="tab-button" role="tab" id="tab-rooms" aria-controls="panel-rooms" aria-selected="false" tabindex="-1" onclick="openTab(event, 'rooms')">房間時間表</button>
-                    <button class="tab-button" role="tab" id="tab-freePeriods" aria-controls="panel-freePeriods" aria-selected="false" tabindex="-1" onclick="openTab(event, 'freePeriods')">教師空堂查詢</button>
-                    <button class="tab-button" role="tab" id="tab-commonFreePeriods" aria-controls="panel-commonFreePeriods" aria-selected="false" tabindex="-1" onclick="openTab(event, 'commonFreePeriods')">共同空堂搜尋</button>
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="openTab(event, 'teacherTimetable')">教師/班別時間表</button>
+                    <button class="tab-button" onclick="openTab(event, 'rooms')">房間時間表</button>
+                    <button class="tab-button" onclick="openTab(event, 'freePeriods')">教師空堂查詢</button>
+                    <button class="tab-button" onclick="openTab(event, 'commonFreePeriods')">共同空堂搜尋</button>
                 </div>
                 <button id="logout-button" onclick="logout()">登出系統</button>
             </div>
             
-            <div id="teacherTimetable" class="tab-content active" role="tabpanel" aria-labelledby="tab-teacherTimetable" id="panel-teacherTimetable">
-                <div class="loading" role="status" aria-live="polite">載入教師/班別時間表查詢功能...</div>
-                <iframe id="ttFrame" title="教師/班別時間表" loading="lazy" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" onload="hideLoading('teacherTimetable')"></iframe>
+            <div id="teacherTimetable" class="tab-content active">
+                <div class="loading">載入教師/班別時間表查詢功能...</div>
+                <iframe id="ttFrame" onload="hideLoading('teacherTimetable')"></iframe>
             </div>
             
-            <div id="rooms" class="tab-content" role="tabpanel" aria-labelledby="tab-rooms" id="panel-rooms">
-                <div class="loading" role="status" aria-live="polite">載入房間時間表查詢功能...</div>
-                <iframe id="roomFrame" title="房間時間表" loading="lazy" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" onload="hideLoading('rooms')"></iframe>
+            <div id="rooms" class="tab-content">
+                <div class="loading">載入房間時間表查詢功能...</div>
+                <iframe id="roomFrame" onload="hideLoading('rooms')"></iframe>
             </div>
 
-            <div id="freePeriods" class="tab-content" role="tabpanel" aria-labelledby="tab-freePeriods" id="panel-freePeriods">
-                <div class="loading" role="status" aria-live="polite">載入教師空堂查詢功能...</div>
-                <iframe id="freeFrame" title="教師空堂查詢" loading="lazy" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" onload="hideLoading('freePeriods')"></iframe>
+            <div id="freePeriods" class="tab-content">
+                <div class="loading">載入教師空堂查詢功能...</div>
+                <iframe id="freeFrame" onload="hideLoading('freePeriods')"></iframe>
             </div>
             
-            <div id="commonFreePeriods" class="tab-content" role="tabpanel" aria-labelledby="tab-commonFreePeriods" id="panel-commonFreePeriods">
-                <div class="loading" role="status" aria-live="polite">載入共同空堂搜尋功能...</div>
-                <iframe id="meetingFrame" title="共同空堂搜尋" loading="lazy" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" onload="hideLoading('commonFreePeriods')"></iframe>
+            <div id="commonFreePeriods" class="tab-content">
+                <div class="loading">載入共同空堂搜尋功能...</div>
+                <iframe id="meetingFrame" onload="hideLoading('commonFreePeriods')"></iframe>
             </div>
         </div>
         
         <div class="footer">
-            <p>© <span id="spanYear"></span> 佛教何南金中學 - 時間表查詢系統 | 版本 1.1</p>
+            <p>© <span id="spanYear"></span> 佛教何南金中學 - 時間表查詢系統 | 版本 1.0</p>
         </div>
     </div>
     
     <!-- Inactivity warning modal -->
-    <div id="inactivity-warning" role="dialog" aria-modal="true" aria-labelledby="idleTitle" aria-describedby="idleDesc">
-        <h3 id="idleTitle">閒置警告</h3>
-        <p id="idleDesc">由於長時間無活動，系統將在 <span id="countdown">60</span> 秒後自動登出。</p>
+    <div id="inactivity-warning">
+        <h3>閒置警告</h3>
+        <p>由於長時間無活動，系統將在 <span id="countdown">60</span> 秒後自動登出。</p>
         <p>請點擊下方按鈕繼續使用系統。</p>
-        <button id="idleContinueBtn" onclick="resetInactivityTimer(true)">繼續使用</button>
+        <button onclick="resetInactivityTimer(true)">繼續使用</button>
     </div>
 
-    <script nonce="r4nd0m123">
-        // 參數設定
-        const CLIENT_ID = "920942611875-eikfedkn3rno9am41fi08sbqniml566c.apps.googleusercontent.com";
+    <script>
+        // 學校網域名稱
         const SCHOOL_DOMAIN = "bhnkc.edu.hk";
+        const TOKEN_SKEW_MS = 60 * 1000; // 時間偏移保險（1分鐘）
+        
+        // 學生帳戶識別規則 (s + 7個任意字符 + @bhnkc.edu.hk)
         const STUDENT_ACCOUNT_REGEX = /^s[a-zA-Z0-9]{7}@bhnkc\.edu\.hk$/i;
-        const TOKEN_SKEW_MS = 60 * 1000;
-        const ENABLE_DEVTOOLS_BLOCK = false;
 
-        // Idle 控制
-        let inactivityTimer;      // 前景用（非關鍵）
-        let warningTimer;         // 前景用（非關鍵）
-        let countdownInterval;
-        const WARNING_TIME = 60;         // 秒
-        const LOGOUT_TIME = 30 * 60 * 1000; // 30分鐘
-        const NEAR_EXP_THRESHOLD_MS = 2 * 60 * 1000; // Token 近過期提示門檻（可視需求使用）
+        // Auto-logout variables（以「絕對時限」為主，避免背景分頁計時器被暫停）
+        let inactivityTimer;      // 備用（前景時的UI倒數）
+        let warningTimer;         // 備用（前景時的UI倒數）
+        let countdownInterval;    // 警告視窗倒數
+        const WARNING_TIME = 60;          // 60 秒前顯示警告
+        const LOGOUT_TIME = 1800000;      // 30 分鐘（毫秒）
 
-        // 可選：封鎖右鍵與開發者工具（預設關閉）
-        if (ENABLE_DEVTOOLS_BLOCK) {
-            document.addEventListener('contextmenu', e => e.preventDefault());
-            document.addEventListener('keydown', e => {
-                if (e.key === 'F12' ||
-                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
-                    (e.ctrlKey && e.key.toLowerCase() === 'u')) {
-                    e.preventDefault();
-                }
-            });
-        }
-
-        // 日期顯示
-        (function showToday() {
-            const today = new Date();
-            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-            document.getElementById("todayDate").textContent = today.toLocaleDateString('zh-TW', options);
-        })();
-
-        // Token 驗證
+        // 取得 / 驗證 Token
         function decodeJwtResponse(token) {
             try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
-                    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-                ).join(''));
+                var base64Url = token.split('.')[1];
+                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
                 return JSON.parse(jsonPayload);
-            } catch { return null; }
+            } catch (e) {
+                console.error("JWT解碼失敗:", e);
+                return null;
+            }
         }
         function isTokenValid(token) {
-            const p = decodeJwtResponse(token);
-            if (!p) return false;
-            const issOk = p.iss === "https://accounts.google.com" || p.iss === "accounts.google.com";
-            const audOk = p.aud === CLIENT_ID;
-            const hdOk = p.hd === SCHOOL_DOMAIN;
-            const notStudent = !STUDENT_ACCOUNT_REGEX.test(p.email || "");
-            const notExpired = p.exp && Date.now() < (p.exp * 1000 - TOKEN_SKEW_MS);
-            return issOk && audOk && hdOk && notStudent && notExpired;
+            const payload = decodeJwtResponse(token);
+            if (!payload) return false;
+            if (payload.hd !== SCHOOL_DOMAIN) return false;
+            if (STUDENT_ACCOUNT_REGEX.test(payload.email)) return false;
+            if (!payload.exp) return false;
+            const expMs = payload.exp * 1000;
+            if (Date.now() >= (expMs - TOKEN_SKEW_MS)) return false;
+            return true;
         }
 
-        // 登出與跨分頁同步
-        function broadcastLogout() {
-            try { localStorage.setItem('app:logout', String(Date.now())); } catch {}
-        }
+        // 安全登出
         function logout() {
+            console.log("用戶登出");
+            // 清除計時器
             clearTimeout(inactivityTimer);
             clearTimeout(warningTimer);
             clearInterval(countdownInterval);
+            // 清除存儲的token與閒置時間
             sessionStorage.removeItem('google_id_token');
             sessionStorage.removeItem('inactivity.logoutAt');
             sessionStorage.removeItem('inactivity.warningAt');
             sessionStorage.removeItem('inactivity.lastActiveAt');
-            if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
-            broadcastLogout();
+            // 完全登出Google帳戶（避免自動選取）
+            if (typeof google !== 'undefined' && google.accounts?.id) {
+                google.accounts.id.disableAutoSelect();
+            }
+            // 跳轉回登入頁面
             window.location.href = "index.html";
         }
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'app:logout') logout();
-        });
 
-        // 閒置控制（絕對門檻）
+        // 設定/重置「絕對」閒置門檻（同時可選擇關閉警告視窗）
         function resetInactivityTimer(closeWarning = false) {
+            // 設置新門檻（寫入 sessionStorage，避免背景時計時中斷）
             const now = Date.now();
             const logoutAt = now + LOGOUT_TIME;
             const warningAt = logoutAt - (WARNING_TIME * 1000);
             sessionStorage.setItem('inactivity.lastActiveAt', String(now));
             sessionStorage.setItem('inactivity.logoutAt', String(logoutAt));
             sessionStorage.setItem('inactivity.warningAt', String(warningAt));
+
+            // 清除前景用的暫時計時器
             clearTimeout(inactivityTimer);
             clearTimeout(warningTimer);
             clearInterval(countdownInterval);
-            if (closeWarning) document.getElementById('inactivity-warning').style.display = 'none';
+
+            if (closeWarning) {
+                document.getElementById('inactivity-warning').style.display = 'none';
+            }
+
+            // 前景時提供 UI 體驗（非必要，但保留）
             inactivityTimer = setTimeout(showInactivityWarning, LOGOUT_TIME - (WARNING_TIME * 1000));
             warningTimer = setTimeout(logoutDueToInactivity, LOGOUT_TIME);
         }
+
         function showInactivityWarning() {
             const logoutAt = parseInt(sessionStorage.getItem('inactivity.logoutAt') || '0', 10);
             const now = Date.now();
             let remainingMs = Math.max(0, logoutAt - now);
             let seconds = Math.ceil(remainingMs / 1000);
+
             document.getElementById('inactivity-warning').style.display = 'block';
-            document.getElementById('idleContinueBtn').focus();
             document.getElementById('countdown').textContent = seconds;
+
             clearInterval(countdownInterval);
             countdownInterval = setInterval(() => {
-                const remain = Math.max(0, parseInt(sessionStorage.getItem('inactivity.logoutAt') || '0', 10) - Date.now());
+                const nowInner = Date.now();
+                const remain = Math.max(0, logoutAt - nowInner);
                 const s = Math.ceil(remain / 1000);
                 document.getElementById('countdown').textContent = s;
-                if (remain <= 0) clearInterval(countdownInterval);
+                if (remain <= 0) {
+                    clearInterval(countdownInterval);
+                }
             }, 1000);
         }
+
         function logoutDueToInactivity() {
+            console.log("自動登出：30分鐘無活動");
             alert("由於30分鐘無活動，系統已自動登出以確保安全。");
             logout();
         }
+
+        // 分頁從背景回到前景或獲得焦點時，馬上檢查是否逾時或需顯示警告
         function checkResumeState() {
-            const idToken = sessionStorage.getItem('google_id_token');
-            if (!idToken || !isTokenValid(idToken)) {
-                logout(); return;
+            // 先驗證 Token 是否仍有效
+            const id_token = sessionStorage.getItem('google_id_token');
+            if (!id_token || !isTokenValid(id_token)) {
+                // Token 無效/過期，立即登出
+                logout();
+                return;
             }
+
+            // 再檢查閒置「絕對門檻」
             const logoutAt = parseInt(sessionStorage.getItem('inactivity.logoutAt') || '0', 10);
             const warningAt = parseInt(sessionStorage.getItem('inactivity.warningAt') || '0', 10);
             const now = Date.now();
-            if (logoutAt && now >= logoutAt) { logoutDueToInactivity(); return; }
-            if (warningAt && now >= warningAt) { showInactivityWarning(); }
+
+            if (logoutAt && now >= logoutAt) {
+                logoutDueToInactivity();
+                return;
+            }
+
+            if (warningAt && now >= warningAt) {
+                // 進入警告期，立刻顯示剩餘倒數
+                showInactivityWarning();
+            }
         }
 
-        // Iframe 載入（lazy）
-        const routes = {
-            teacherTimetable: "tt.html",
-            rooms: "room.html",
-            freePeriods: "free.html",
-            commonFreePeriods: "bysub.html"
-        };
-        function loadIframesInitial() {
-            // 只先載入第一個頁籤
-            const tt = document.getElementById('ttFrame');
-            if (!tt.src) tt.src = routes.teacherTimetable;
+        // 載入 iframe 內容
+        function loadIframes() {
+            console.log("開始載入iframe內容...");
+            if (!document.getElementById('ttFrame').src) {
+                document.getElementById('ttFrame').src = "tt.html";
+                document.getElementById('roomFrame').src = "room.html";
+                document.getElementById('freeFrame').src = "free.html";
+                document.getElementById('meetingFrame').src = "bysub.html";
+            }
         }
 
-        // A11y Tabs 操作
-        function setActiveTab(tabName) {
-            const ids = ['teacherTimetable','rooms','freePeriods','commonFreePeriods'];
-            ids.forEach(id => {
-                const btn = document.getElementById('tab-' + id);
-                const panel = document.getElementById(id);
-                const active = (id === tabName);
-                btn.classList.toggle('active', active);
-                btn.setAttribute('aria-selected', String(active));
-                btn.tabIndex = active ? 0 : -1;
-                panel.classList.toggle('active', active);
-            });
-        }
-        function ensureIframe(tabName) {
-            const map = {
-                teacherTimetable: 'ttFrame',
-                rooms: 'roomFrame',
-                freePeriods: 'freeFrame',
-                commonFreePeriods: 'meetingFrame'
+        // 登出功能（供按鈕使用）已定義為 logout()
+
+        // 追蹤使用者互動（任何互動都重置絕對門檻）
+        function setupActivityTracking() {
+            const activityHandler = () => resetInactivityTimer();
+            window.addEventListener('mousemove', activityHandler);
+            window.addEventListener('keypress', activityHandler);
+            window.addEventListener('click', activityHandler);
+            window.addEventListener('scroll', activityHandler);
+
+            // 也追蹤 iframe 內的活動
+            const addIframeActivity = (frame) => {
+                try {
+                    frame.contentWindow.addEventListener('mousemove', activityHandler);
+                    frame.contentWindow.addEventListener('click', activityHandler);
+                    frame.contentWindow.addEventListener('keypress', activityHandler);
+                    frame.contentWindow.addEventListener('scroll', activityHandler);
+                } catch (e) {
+                    console.warn('無法為 iframe 綁定活動監聽：', e);
+                }
             };
-            const frameId = map[tabName];
-            const iframe = document.getElementById(frameId);
-            if (iframe && !iframe.src) iframe.src = routes[tabName];
-        }
-        function openTab(evt, tabName) {
-            setActiveTab(tabName);
-            ensureIframe(tabName);
-            document.getElementById('tab-' + tabName).focus();
-        }
-        // 鍵盤操作（左右鍵、Home/End）
-        document.querySelector('.tab-buttons').addEventListener('keydown', (e) => {
-            const order = ['teacherTimetable','rooms','freePeriods','commonFreePeriods'];
-            const current = order.findIndex(id => document.getElementById('tab-' + id).getAttribute('aria-selected') === 'true');
-            if (e.key === 'ArrowRight') {
-                const next = (current + 1) % order.length;
-                openTab(null, order[next]); e.preventDefault();
-            } else if (e.key === 'ArrowLeft') {
-                const prev = (current - 1 + order.length) % order.length;
-                openTab(null, order[prev]); e.preventDefault();
-            } else if (e.key === 'Home') {
-                openTab(null, order[0]); e.preventDefault();
-            } else if (e.key === 'End') {
-                openTab(null, order[order.length - 1]); e.preventDefault();
-            }
-        });
 
-        // 載入時初始化
-        window.addEventListener('load', () => {
-            // Token 驗證
-            const idToken = sessionStorage.getItem('google_id_token');
-            if (!idToken || !isTokenValid(idToken)) {
+            document.getElementById('ttFrame').addEventListener('load', function() { addIframeActivity(this); });
+            document.getElementById('roomFrame').addEventListener('load', function() { addIframeActivity(this); });
+            document.getElementById('freeFrame').addEventListener('load', function() { addIframeActivity(this); });
+            document.getElementById('meetingFrame').addEventListener('load', function() { addIframeActivity(this); });
+
+            // 初始設定門檻
+            resetInactivityTimer();
+        }
+
+        // 頁面載入初始化
+        window.onload = function() {
+            console.log("頁面載入完成，檢查登入狀態...");
+            
+            // 檢查是否已登入且 token 未過期
+            const id_token = sessionStorage.getItem('google_id_token');
+            if (!id_token || !isTokenValid(id_token)) {
+                // 如果沒有 token 或 token 無效/過期，清除並跳轉
                 sessionStorage.removeItem('google_id_token');
-                window.location.href = "index.html"; return;
+                window.location.href = "index.html";
+                return;
             }
-            // 年份
-            document.getElementById('spanYear').textContent = new Date().getFullYear();
-            // 初始化 iframe 與活動追蹤
-            loadIframesInitial();
-            setupActivityTracking();
-        });
 
-        // 從背景回來時檢查
+            // 驗證通過，載入應用
+            loadIframes();
+            setupActivityTracking();
+            
+            // 設置當前年份
+            document.getElementById('spanYear').textContent = new Date().getFullYear();
+        };
+
+        // 從背景回到前景時的檢查（避免因瀏覽器暫停計時器而未登出）
         window.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') checkResumeState();
+            if (document.visibilityState === 'visible') {
+                checkResumeState();
+            }
         });
         window.addEventListener('focus', checkResumeState);
 
+        // 切換標籤頁
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            const tabButtons = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        
         // 隱藏載入訊息
         function hideLoading(tabId) {
             const tab = document.getElementById(tabId);
-            const loading = tab?.querySelector('.loading');
-            if (loading) loading.style.display = 'none';
+            const loading = tab.querySelector('.loading');
+            if (loading) {
+                loading.style.display = 'none';
+            }
         }
-
-        // 追蹤互動（包含 iframe）
-        function setupActivityTracking() {
-            const activity = () => resetInactivityTimer();
-            window.addEventListener('mousemove', activity);
-            window.addEventListener('keypress', activity);
-            window.addEventListener('click', activity);
-            window.addEventListener('scroll', activity, { passive: true });
-            const addIframeActivity = (frame) => {
-                try {
-                    const w = frame.contentWindow;
-                    w.addEventListener('mousemove', activity);
-                    w.addEventListener('click', activity);
-                    w.addEventListener('keypress', activity);
-                    w.addEventListener('scroll', activity, { passive: true });
-                } catch (e) { console.warn('無法為 iframe 綁定活動監聽：', e); }
-            };
-            document.getElementById('ttFrame').addEventListener('load', function(){ addIframeActivity(this); });
-            document.getElementById('roomFrame').addEventListener('load', function(){ addIframeActivity(this); });
-            document.getElementById('freeFrame').addEventListener('load', function(){ addIframeActivity(this); });
-            document.getElementById('meetingFrame').addEventListener('load', function(){ addIframeActivity(this); });
-            resetInactivityTimer();
-        }
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Wait for DOM to be fully loaded before manipulating it
+        $(document).ready(function() {
+            $('#spanYear').html(new Date().getFullYear());
+        });
     </script>
 </body>
 </html>
