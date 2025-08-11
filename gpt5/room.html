@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data:;
+      connect-src 'self';
+      frame-ancestors 'self';
+      object-src 'none';
+      base-uri 'self';
+      upgrade-insecure-requests
+    ">
+    <link rel="stylesheet" type="text/css" href="hnkstyle.css">
+    <title>房間查詢系統</title>
+    <style>
+        body { margin: 10px; }
+        .container { max-width: 95%; margin: auto; }
+        h1, h2, h3 { text-align: center; }
+        select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { min-width: 100px; border: 1px solid #ddd; padding: 8px; text-align: center; }
+        .tab-buttons { display: flex; margin-bottom: 20px; }
+        .tab-button { flex: 1; padding: 10px; text-align: center; background: #f0f0f0; border: 1px solid #ddd; cursor: pointer; }
+        .tab-button.active { background: #ddd; font-weight: bold; }
+        .room-schedule th { background-color: #e6f3ff; }
+        .room-schedule td { vertical-align: top; }
+    </style>
+</head>
+<body>
+    <div class="refresh-btn" title="重整頁面"><div class="refresh-icon"></div></div>
+
+    <div class="container">
+        <h3>房間查詢系統</h3>
+        <div class="tab-buttons">
+            <div class="tab-button active" data-tab="roomSchedule">房間時間表查詢</div>
+            <div class="tab-button" data-tab="freeRooms">閒置房間查詢</div>
+        </div>
+        
+        <div id="roomSchedule" class="tab-content active">
+            <h3 style="text-align: center;">房間時間表查詢</h3>
+            <label for="roomSelect">選擇房間:</label>
+            <select id="roomSelect">
+                <option value="">-- 請選擇房間 --</option>
+            </select>
+            <div id="roomStatusMessage" class="status-message" style="display:none;"></div>
+            <div id="roomScheduleContainer" style="margin-top: 20px; display: none;">
+                <h3 id="roomScheduleTitle"></h3>
+                <div class="table-wrapper">
+                    <table class="room-schedule">
+                        <thead>
+                            <tr>
+                                <th>節數</th><th>星期一</th><th>星期二</th><th>星期三</th><th>星期四</th><th>星期五</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roomScheduleTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="freeRooms" class="tab-content" style="display:none;">
+            <h3 style="text-align: center;">閒置房間查詢</h3>
+            <label for="weekday">選擇星期:</label>
+            <select id="weekday">
+                <option value="1">星期一</option>
+                <option value="2">星期二</option>
+                <option value="3">星期三</option>
+                <option value="4">星期四</option>
+                <option value="5">星期五</option>
+            </select>
+            <div id="freeRoomsStatusMessage" class="status-message" style="display:none;"></div>
+            <div class="table-wrapper">
+                <table id="freeRoomsTable">
+                    <thead><tr><th>節</th><th>閒置房間</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { guard } from './js/auth.js';
+        import { initRefreshButton, showStatus } from './js/ui.js';
+        import { getLessons, getRooms } from './js/dataService.js';
+        import { weekdayNames } from './js/utils.js';
+
+        guard();
+        initRefreshButton();
+
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(btn => btn.addEventListener('click', () => {
+            tabButtons.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.tab).style.display = btn.dataset.tab === 'roomSchedule' ? 'block' : 'block';
+        }));
+
+        const roomSelect = document.getElementById('roomSelect');
+        const roomStatusMessage = document.getElementById('roomStatusMessage');
+        const roomScheduleContainer = document.getElementById('roomScheduleContainer');
+        const roomScheduleTitle = document.getElementById('roomScheduleTitle');
+        const roomScheduleTable = document.getElementById('roomScheduleTable');
+        const freeRoomsTableBody = document.querySelector('#freeRoomsTable tbody');
+        const freeRoomsStatusMessage = document.getElementById('freeRoomsStatusMessage');
+        const weekdaySelect = document.getElementById('weekday');
+
+        let lessons = [];
+        let allRooms = [];
+
+        function autoSelectWeekday() {
+            let wd = new Date().getDay(); // 0..6
+            if (wd === 0 || wd === 6) wd = 1;
+            weekdaySelect.value = wd;
+        }
+
+        function populateRoomSelect() {
+            roomSelect.innerHTML = '<option value="">-- 請選擇房間 --</option>';
+            allRooms.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = r;
+                roomSelect.appendChild(opt);
+            });
+        }
+
+        function buildRoomSchedule(room) {
+            const schedule = {};
+            for (let week=1; week<=5; week++) {
+                schedule[week] = {};
+                for (let p=1; p<=10; p++) schedule[week][p] = [];
+            }
+            lessons.filter(i => i.room === room).forEach(i => {
+                if (i.day>=1 && i.day<=5 && i.period>=1 && i.period<=10) {
+                    schedule[i.day][i.period].push({ className: i.class, subject: i.subject, teacher: i.teacher });
+                }
+            });
+            roomScheduleTitle.innerHTML = `房間 <span style="color:#ff0000;">${room}</span> 的時間表`;
+            roomScheduleTable.innerHTML = '';
+            for (let p=1; p<=10; p++) {
+                const row = roomScheduleTable.insertRow();
+                row.insertCell(0).textContent = `第 ${p} 節`;
+                for (let w=1; w<=5; w++) {
+                    const cell = row.insertCell(w);
+                    const infos = schedule[w][p];
+                    const isWedPeriod10 = (w === 3 && p === 10);
+                    if (isWedPeriod10) {
+                        cell.className = 'wed-period10';
+                        cell.innerHTML = '<div>(CPA 14:40 - 15:30)</div>';
+                    } else if (infos.length > 0) {
+                        const grouped = {};
+                        infos.forEach(info => {
+                            if (!grouped[info.subject]) grouped[info.subject] = { classes: [], teachers: new Set() };
+                            grouped[info.subject].classes.push(info.className);
+                            grouped[info.subject].teachers.add(info.teacher);
+                        });
+                        let content = '';
+                        Object.entries(grouped).forEach(([subject, data]) => {
+                            if (content) content += '<br>';
+                            content += `${data.classes.join('/')} ${subject}`;
+                            const teachers = Array.from(data.teachers);
+                            content += ` (${teachers.join('/')})`;
+                        });
+                        cell.innerHTML = `<div>${content}</div>`;
+                    } else cell.innerHTML = '<div class="free-slot"></div>';
+                }
+                if (p === 2 || p === 4 || p === 7) {
+                    const emptyRow = roomScheduleTable.insertRow();
+                    emptyRow.style.backgroundColor = '#f0f0f0';
+                    for (let i=0; i<=5; i++) emptyRow.insertCell(i);
+                }
+            }
+            roomScheduleContainer.style.display = 'block';
+        }
+
+        function findFreeRooms() {
+            const weekday = weekdaySelect.value;
+            showStatus(`正在查找${weekdayNames[weekday]}的閒置房間...`, 'loading', freeRoomsStatusMessage);
+            const periods = {};
+            lessons.forEach(i => {
+                if (String(i.day) === String(weekday)) {
+                    if (!periods[i.period]) periods[i.period] = new Set();
+                    if (i.room) periods[i.period].add(i.room);
+                }
+            });
+            freeRoomsTableBody.innerHTML = '';
+            const sortedAll = allRooms;
+            for (let i=1; i<=10; i++) {
+                if (weekday === '3' && i === 10) continue;
+                const used = periods[i] || new Set();
+                const free = sortedAll.filter(r => !used.has(r));
+                const row = freeRoomsTableBody.insertRow();
+                row.insertCell(0).textContent = `第 ${i} 節`;
+                const roomsCell = row.insertCell(1);
+                if (free.length === 0) {
+                    roomsCell.textContent = '無閒置房間';
+                } else {
+                    free.forEach((room, idx) => {
+                        const span = document.createElement('span');
+                        span.textContent = room;
+                        span.className = 'room-name';
+                        span.addEventListener('mouseover', () => {
+                            document.querySelectorAll('#freeRoomsTable .room-name').forEach(s => {
+                                if (s.textContent === room) s.classList.add('highlight-room');
+                            });
+                        });
+                        span.addEventListener('mouseout', () => {
+                            document.querySelectorAll('#freeRoomsTable .highlight-room').forEach(s => s.classList.remove('highlight-room'));
+                        });
+                        roomsCell.appendChild(span);
+                        if (idx < free.length - 1) roomsCell.appendChild(document.createTextNode(', '));
+                    });
+                }
+                if (i === 2 || i === 4 || i === 7) {
+                    const sep = freeRoomsTableBody.insertRow();
+                    const td = sep.insertCell(0);
+                    td.colSpan = 2; td.style.border = 'none';
+                }
+            }
+            showStatus(`成功找到 「${weekdayNames[weekday]}」 的閒置房間資訊`, 'success', freeRoomsStatusMessage);
+        }
+
+        roomSelect.addEventListener('change', function() {
+            if (!this.value) { roomScheduleContainer.style.display = 'none'; return; }
+            showStatus(`正在查詢房間 ${this.value} 的時間表...`, 'loading', roomStatusMessage);
+            buildRoomSchedule(this.value);
+            showStatus(`房間 ${this.value} 的時間表查詢完成`, 'success', roomStatusMessage);
+        });
+        weekdaySelect.addEventListener('change', findFreeRooms);
+
+        try {
+            lessons = await getLessons();
+            allRooms = await getRooms();
+            populateRoomSelect();
+            autoSelectWeekday();
+            findFreeRooms();
+        } catch (e) {
+            console.error(e);
+            showStatus(`錯誤: ${e.message}`, 'error', roomStatusMessage);
+        }
+    </script>
+</body>
+</html>

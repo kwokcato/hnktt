@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' https://cdnjs.cloudflare.com;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data:;
+      connect-src 'self';
+      frame-ancestors 'self';
+      object-src 'none';
+      base-uri 'self';
+      upgrade-insecure-requests
+    ">
+    <link rel="stylesheet" type="text/css" href="hnkstyle.css">
+    <title>教師/班別時間表查詢</title>
+    <!-- 匯出所需（Excel / PDF） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+    <style>
+        body { max-width: 1200px; margin: 0 auto; padding: 10px; }
+        .container { display: flex; flex-direction: column; gap: 8px; }
+        .input-section { display: flex; gap: 10px; align-items: center; background-color: #f5f5f5; padding: 10px; border-radius: 5px; flex-wrap: wrap; }
+        .dropdown-group { display: flex; gap: 10px; align-items: center; flex-grow: 1; position: relative; }
+        select, input { padding: 8px; border-radius: 4px; border: 1px solid #ddd; }
+        #timetable { margin-top: 0; }
+        .dropdown-group #exportBtnGroup { margin-left: auto; display: flex; justify-content: flex-end; }
+        #result h3 { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="refresh-btn" title="重整頁面">
+        <div class="refresh-icon"></div>
+    </div>
+
+    <div class="container">
+        <b>教師/班別時間表查詢</b>
+        <div class="input-section">
+            <input type="text" id="teacherName" placeholder="輸入教師姓名或班別 (如 1A)" list="quickList">
+            <datalist id="quickList"></datalist>
+            <div class="dropdown-group">
+                <span>或</span>
+                <select id="teacherDropdown">
+                    <option value="">選擇教師...</option>
+                </select>
+                <span>或</span>
+                <select id="classDropdown">
+                    <option value="">選擇班別...</option>
+                </select>
+                <div id="exportBtnGroup"></div>
+            </div>
+        </div>
+        <div id="result"></div>
+        <div class="table-wrapper">
+            <table id="timetable">
+                <div id="loading">載入時間表數據中...</div>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { guard } from './js/auth.js';
+        import { initRefreshButton, applyFontPercent, loadFontPercent } from './js/ui.js';
+        import { initTimetable } from './timetable.js';
+
+        guard();
+        initRefreshButton();
+        applyFontPercent(loadFontPercent());
+        initTimetable();
+    </script>
+</body>
+</html>

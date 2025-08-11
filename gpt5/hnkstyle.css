@@ -1,0 +1,177 @@
+:root {
+    /* 統一字級倍率（百分比），由 JS 設定 */
+    --tt-font-scale: 100;
+    --color-primary: #3498db;
+    --color-primary-dark: #2980b9;
+    --color-gray-100: #f5f5f5;
+    --color-gray-200: #e6e6e6;
+    --color-gray-300: #ddd;
+    --color-text: #333;
+}
+
+/* 通用字體與容器 */
+body {
+    font-family: Arial, sans-serif;
+    color: var(--color-text);
+    margin: 0;
+    padding: 0;
+}
+
+/* 讓表格在窄螢幕可水平捲動，表頭黏性 */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--color-primary);
+    color: #fff;
+}
+
+/* 統一課表字級（以 CSS 變數控制） */
+#timetable th, #timetable td {
+    font-size: calc(11px * var(--tt-font-scale) / 100);
+}
+#timetable .subject {
+    font-size: calc(14px * var(--tt-font-scale) / 100);
+}
+#timetable .teacher, 
+#timetable .room, 
+#timetable .dismissal-time {
+    font-size: calc(10px * var(--tt-font-scale) / 100);
+}
+
+/* 顏色與樣式 */
+th {
+    background-color: var(--color-primary);
+    color: #fff;
+}
+tr:nth-child(even) {
+    background-color: #fff;
+}
+.empty-cell {
+    background-color: #fff;
+}
+.break-cell {
+    background-color: #e6e6e6;
+    color: #777;
+    font-style: italic;
+}
+.main-lesson {
+    font-weight: bold;
+    white-space: normal;
+    word-wrap: break-word;
+    display: inline-block;
+    max-width: 100%;
+    text-align: center;
+}
+.co-teachers {
+    font-size: 0.9em;
+    color: #666;
+}
+.dismissal-time {
+    font-size: 0.9em;
+    color: #666;
+    font-style: italic;
+}
+.period-col {
+    width: 5ch !important;
+    max-width: 5ch;
+    background-color: var(--color-primary);
+    color: white;
+    font-weight: bold;
+}
+.time-col {
+    width: 10ch !important;
+    max-width: 10ch;
+    background-color: var(--color-primary);
+    color: white;
+    font-weight: bold;
+}
+
+/* 通用按鈕樣式 */
+.btn, .export-btn {
+    padding: 10px 15px;
+    margin: 0 5px;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.btn:hover, .export-btn:hover {
+    background-color: var(--color-primary-dark);
+}
+
+/* Refresh Button */
+.refresh-btn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(200, 200, 200, 0.3);
+    border: 1px solid rgba(150, 150, 150, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+.refresh-btn:hover {
+    background-color: rgba(200, 200, 200, 0.7);
+    transform: scale(1.1);
+}
+.refresh-icon {
+    width: 16px;
+    height: 16px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23333333"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>');
+    background-size: contain;
+    opacity: 0.7;
+}
+
+/* 其它頁面專用 */
+.status-message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+}
+.loading { background-color: #fff3cd; color: #856404; }
+.success { background-color: #d4edda; color: #155724; }
+.error { background-color: #f8d7da; color: #721c24; }
+
+/* 房間表、共同表小樣式 */
+.room-name { cursor: pointer; transition: color 0.2s; }
+.room-name:hover { color: red; }
+.highlight-room { color: red; font-weight: bold; }
+
+/* 星期三第十節的斜線底紋 */
+.wed-period10 { position: relative; background-color: white !important; }
+.wed-period10::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(45deg, transparent, transparent 3px, #dddddd 3px, #dddddd 6px);
+    pointer-events: none;
+}
+.wed-period10 div, .wed-period10 .class-list, .wed-period10 .teacher-names {
+    position: relative; z-index: 1; color: #999 !important;
+}
