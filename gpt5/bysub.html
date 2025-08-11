@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' https://cdnjs.cloudflare.com;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data:;
+      connect-src 'self';
+      frame-ancestors 'self';
+      object-src 'none';
+      base-uri 'self';
+      upgrade-insecure-requests
+    ">
+    <link rel="stylesheet" type="text/css" href="hnkstyle.css">
+    <title>共同時間表</title>
+    <!-- PDF/Canvas 相關外掛（cdnjs） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <style>
+        body { margin: 10px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 5px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        select { width: 30%; min-width: 220px; padding: 8px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-right: 10px; }
+        button:hover { background-color: #45a049; }
+        .teachers-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .teacher-checkbox { display: flex; align-items: center; background-color: #f0f0f0; padding: 5px 10px; border-radius: 4px; transition: background-color 0.3s; }
+        .teacher-checkbox.highlighted { background-color: #e6f7ff; }
+        .teacher-checkbox input { margin-right: 5px; }
+        .export-buttons { margin: 20px 0; text-align: center; }
+        .print-btn { background-color: #2196F3; }
+        .pdf-btn { background-color: #f44336; }
+        #teacherInput { border: 1px solid #ddd; border-radius: 4px; font-size: 14px; margin-bottom: 10px; width: 95%; padding: 8px; }
+        #teacherInput:focus { outline: none; border-color: #4CAF50; box-shadow: 0 0 5px rgba(76,175,80,.3); }
+        .break-row { height: 25px; }
+        .empty-cell { min-width: 100px; background-color: #f9f0eb; }
+        .table-wrapper { overflow-x: auto; }
+        @media print { .form-group, .refresh-btn, .export-buttons { display: none; } body { margin: 0; padding: 10px; } table { width: 100%; font-size: 12px; } th, td { padding: 5px; } }
+    </style>
+</head>
+<body>
+    <div class="refresh-btn" title="重整頁面"><div class="refresh-icon"></div></div>
+
+    <div class="container">
+        <b>科目/教師/組別共同時間表查詢</b>
+        <div class="form-group">
+            <select id="subject"><option value="">-- 請選擇科目 --</option></select>
+            <button id="generateBySubjectBtn">按科目生成時間表</button> 或
+            <select id="group"><option value="">-- 請選擇組別 --</option></select>
+            <button id="generateByGroupBtn">按組別生成時間表</button>
+            <div id="teacherSelection">
+                <span id="toggleTeachersBtn" class="toggle-teachers">▼ 選擇教師</span>
+                <div id="teachersCollapsible" class="collapsible">
+                    <label>選擇教師:</label>
+                    <div style="margin-bottom: 10px;"><input type="text" id="teacherInput" placeholder="輸入教師名稱 (可用逗號或空格分隔)"></div>
+                    <div id="teachersCheckboxContainer" class="teachers-container"></div>
+                    <div class="action-buttons">
+                        <button id="selectAllBtn" class="select-all">全選</button>
+                        <button id="clearAllBtn" class="clear-all">清除</button>
+                        <button id="generateByTeachersBtn">按教師生成時間表</button>
+                    </div>
+                </div>
+            </div>
+            <div id="exportButtons" class="export-buttons" style="display: none;">
+                <button id="printTimetableBtn" class="print-btn">列印時間表</button>
+                <button id="exportPdfBtn" class="pdf-btn">匯出 PDF</button>
+            </div>
+        </div>
+
+        <div id="errorMsg" class="error"></div>
+        <div id="loading" class="loading" style="display:none;">載入中，請稍候...</div>
+        <div id="timetableContainer" class="table-wrapper"></div>
+    </div>
+
+    <script type="module">
+        import { guard } from './js/auth.js';
+        import { initRefreshButton } from './js/ui.js';
+        import { getLessons } from './js/dataService.js';
+        import { simplifyClassNames } from './js/utils.js';
+
+        guard();
+        initRefreshButton();
+
+        const { jsPDF } = window.jspdf || {};
+
+        const subjectSelect = document.getElementById('subject');
+        const groupSelect = document.getElementById('group');
+        const teachersCheckboxContainer = document.getElementById('teachersCheckboxContainer');
+        const generateBySubjectBtn = document.getElementById('generateBySubjectBtn');
+        const generateByTeachersBtn = document.getElementById('generateByTeachersBtn');
+        const generateByGroupBtn = document.getElementById('generateByGroupBtn');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const timetableContainer = document.getElementById('timetableContainer');
+        const errorMsg = document.getElementById('errorMsg');
+        const loading = document.getElementById('loading');
+        const toggleTeachersBtn = document.getElementById('toggleTeachersBtn');
+        const teachersCollapsible = document.getElementById('teachersCollapsible');
+        const printTimetableBtn = document.getElementById('printTimetableBtn');
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const exportButtons = document.getElementById('exportButtons');
+        const teacherInput = document.getElementById('teacherInput');
+
+        let timetableData = [];
+        let subjects = [];
+        let subjectTeachersMap = {};
+        let allTeachers = new Set();
+        let groupData = {};
+        let allGroups = new Set();
+
+        const allWeeks = [1,2,3,4,5];
+        const allPeriods = [1,2,3,4,5,6,7,8,9,10];
+
+        toggleTeachersBtn.addEventListener('click', function(){
+            teachersCollapsible.classList.toggle('show');
+            this.textContent = teachersCollapsible.classList.contains('show') ? '▲ 隱藏教師選擇' : '▼ 選擇教師';
+        });
+        document.querySelector('.refresh-btn').addEventListener('click', function(){
+            this.style.transform = 'scale(1.2) rotate(360deg)'; this.style.backgroundColor = 'rgba(150,150,150,0.8)';
+            setTimeout(()=> location.reload(), 600);
+        });
+        printTimetableBtn.addEventListener('click', () => window.print());
+        exportPdfBtn.addEventListener('click', function(){
+            const title = document.querySelector('#timetableContainer h2')?.textContent || '時間表';
+            const container = timetableContainer;
+            html2canvas(container, { scale: 2, logging: false, useCORS: true, allowTaint: true, scrollX: 0, scrollY: 0,
+                windowWidth: container.scrollWidth, windowHeight: container.scrollHeight
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = pageWidth - 20; const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let position = 15;
+                if (imgHeight > (pageHeight - position)) {
+                    const ratio = (pageHeight - position) / imgHeight;
+                    const splitHeight = canvas.height * ratio;
+                    pdf.addImage({ imageData: imgData, x: 10, y: position, width: imgWidth, height: (splitHeight * imgWidth) / canvas.width, format: 'PNG' });
+                    pdf.addPage();
+                    pdf.addImage({ imageData: imgData, x: 10, y: 10, width: imgWidth, height: imgHeight - (splitHeight * imgWidth) / canvas.width, format: 'PNG' });
+                } else {
+                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                }
+                pdf.save(`${title}.pdf`);
+            }).catch(e => { console.error('生成PDF失敗:', e); errorMsg.textContent = '生成PDF時發生錯誤'; });
+        });
+        teacherInput.addEventListener('keydown', function(e){
+            if (e.key === 'Enter') {
+                const inputText = this.value.trim();
+                if (!inputText) return;
+                const inputTeachers = inputText.split(/[, ]+/).filter(Boolean);
+                document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false; cb.parentElement.classList.remove('highlighted');
+                });
+                let foundAny = false;
+                inputTeachers.forEach(t => {
+                    let cb = document.querySelector(`#teachersCheckboxContainer input[value="${t}"]`);
+                    if (!cb) {
+                        for (const c of document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]')) {
+                            if (c.value.toLowerCase().includes(t.toLowerCase())) { cb = c; break; }
+                        }
+                    }
+                    if (cb) { cb.checked = true; cb.parentElement.classList.add('highlighted'); foundAny = true; }
+                });
+                if (foundAny) {
+                    const selected = getSelectedTeachers();
+                    errorMsg.textContent = ''; loading.style.display = 'block'; exportButtons.style.display = 'none';
+                    setTimeout(() => {
+                        generateTimetableByTeachers(selected);
+                        loading.style.display = 'none'; exportButtons.style.display = 'block';
+                        timetableContainer.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                } else errorMsg.textContent = '沒有找到匹配的教師';
+                this.value = '';
+            }
+        });
+
+        function fetchCSV(filename) {
+            return fetch(filename).then(r => {
+                if (!r.ok) throw new Error(`無法載入 ${filename} (${r.status})`);
+                return r.text();
+            });
+        }
+        function processGroupCSV(csvText) {
+            csvText = csvText.replace(/^\uFEFF/, '');
+            const lines = csvText.split('\n');
+            for (let i=1;i<lines.length;i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const parts = line.split(',');
+                if (parts.length >= 2) {
+                    const initial = parts[0].trim();
+                    const duties = [];
+                    for (let j=1;j<5;j++) {
+                        if (parts[j] && parts[j].trim() !== '') { duties.push(parts[j].trim()); allGroups.add(parts[j].trim()); }
+                    }
+                    groupData[initial] = duties;
+                }
+            }
+            groupSelect.innerHTML = '<option value="">-- 請選擇組別 --</option>';
+            Array.from(allGroups).sort().forEach(group => {
+                const opt = document.createElement('option'); opt.value = group; opt.textContent = group; groupSelect.appendChild(opt);
+            });
+        }
+        function extractSubjects() {
+            const subjectSet = new Set(); subjectTeachersMap = {};
+            timetableData.forEach(entry => {
+                const subject = entry.subject; const teacher = entry.teacher;
+                if (subject) {
+                    subjectSet.add(subject);
+                    if (!subjectTeachersMap[subject]) subjectTeachersMap[subject] = new Set();
+                    subjectTeachersMap[subject].add(teacher);
+                }
+            });
+            subjects = Array.from(subjectSet).sort();
+            subjectSelect.innerHTML = '<option value="">-- 請選擇科目 --</option>';
+            subjects.forEach(s => {
+                const opt = document.createElement('option'); opt.value = s; opt.textContent = s; subjectSelect.appendChild(opt);
+            });
+        }
+        function createTeacherCheckboxes() {
+            teachersCheckboxContainer.innerHTML = '';
+            const sortedTeachers = Array.from(allTeachers).sort();
+            sortedTeachers.forEach(t => {
+                const wrap = document.createElement('div'); wrap.className = 'teacher-checkbox';
+                const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = `teacher-${t}`; cb.value = t;
+                const label = document.createElement('label'); label.htmlFor = `teacher-${t}`; label.textContent = t;
+                wrap.appendChild(cb); wrap.appendChild(label); teachersCheckboxContainer.appendChild(wrap);
+            });
+        }
+        subjectSelect.addEventListener('change', function(){
+            const s = this.value;
+            document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.parentElement.classList.remove('highlighted'); });
+            if (s && subjectTeachersMap[s]) {
+                const subjectTeachers = Array.from(subjectTeachersMap[s]);
+                subjectTeachers.forEach(t => {
+                    const cb = document.querySelector(`#teachersCheckboxContainer input[value="${t}"]`);
+                    if (cb) { cb.checked = true; cb.parentElement.classList.add('highlighted'); }
+                });
+            }
+        });
+        groupSelect.addEventListener('change', function(){
+            const g = this.value;
+            document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.parentElement.classList.remove('highlighted'); });
+            if (g) {
+                const groupTeachers = [];
+                for (const [initial, duties] of Object.entries(groupData)) {
+                    if (duties.includes(g)) groupTeachers.push(initial);
+                }
+                groupTeachers.forEach(t => {
+                    const cb = document.querySelector(`#teachersCheckboxContainer input[value="${t}"]`);
+                    if (cb) { cb.checked = true; cb.parentElement.classList.add('highlighted'); }
+                });
+            }
+        });
+        selectAllBtn.addEventListener('click', () => { document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(cb => cb.checked = true); });
+        clearAllBtn.addEventListener('click', () => { document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(cb => cb.checked = false); });
+        generateBySubjectBtn.addEventListener('click', function(){
+            const s = subjectSelect.value;
+            if (!s) { errorMsg.textContent = '請選擇一個科目'; return; }
+            errorMsg.textContent=''; loading.style.display='block'; exportButtons.style.display='none';
+            setTimeout(()=>{ generateTimetableBySubject(s); loading.style.display='none'; exportButtons.style.display='block'; timetableContainer.scrollIntoView({behavior:'smooth'}); }, 100);
+        });
+        generateByTeachersBtn.addEventListener('click', function(){
+            const selected = getSelectedTeachers();
+            if (selected.length === 0) { errorMsg.textContent = '請至少選擇一位教師'; return; }
+            errorMsg.textContent=''; loading.style.display='block'; exportButtons.style.display='none';
+            setTimeout(()=>{ generateTimetableByTeachers(selected); loading.style.display='none'; exportButtons.style.display='block'; timetableContainer.scrollIntoView({behavior:'smooth'}); }, 100);
+        });
+        generateByGroupBtn.addEventListener('click', function(){
+            const g = groupSelect.value;
+            if (!g) { errorMsg.textContent='請選擇一個組別'; return; }
+            errorMsg.textContent=''; loading.style.display='block'; exportButtons.style.display='none';
+            setTimeout(()=> {
+                const groupTeachers = [];
+                for (const [initial, duties] of Object.entries(groupData)) {
+                    if (duties.includes(g)) groupTeachers.push(initial);
+                }
+                if (groupTeachers.length === 0) { errorMsg.textContent = '該組別沒有教師'; loading.style.display='none'; return; }
+                generateTimetableByTeachers(groupTeachers);
+                loading.style.display='none'; exportButtons.style.display='block'; timetableContainer.scrollIntoView({behavior:'smooth'});
+            }, 100);
+        });
+        function getSelectedTeachers() {
+            return Array.from(document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]:checked')).map(cb => cb.value);
+        }
+        function simplifyClassList(classes) {
+            return simplifyClassNames(classes);
+        }
+        function generateTimetableBySubject(subject) {
+            const teachers = Array.from(subjectTeachersMap[subject] || []);
+            const subjectEntries = timetableData.filter(entry => entry.subject === subject);
+            let html = `<h2>${subject} 共同時間表</h2><p>教師: ${teachers.join(', ')}</p><div class="table-wrapper"><table><thead><tr><th>節/星期</th>${allWeeks.map(w=>`<th>星期 ${w}</th>`).join('')}</tr></thead><tbody>`;
+            allPeriods.forEach(period => {
+                html += `<tr><td>第 ${period} 節</td>`;
+                allWeeks.forEach(week => {
+                    const entries = subjectEntries.filter(entry => entry.week === week || entry.day === week).filter(e => e.period === period);
+                    const isWedPeriod10 = (week === 3 && period === 10);
+                    const cellClass = isWedPeriod10 ? 'wed-period10' : '';
+                    if (entries.length > 0) {
+                        const allClasses = entries.map(e => e.class);
+                        const simplifiedClasses = simplifyClassList(allClasses);
+                        const teachersInSlot = [...new Set(entries.map(e => e.teacher))];
+                        html += `<td class="timetable-cell ${cellClass}"><div class="class-list">${simplifiedClasses}</div><div class="teacher-names">${teachersInSlot.join(', ')}</div></td>`;
+                    } else html += `<td class="empty-cell ${cellClass}"></td>`;
+                });
+                html += `</tr>`;
+                if (period === 2 || period === 4 || period === 7) html += `<tr class="break-row"><td colspan="${allWeeks.length+1}"></td></tr>`;
+            });
+            html += '</tbody></table></div>';
+            timetableContainer.innerHTML = html;
+        }
+        function generateTimetableByTeachers(teachers) {
+            const teacherEntries = timetableData.filter(e => teachers.includes(e.teacher));
+            let html = `<h2>${teachers.join(', ')} 教師組合時間表</h2><div class="table-wrapper"><table><thead><tr><th>節/星期</th>${allWeeks.map(w=>`<th>星期 ${w}</th>`).join('')}</tr></thead><tbody>`;
+            allPeriods.forEach(period => {
+                html += `<tr><td>第 ${period} 節</td>`;
+                allWeeks.forEach(week => {
+                    const entries = teacherEntries.filter(e => (e.week === week || e.day === week) && e.period === period);
+                    const isWedPeriod10 = (week === 3 && period === 10);
+                    const cellClass = isWedPeriod10 ? 'wed-period10' : '';
+                    if (entries.length > 0) {
+                        const subjectsInSlot = [...new Set(entries.map(e => e.subject))];
+                        let cellContent = '';
+                        subjectsInSlot.forEach(subject => {
+                            const subjectEntries = entries.filter(e => e.subject === subject);
+                            const allClasses = subjectEntries.map(e => e.class);
+                            const simplifiedClasses = simplifyClassList(allClasses);
+                            const teachersInSubject = [...new Set(subjectEntries.map(e => e.teacher))];
+                            cellContent += `<div><div class="class-list">${subject}: ${simplifiedClasses}</div><div class="teacher-names">${teachersInSubject.join(', ')}</div></div>`;
+                        });
+                        html += `<td class="timetable-cell ${cellClass}">${cellContent}</td>`;
+                    } else html += `<td class="empty-cell ${cellClass}"></td>`;
+                });
+                html += `</tr>`;
+                if (period === 2 || period === 4 || period === 7) html += `<tr class="break-row"><td colspan="${allWeeks.length+1}"></td></tr>`;
+            });
+            html += '</tbody></table></div>';
+            timetableContainer.innerHTML = html;
+        }
+
+        // 載入資料
+        try {
+            timetableData = await getLessons();
+            timetableData.forEach(e => allTeachers.add(e.teacher));
+            const agroup = await fetchCSV('agroup.csv'); // 保留原有組別資料來源
+            processGroupCSV(agroup);
+            extractSubjects();
+            createTeacherCheckboxes();
+        } catch (e) {
+            console.error('載入數據失敗:', e);
+            errorMsg.textContent = '無法載入數據';
+        }
+    </script>
+</body>
+</html>
