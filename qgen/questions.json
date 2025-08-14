@@ -1,364 +1,778 @@
 {
   "questions": [
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "1",
-      "question_text": "志明在试算表内建立了图表 1，他想修改图表 1，使它成为图表 2。他须修改哪项图表设定？",
-      "topics": ["Spreadsheet"],
-      "types": ["Chart Settings"],
+      "source": "s22_11",
+      "number": "1(a)",
+      "question_text": "State the difference between a tebibyte and a terabyte. [1]",
+      "topics": ["Information representation"],
+      "types": ["Definition", "Comparison"],
+      "aos": ["AO1"],
+      "answer_text": "one tebibyte is 1024 gibibytes and one terabyte is 1000 gigabytes"
+    },
+    {
+      "source": "s22_11",
+      "number": "1(b)",
+      "question_text": "Convert the signed denary value –100 into an 8-bit two’s complement binary integer. [1]",
+      "topics": ["Information representation"],
+      "types": ["Calculation", "Conversion"],
       "aos": ["AO2"],
-      "answer_text": "D. 图表類型"
+      "answer_text": "10011100"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "2",
-      "question_text": "數據庫表 PROD 包含七筆記錄，如下展示。執行下列 SQL 指令會輸出什麼？\nSELECT MAX (WEIGHT) FROM PROD WHERE PSTAT <> 'S'",
-      "topics": ["Databases"],
-      "types": ["SQL Query"],
+      "source": "s22_11",
+      "number": "1(c)",
+      "question_text": "Convert the denary number 251 into hexadecimal. Show your working. [2]",
+      "topics": ["Information representation"],
+      "types": ["Calculation", "Conversion"],
       "aos": ["AO2"],
-      "answer_text": "B. 5"
+      "answer_text": "Working: Dividing by 16 or converting to binary (11111011)\nAnswer: FB"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "3",
-      "question_text": "下列哪項是改變學校內聯網帳戶密碼時的一個數據驗證例子？",
-      "topics": ["Data Validation"],
-      "types": ["Verification"],
-      "aos": ["AO1"],
-      "answer_text": "A. 輸入新密碼兩次"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "4",
-      "question_text": "下列所有原始檔的檔案大小均為1MB。在正常情況下，壓縮這些檔案後，哪個壓縮檔的大小是最大的？",
-      "topics": ["Data Compression"],
-      "types": ["File Compression"],
+      "source": "s22_11",
+      "number": "1(d)",
+      "question_text": "Add the following unsigned binary integers.\n\n  01010000\n+ 00111110\n[1]",
+      "topics": ["Information representation"],
+      "types": ["Calculation"],
       "aos": ["AO2"],
-      "answer_text": "D. testD.jpg    testD.zip"
+      "answer_text": "10001110"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "5",
-      "question_text": "下列為韓文文本例子：習習計測組。下列哪種字符編碼法可用來表示韓文文本？\n(1) ASCII\n(2) 統一碼\n(3) 大五碼",
-      "topics": ["Character Encoding"],
-      "types": ["Encoding Standards"],
+      "source": "s22_11",
+      "number": "2(a)(i)",
+      "question_text": "A computer has hardware and software. The hardware includes different types of memory.\nComplete the description of computer memory.\n\nRandom Access Memory (RAM) and Read Only Memory (ROM) are both examples of ......................................................................... memory.\nOne item that is stored in RAM is ......................................................................... .\nOne item that is stored in ROM is ......................................................................... .\nRAM can be either Static RAM (SRAM) or Dynamic RAM (DRAM).\nSRAM uses transistors arranged as ......................................................................... .\nDRAM uses transistors and ......................................................................... .\n[5]",
+      "topics": ["Hardware"],
+      "types": ["Completion", "Definition"],
       "aos": ["AO1"],
-      "answer_text": "B. 只有 (2)"
+      "answer_text": "- primary memory\n- currently running software/data/part of OS\n- the start-up/boot-up instructions/BIOS\n- flip-flops/latches\n- capacitors"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "6",
-      "question_text": "下列哪些適合用來表達故事分鏡圖？\n(1) 投影片放映\n(2) 多媒體文件\n(3) 資料庫檔案",
-      "topics": ["Multimedia"],
-      "types": ["Storyboarding"],
+      "source": "s22_11",
+      "number": "2(a)(ii)",
+      "question_text": "Explain the difference between Programmable ROM (PROM), Erasable Programmable ROM (EPROM) and Electrically Erasable Programmable ROM (EEPROM). [3]",
+      "topics": ["Hardware"],
+      "types": ["Explanation", "Comparison"],
       "aos": ["AO1"],
-      "answer_text": "A. 只有 (1) 和 (2)"
+      "answer_text": "- PROM can be set once, EPROM and EEPROM can be overwritten multiple times.\n- EPROM needs to be removed from device EEPROM can be erased in situ.\n- EPROM and can be erased using UV light, EEPROM can be erased using voltage // is flash storage.\n- EPROM must be entirely erased before rewriting, EEPROM does not have to be entirely erased before rewriting."
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "7",
-      "question_text": "某公司設計了一個處理員工記錄的流動應用程式。每筆記錄中，以10個位元來儲存員工號碼和12個字節來儲存中文姓名。這個流動應用程式可支援多少筆員工記錄？",
-      "topics": ["Data Storage"],
-      "types": ["Capacity Calculation"],
-      "aos": ["AO2"],
-      "answer_text": "B. \(2^{22}\)"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "8",
-      "question_text": "志偉編寫了一個程式來處理學生資料，其中包括學生姓名、平均分和修讀科目數目。志偉應利用哪些數據類型來儲存相關的學生資料？",
-      "topics": ["Data Types"],
-      "types": ["Variable Declaration"],
-      "aos": ["AO1"],
-      "answer_text": "E. 字符    實數    整數"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "9",
-      "question_text": "下列哪個是以 8 位元二進制補碼表示的十進制數值-8？",
-      "topics": ["Binary Representation"],
-      "types": ["Two's Complement"],
-      "aos": ["AO2"],
-      "answer_text": "B. 1111 1000"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "10",
-      "question_text": "莉莉在一個文件檔內插入一個超連結，使用此超連結可能會有什麼後果？\n(1) 開啟一個視像檔\n(2) 跳至此文件的另一頁\n(3) 跳至另一個文件的某一頁",
-      "topics": ["Hyperlinks"],
-      "types": ["Functionality"],
-      "aos": ["AO1"],
-      "answer_text": "D. (1)、(2) 和 (3)"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "11",
-      "question_text": "某文字檔包含字符串「*IT*」。志明利用一個程式去檢視該字符串以十六進制表示的 ASCII 編碼，如下展示：\n2A 49 54 2A\n儲存該字符串需要多少個位元？",
-      "topics": ["ASCII Encoding"],
-      "types": ["Bit Calculation"],
-      "aos": ["AO2"],
-      "answer_text": "C. 32"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "12",
-      "question_text": "下列哪些元素可以包括在 PDF 檔案內？\n(1) 照片\n(2) 視像\n(3) 超連結",
-      "topics": ["PDF Features"],
-      "types": ["File Format"],
-      "aos": ["AO1"],
-      "answer_text": "D. (1)、(2) 和 (3)"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "13",
-      "question_text": "下列兩個條碼 X 和 Y 分別見於汽水罐和廣告海報中。它們主要的差別是什麼？",
-      "topics": ["Barcodes"],
-      "types": ["Comparison"],
-      "aos": ["AO1"],
-      "answer_text": "C. Y 能夠表示更多數據。"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "14",
-      "question_text": "下列哪句關於郵件合併是正確的？",
-      "topics": ["Mail Merge"],
-      "types": ["Functionality"],
-      "aos": ["AO1"],
-      "answer_text": "C. 可將數據排序和篩選以作郵件合併。"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "15",
-      "question_text": "如「維基百科」的免費網上百科全書含有大量文章。下列哪些關於這些網上百科全書的句子是正確的？\n(1) 人們可以快速搜尋某主題的相關文章。\n(2) 這些文章沒有版權。\n(3) 這些百科全書會經常更新。",
-      "topics": ["Online Encyclopedias"],
-      "types": ["Features"],
-      "aos": ["AO1"],
-      "answer_text": "B. 只有 (1) 和 (3)"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "16",
-      "question_text": "連接應使用路由器。",
-      "topics": ["Networking"],
-      "types": ["Device Usage"],
-      "aos": ["AO1"],
-      "answer_text": "A. 兩個不同網絡"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "17",
-      "question_text": "以下哪些是操作系統的基本功能？\n(1) 電郵管理\n(2) 記憶體管理\n(3) 輸入／輸出管理",
-      "topics": ["Operating Systems"],
-      "types": ["Functions"],
-      "aos": ["AO1"],
-      "answer_text": "C. 只有 (2) 和 (3)"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "18",
-      "question_text": "為什麼在許多流動設備中普遍使用固態硬碟（SSD）而不使用硬碟？",
-      "topics": ["Storage Devices"],
-      "types": ["Comparison"],
-      "aos": ["AO1"],
-      "answer_text": "A. SSD的體積較小。"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "19",
-      "question_text": "以下哪項可以幫助縮短存取硬碟內文件所需的時間？",
-      "topics": ["Disk Management"],
-      "types": ["Optimization"],
-      "aos": ["AO1"],
-      "answer_text": "D. 磁碟重組軟件"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "20",
-      "question_text": "細看下列桌上電腦的配置：\n● Intel® Core™ i7 CPU\n● 16GB DDR4 RAM\n● 1TB SSD\n● 802.11ac Wi-Fi\n從這些配置可獲得什麼資訊？\n(1) 顯示屏的可視尺寸\n(2) 無線網絡的最大數據傳輸速率\n(3) 啟動電腦時間",
-      "topics": ["Computer Specifications"],
-      "types": ["Interpretation"],
-      "aos": ["AO1"],
-      "answer_text": "B. 只有 (2)"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "21",
-      "question_text": "下列哪項是硬碟的最新發展趨勢？\n(1) 耗電量較低\n(2) 使用壽命較長\n(3) 附有較多內置軟件",
-      "topics": ["Hard Disk Trends"],
-      "types": ["Trends"],
-      "aos": ["AO1"],
-      "answer_text": "A. 只有 (1) 和 (2)"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "22",
-      "question_text": "下列哪句關於 CPU 內提取一譯碼—執行周期是正確的？",
-      "topics": ["CPU Cycle"],
+      "source": "s22_11",
+      "number": "2(b)",
+      "question_text": "A magnetic hard disk is used to store data on the computer.\nDescribe the principal operations of a magnetic hard disk. [5]",
+      "topics": ["Hardware"],
       "types": ["Description"],
       "aos": ["AO1"],
-      "answer_text": "A. 在這周期中使用了寄存器。"
+      "answer_text": "- The hard disk has (one or more) platter/plate/disk\n- Each surface of the platter/disk is (ferrous oxide which is) capable of being magnetised\n- The platters/disks are mounted on a (central) spindle\n- The entire mechanism is contained inside a sealed (aluminium) box.\n- The disks are rotated (at high-speed)\n- (Each surface of the disk) has a read/write head mounted on an arm (positioned just above the surface)\n- Electronic circuits control the movement of the arm (and hence the heads)\n- The surface of the platter/disk is divided into concentric tracks / circles\n- The surface of the platter/disk is divided into sectors\n- One track in one sector is the basic unit of storage called a block\n- The data is encoded as a magnetic pattern for each block\n- When writing to disk, a variation in the current in the head produces a variation in magnetic field on the disk\n- When reading from disk, a variation in magnetic field produces a variation in current through the head"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "23",
-      "question_text": "在餐廳的銷售點系統中，下列哪項（些）是採用賦款式打印機來印製收據的原因？\n(1) 可保留收據列印本較長時間。\n(2) 打印時安靜。\n(3) 打印時間短。",
-      "topics": ["Printers"],
-      "types": ["Advantages"],
+      "source": "s22_11",
+      "number": "2(c)(i)",
+      "question_text": "Computers consist of logic gates.\nComplete the table by writing one set of values (input 1 and input 2) for each gate that will give the output 1.\n\n| Gate | Input 1 | Input 2 | Output |\n| :--- | :---: | :---: | :---: |\n| AND  |         |         |   1    |\n| NAND |         |         |   1    |\n| XOR  |         |         |   1    |\n| NOR  |         |         |   1    |\n[4]",
+      "topics": ["Hardware"],
+      "types": ["Completion", "Logic"],
       "aos": ["AO1"],
-      "answer_text": "C. 只有 (1) 和 (3)"
+      "answer_text": "| Gate | Input 1 | Input 2 |\n| :--- | :---: | :---: |\n| AND  |    1    |    1    |\n| NAND | 0/0/1   | 0/1/0   |\n| XOR  | 0/1     | 1/0     |\n| NOR  |    0    |    0    |"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "24",
-      "question_text": "莉莉在家中登入其公司內的電腦，並進行一些文字處理工作。以下哪句關於此遠程登入是正確的？",
-      "topics": ["Remote Access"],
-      "types": ["Functionality"],
-      "aos": ["AO1"],
-      "answer_text": "C. 此遠程登入支援數據加密。"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "25",
-      "question_text": "下圖是 www.abc.edu.hk 的部分文件夾結構。下列哪個 URL 是無效的？",
-      "topics": ["URL Structure"],
-      "types": ["Validation"],
+      "source": "s22_11",
+      "number": "2(c)(ii)",
+      "question_text": "Write the logic expression for the given logic circuit.\n(Image of a logic circuit with inputs A, B, C and output X. A and B go into a NAND gate. B and C go into an XOR gate. The outputs of these two gates go into an OR gate to produce X.)\n[3]",
+      "topics": ["Hardware"],
+      "types": ["Logic Expression"],
       "aos": ["AO2"],
-      "answer_text": "B. http://www.abc.edu.hk/info/chi/p1.jpg"
+      "answer_text": "(A NAND B) OR (B XOR C)"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "26",
-      "question_text": "下列哪項不是電郵協定？",
-      "topics": ["Email Protocols"],
+      "source": "s22_11",
+      "number": "3(a)",
+      "question_text": "A teacher is writing examination papers on a laptop computer. The computer is connected to the internet. The teacher is concerned about the security and privacy of the papers.\nState the difference between the security of data and the privacy of data. [1]",
+      "topics": ["Security, privacy and data integrity"],
+      "types": ["Definition", "Comparison"],
+      "aos": ["AO1"],
+      "answer_text": "Security prevents against loss while privacy prevents unauthorised access."
+    },
+    {
+      "source": "s22_11",
+      "number": "3(b)",
+      "question_text": "Identify and describe two threats to the data. Identify one security measure to protect against each threat. Each security measure must be different. [6]",
+      "topics": ["Security, privacy and data integrity"],
+      "types": ["Identification", "Description"],
+      "aos": ["AO1", "AO2"],
+      "answer_text": "Threat 1: Malware\nDescription: Malicious software that replicates and can delete/damage the examination papers.\nSecurity measure: Install and run anti-malware.\n\nThreat 2: Hacker/unauthorised access\nDescription: Illegal access in order to delete/damage the examination papers.\nSecurity measure: Use a firewall // strong passwords.\n\n(Alternative Threat: Spyware\nDescription: Software installed on the computer without the teacher’s knowledge which records keystrokes and sends the data gathered about the examination papers to a third party.\nSecurity measure: Use a firewall / install and run anti-spyware / use a virtual (onscreen) keyboard)"
+    },
+    {
+      "source": "s22_11",
+      "number": "4(a)",
+      "question_text": "A teacher uses a relational database, MARKS, to store data about students and their test marks.\nThe database has the following structure:\nSTUDENT(StudentID, FirstName, LastName)\nTEST(TestID, Description, TotalMarks)\nSTUDENT_TEST(StudentID, TestID, Mark)\n\nDescribe the advantages of using a relational database compared to a file-based approach. [4]",
+      "topics": ["Databases"],
+      "types": ["Description", "Comparison"],
+      "aos": ["AO1"],
+      "answer_text": "- Reduced data redundancy // less repeated data, because each item of data is only stored once.\n- Maintains data consistency // improves data integrity, because changes in one table will automatically update in another and linked data cannot be entered differently in two tables.\n- Program-data independence, because changes to the data do not require programs to be re-written.\n- Complex queries are easier to run.\n- Can provide different views, so users can only see specific aspects of the database."
+    },
+    {
+      "source": "s22_11",
+      "number": "4(b)",
+      "question_text": "Give the highest level of Normal Form (NF) the database MARKS is in and justify your choice. [3]",
+      "topics": ["Databases"],
+      "types": ["Identification", "Justification"],
+      "aos": ["AO2"],
+      "answer_text": "Normal Form: 3NF\nJustification:\n- There are no repeated attributes // it is already in 2NF.\n- Each field is fully dependent on the corresponding primary key // no partial dependencies.\n- No transitive dependencies."
+    },
+    {
+      "source": "s22_11",
+      "number": "4(c)(i)",
+      "question_text": "Sample data to be stored in the table STUDENT_TEST is shown.\n\n| StudentID | TestID | Mark |\n| :--- | :--- | :--- |\n| 12 | A1 | 50 |\n| 12 | P10 | 100 |\n| 13 | A1 | 75 |\n| 14 | P10 | 60 |\n\nWrite a Structured Query Language (SQL) script to create the table STUDENT_TEST. [5]",
+      "topics": ["Databases"],
+      "types": ["SQL", "Programming"],
+      "aos": ["AO3"],
+      "answer_text": "CREATE TABLE STUDENT_TEST (\n    StudentID INTEGER,\n    TestID VARCHAR(10),\n    Mark INTEGER,\n    PRIMARY KEY(StudentID, TestID),\n    FOREIGN KEY(TestID) REFERENCES TEST(TestID),\n    FOREIGN KEY(StudentID) REFERENCES STUDENT(StudentID)\n);"
+    },
+    {
+      "source": "s22_11",
+      "number": "4(c)(ii)",
+      "question_text": "Write a Structured Query Language (SQL) script to find the average mark of students in test A7. [3]",
+      "topics": ["Databases"],
+      "types": ["SQL", "Programming"],
+      "aos": ["AO3"],
+      "answer_text": "SELECT AVG(Mark)\nFROM STUDENT_TEST\nWHERE TestID = 'A7';"
+    },
+    {
+      "source": "s22_11",
+      "number": "4(d)",
+      "question_text": "The mark a student is awarded in a test will be entered into the database. This mark needs to be a whole number between 0 and the maximum number of marks for that test (inclusive).\n\nExplain how data validation and data verification can be used when a mark is entered. [4]",
+      "topics": ["Databases", "Security, privacy and data integrity"],
+      "types": ["Explanation"],
+      "aos": ["AO2"],
+      "answer_text": "Validation:\n- range check to make sure it is between 0 and max marks\n- presence check to make sure a mark is entered\n- type check to make sure an integer value is entered\n\nVerification:\n- double entry - enter the mark twice and the computer compares them\n- visual check - manually compare the mark entered with the mark on the input document"
+    },
+    {
+      "source": "s22_11",
+      "number": "5(a)",
+      "question_text": "A programmer uses an Integrated Development Environment (IDE) to develop a program.\nDraw one line from each IDE feature to its correct description.\n\n| IDE feature | | Description |\n| :--- | :--- | :--- |\n| Context-sensitive prompt | | Executes one line of the program and then stops |\n| Dynamic syntax check | | Underlines or highlights statements that do not meet the rules of the language |\n| Breakpoint | | Outputs the contents of variables and data structures |\n| Single stepping | | Stops the code executing at a set line |\n| Report window | | Displays predictions of the code being entered |\n[4]",
+      "topics": ["System Software", "Software Development"],
+      "types": ["Matching", "Definition"],
+      "aos": ["AO1"],
+      "answer_text": "- Context-sensitive prompt -> Displays predictions of the code being entered\n- Dynamic syntax check -> Underlines or highlights statements that do not meet the rules of the language\n- Breakpoint -> Stops the code executing at a set line\n- Single stepping -> Executes one line of the program and then stops\n- Report window -> Outputs the contents of variables and data structures"
+    },
+    {
+      "source": "s22_11",
+      "number": "5(b)",
+      "question_text": "The programmer wants to allow users to edit, improve and redistribute the program.\nIdentify two different types of software licence that the programmer could use. [2]",
+      "topics": ["Ethics and Ownership"],
       "types": ["Identification"],
       "aos": ["AO1"],
-      "answer_text": "D. FTP"
+      "answer_text": "- Open Source Initiative\n- Free Software Foundation"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "27",
-      "question_text": "芝芝可藉 ABC 學校網站的 IP 位址瀏覽該網站，但不能以它的 URL 瀏覽。原因可能是什麼？",
-      "topics": ["DNS"],
-      "types": ["Troubleshooting"],
+      "source": "s22_11",
+      "number": "5(c)",
+      "question_text": "Explain the benefits to the programmer of using program libraries. [3]",
+      "topics": ["Software Development"],
+      "types": ["Explanation"],
+      "aos": ["AO1"],
+      "answer_text": "- Saves (programming/testing) time as code does not have to be written/re-written from scratch // code does not have to be tested.\n- Code is already tested so it is more robust/likely to work.\n- If there is an improvement in the library routine the program updates automatically.\n- Can perform complex calculations that the programmer may be unable to do."
+    },
+    {
+      "source": "s22_11",
+      "number": "6(a)(i)",
+      "question_text": "A computer system is designed using the basic Von Neumann model.\nDescribe the role of the registers in the Fetch-Execute (F-E) cycle. [5]",
+      "topics": ["Processor Fundamentals"],
+      "types": ["Description"],
+      "aos": ["AO1"],
+      "answer_text": "- The Program Counter (PC) holds the address of the next instruction and the contents are incremented / changed to the next address each cycle.\n- The Memory Address Register (MAR) holds the address to fetch the data (from the PC).\n- The Memory Data Register (MDR) holds the data at the address in MAR.\n- The instruction is transferred to Current Instruction Register (CIR) for decoding and execution."
+    },
+    {
+      "source": "s22_11",
+      "number": "6(a)(ii)",
+      "question_text": "Describe when interrupts are detected in the F-E cycle and how the interrupts are handled. [5]",
+      "topics": ["Processor Fundamentals", "System Software"],
+      "types": ["Description"],
+      "aos": ["AO1"],
+      "answer_text": "Detected:\n- At the start/end of a F-E cycle.\n\nHandled:\n- Priority is checked.\n- If lower priority than current process continue with F-E cycle.\n- If higher priority than current process, state of current process is / registers are stored on stack.\n- Location / type of interrupt identified and appropriate ISR is called to handle the interrupt.\n- When ISR finished, check for further interrupts (of high priority) / return to step 1.\n- Otherwise load data from stack and continue with process."
+    },
+    {
+      "source": "s22_11",
+      "number": "6(b)",
+      "question_text": "Identify one factor that can affect the performance of the computer system and state how it impacts the performance. [2]",
+      "topics": ["Processor Fundamentals"],
+      "types": ["Identification", "Explanation"],
+      "aos": ["AO1"],
+      "answer_text": "Factor: Clock speed\nImpact: higher clock speed means more F-E cycles per second.\n\nOR\n\nFactor: Number of cores\nImpact: means more instructions can be carried out simultaneously.\n\nOR\n\nFactor: Bus width\nImpact: allows the transfer of more data each time // allows more memory locations to be directly accessed.\n\nOR\n\nFactor: Cache\nImpact: the higher capacity the more frequently used instructions it can store for fast access."
+    },
+    {
+      "source": "s22_11",
+      "number": "6(c)(i)",
+      "question_text": "The table shows part of the instruction set for a processor. The processor has one general purpose register, the Accumulator (ACC).\n\n| Opcode | Operand | Explanation |\n| :--- | :--- | :--- |\n| AND | #n | Bitwise AND operation of the contents of ACC with the operand |\n| XOR | #n | Bitwise XOR operation of the contents of ACC with the operand |\n| OR | #n | Bitwise OR operation of the contents of ACC with the operand |\n| LSL | #n | Bits in ACC are shifted logically n places to the left. Zeros are introduced on the right hand end |\n| LSR | #n | Bits in ACC are shifted logically n places to the right. Zeros are introduced on the left hand end |\n\n# denotes a denary number, e.g. #123\n\nComplete the register to show the result after the instruction AND #2 is executed.\n\nRegister before: 01101101\nRegister after:\n[1]",
+      "topics": ["Processor Fundamentals"],
+      "types": ["Calculation", "Bitwise Operation"],
       "aos": ["AO2"],
-      "answer_text": "B. 該網域名稱系統 (DNS) 伺服器暫時停止服務。"
+      "answer_text": "00000000"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "28",
-      "question_text": "觀賞採用串流傳輸技術的網站內的視像，與下列哪些項目有關？\n(1) DNS\n(2) FTP\n(3) IP",
-      "topics": ["Streaming"],
-      "types": ["Requirements"],
-      "aos": ["AO1"],
-      "answer_text": "B. 只有 (1) 和 (3)"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "29",
-      "question_text": "細看下列網頁：市場上的水果：- 橙 - 蘋果 - 香蕉 - 櫻桃 - 菠蘿 - 檸檬 - 西瓜 - 雪梨。下列哪項（些）可以更便於導航？\n(1) 表單\n(2) 框\n(3) 背景音樂",
-      "topics": ["Web Navigation"],
-      "types": ["Improvement"],
-      "aos": ["AO1"],
-      "answer_text": "C. 只有 (1) 和 (2)"
-    },
-    {
-      "source": "2018-DSE-ICT-1A",
-      "number": "30",
-      "question_text": "下列算法是用作計算 \( (1^2 + 2^2 + 3^2 + \cdots + N^2) \) 的值。方格內應是什麼？",
-      "topics": ["Algorithms"],
-      "types": ["Loop Condition"],
+      "source": "s22_11",
+      "number": "6(c)(ii)",
+      "question_text": "Background: The table shows part of the instruction set for a processor.\n\nComplete the register to show the result after the instruction OR #8 is executed.\n\nRegister before: 01101101\nRegister after:\n[1]",
+      "topics": ["Processor Fundamentals"],
+      "types": ["Calculation", "Bitwise Operation"],
       "aos": ["AO2"],
-      "answer_text": "A. \( N > 0 \)"
+      "answer_text": "01101101"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "31",
-      "question_text": "細看以下算法。下列哪組輸入數據最適合用作測試此算法？",
-      "topics": ["Algorithm Testing"],
-      "types": ["Test Data"],
+      "source": "s22_11",
+      "number": "6(c)(iii)",
+      "question_text": "Background: The table shows part of the instruction set for a processor.\n\nComplete the register to show the result after the operation LSL #4 is executed.\n\nRegister before: 01101101\nRegister after:\n[1]",
+      "topics": ["Processor Fundamentals"],
+      "types": ["Calculation", "Bitwise Operation"],
       "aos": ["AO2"],
-      "answer_text": "C. -20, -6, 0, 9, 15"
+      "answer_text": "11010000"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "32",
-      "question_text": "細看以下流程圖的一部分。假設 X 和 Y 的初始值分別為 14 和 4。輸出是什麼？",
-      "topics": ["Flowchart"],
-      "types": ["Trace"],
+      "source": "s22_21",
+      "number": "1(a)",
+      "question_text": "A programmer draws a program flowchart to show the sequence of steps required to solve a problem.\nGive the technical term for a sequence of steps that describe how to solve a problem. [1]",
+      "topics": ["Algorithm Design and Problem-solving"],
+      "types": ["Definition"],
+      "aos": ["AO1"],
+      "answer_text": "An algorithm"
+    },
+    {
+      "source": "s22_21",
+      "number": "1(b)(i)",
+      "question_text": "The table lists some of the variables used in a program.\nComplete the table by writing the most appropriate data type for each variable.\n\n| Variable | Use of variable | Data type |\n| :--- | :--- | :--- |\n| Temp | Stores the average temperature | |\n| PetName | Stores the name of my pet | |\n| MyDOB | To calculate the number of days until my next birthday | |\n| LightOn | Stores state of light; light is only on or off | |\n[4]",
+      "topics": ["Data Types and Structures"],
+      "types": ["Identification", "Data Types"],
+      "aos": ["AO1"],
+      "answer_text": "- Temp: REAL\n- PetName: STRING\n- MyDOB: DATE\n- LightOn: BOOLEAN"
+    },
+    {
+      "source": "s22_21",
+      "number": "1(b)(ii)",
+      "question_text": "One of the names used for a variable in the table in part 1(b)(i) is not an example of good practice.\nIdentify the variable and give a reason why it is not good practice to use that name. [2]",
+      "topics": ["Programming"],
+      "types": ["Evaluation", "Best Practice"],
       "aos": ["AO2"],
-      "answer_text": "C. 2"
+      "answer_text": "Variable: Temp\nReason: Name does not indicate what the variable is used for."
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "33",
-      "question_text": "假設 \( X = 1 \cdot Y = 2 \) 和 \( Z = 3 \)。下列哪條布爾公式是「真」？",
-      "topics": ["Boolean Logic"],
-      "types": ["Evaluation"],
+      "source": "s22_21",
+      "number": "1(c)",
+      "question_text": "Complete the table by evaluating each expression.\n\n| Expression | Evaluation |\n| :--- | :--- |\n| INT((31 / 3) + 1) | |\n| MID(TO_UPPER(\"Version\"), 4, 2) | |\n| TRUE AND (NOT FALSE) | |\n| NUM_TO_STR(27 MOD 3) | |\n[4]",
+      "topics": ["Programming", "Data Types and Structures"],
+      "types": ["Evaluation", "Calculation"],
       "aos": ["AO2"],
-      "answer_text": "B. \( (X = 1) \) AND \( (Y > -2) \) OR \( (Z > 3) \)"
+      "answer_text": "- INT((31 / 3) + 1): 11\n- MID(TO_UPPER(\"Version\"), 4, 2): \"SI\"\n- TRUE AND (NOT FALSE): TRUE\n- NUM_TO_STR(27 MOD 3): \"0\""
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "34",
-      "question_text": "於設計電腦解決方案時使用模組的特徵是什麼？\n(1) 模組通常是用來解決簡單的問題。\n(2) 模組可能是可重用的。\n(3) 開發成本較高。\n(4) 模組可以獨立開發。",
-      "topics": ["Modular Design"],
-      "types": ["Characteristics"],
-      "aos": ["AO1"],
-      "answer_text": "D. 只有 (2) 和 (4)"
+      "source": "s22_21",
+      "number": "2(a)",
+      "question_text": "Examine the following state-transition diagram.\n(Image of a state-transition diagram with states S1, S2, S3, S4 and transitions based on inputs Button-X, Button-Y, Button-Z, resulting in outputs Output-A, Output-B, Output-C)\n\nComplete the table with reference to the diagram.\n\n| | Answer |\n| :--- | :--- |\n| The number of different inputs | |\n| The number of different outputs | |\n| The single input value that could result in S4 | |\n[3]",
+      "topics": ["Algorithm Design and Problem-solving"],
+      "types": ["Analysis", "State-transition diagram"],
+      "aos": ["AO2"],
+      "answer_text": "- The number of different inputs: 3\n- The number of different outputs: 3\n- The single input value that could result in S4: Button-Y"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "35",
-      "question_text": "在軟件設計中從人體工學方面有什麼良好的做法？\n(1) 固定字體大小\n(2) 給用戶適當的系統信息\n(3) 一致的用戶界面",
-      "topics": ["Ergonomics"],
-      "types": ["Best Practices"],
-      "aos": ["AO1"],
-      "answer_text": "C. 只有 (2) 和 (3)"
+      "source": "s22_21",
+      "number": "2(b)",
+      "question_text": "Background: Examine the following state-transition diagram.\n(Image of a state-transition diagram with states S1, S2, S3, S4 and transitions based on inputs Button-X, Button-Y, Button-Z, resulting in outputs Output-A, Output-B, Output-C)\n\nThe initial state is S1.\nComplete the table to show the inputs, outputs and next states.\n\n| Input | Output | Next state |\n| :--- | :--- | :--- |\n| Button-Y | | |\n| | none | S3 |\n| Button-Z | | S2 |\n| | none | |\n[4]",
+      "topics": ["Algorithm Design and Problem-solving"],
+      "types": ["Analysis", "State-transition diagram"],
+      "aos": ["AO2"],
+      "answer_text": "| Input | Output | Next state |\n| :--- | :--- | :--- |\n| Button-Y | Output-A | S4 |\n| Button-X | none | S3 |\n| Button-Z | Output-B | S2 |\n| Button-Y | none | S1 |"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "36",
-      "question_text": "李小姐是一名攝影師。張先生於未經李小姐同意下，從她的網站下載大量版權照片，並在其補習社使用。這樣可引致什麼法律後果？\n(1) 張先生需要向李小姐作出賠償。\n(2) 張先生犯了刑事罪行。\n(3) 張先生需要結束他的補習社。",
-      "topics": ["Copyright"],
-      "types": ["Legal Consequences"],
-      "aos": ["AO1"],
-      "answer_text": "A. 只有 (1) 和 (2)"
+      "source": "s22_21",
+      "number": "3(a)",
+      "question_text": "The manager of a cinema wants a program to allow users to book seats. The cinema has several screens. Each screen shows a different film.\nDecomposition will be used to break the problem down into sub-problems.\nDescribe three program modules that could be used in the design. [3]",
+      "topics": ["Software Development", "Algorithm Design and Problem-solving"],
+      "types": ["Design", "Decomposition"],
+      "aos": ["AO3"],
+      "answer_text": "- Module 1: Allows the user to search for films being shown // input name of film they want to see.\n- Module 2: Allows the user to search for available seats.\n- Module 3: Calculate cost of booking // Book a given number of seats for a particular screening."
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "37",
-      "question_text": "在互聯網上，為什麼我們需要保密插口層（SSL）？",
-      "topics": ["SSL"],
-      "types": ["Purpose"],
+      "source": "s22_21",
+      "number": "3(b)",
+      "question_text": "Two types of program modules may be used in the design of the program.\nIdentify the type of program module that should be used to return a value. [1]",
+      "topics": ["Programming"],
+      "types": ["Identification", "Definition"],
       "aos": ["AO1"],
-      "answer_text": "D. 可安全地傳輸數據。"
+      "answer_text": "Function"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "38",
-      "question_text": "在通過互聯網傳輸機密資料時，使用數據加密的主要好處是什麼？\n(1) 黑客不能輕易收集加密數據\n(2) 黑客不能輕易讀取機密資料\n(3) 黑客不能輕易刪除機密資料",
-      "topics": ["Encryption"],
-      "types": ["Benefits"],
-      "aos": ["AO1"],
-      "answer_text": "D. 只有 (2) 和 (3)"
+      "source": "s22_21",
+      "number": "4(a)",
+      "question_text": "A stack is created using a high-level language. Memory locations 200 to 207 are to be used to store the stack.\nThe following diagram represents the current state of the stack. TopOfStack points to the last value added to the stack.\n(Diagram shows a stack with values 'H', 'E', 'D', 'C', 'F' where 'F' is at the top at location 203)\n\nComplete the following table by writing the answers.\n\n| | Answer |\n| :--- | :--- |\n| The value that has been on the stack for the longest time. | |\n| The memory location pointed to by TopOfStack if three POP operations are performed. | |\n[2]",
+      "topics": ["Data Types and Structures"],
+      "types": ["Analysis", "Stack"],
+      "aos": ["AO2"],
+      "answer_text": "- The value that has been on the stack for the longest time: 'H'\n- The memory location pointed to by TopOfStack if three POP operations are performed: 206"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "39",
-      "question_text": "在互聯網上所發布的照片，有什麼適當措施可保護其知識產權？\n(1) 數碼簽署\n(2) 數碼水印\n(3) 防火牆",
-      "topics": ["Intellectual Property"],
-      "types": ["Protection"],
-      "aos": ["AO1"],
-      "answer_text": "B. 只有 (2)"
+      "source": "s22_21",
+      "number": "4(b)",
+      "question_text": "The following diagram shows the current state of the stack:\n(Diagram shows a stack with values 'P', 'N', 'Z', 'X', 'Y', 'W' where 'W' is at the top at location 202)\n\nThe following operations are performed:\n POP\n POP\n PUSH 'A'\n PUSH 'B'\n POP\n PUSH 'C'\n PUSH 'D'\n\nComplete the diagram to show the state of the stack after the operations have been performed. [4]",
+      "topics": ["Data Types and Structures"],
+      "types": ["Trace", "Stack"],
+      "aos": ["AO2"],
+      "answer_text": "Final Stack State:\n- TopOfStack pointer at memory location 201.\n- Memory location 201: 'D'\n- Memory location 202: 'C'\n- Memory location 203: 'A'\n- Memory location 204: 'X'\n- Memory location 205: 'Z'\n- Memory location 206: 'N'\n- Memory location 207: 'P'"
     },
     {
-      "source": "2018-DSE-ICT-1A",
-      "number": "40",
-      "question_text": "在電腦系統的認證中，使用指紋比較使用密碼有何好處？\n(1) 一般來說，輸入時間較短。\n(2) 系統開發的成本更低。\n(3) 用潔淨手指可減少錯誤。",
-      "topics": ["Authentication"],
-      "types": ["Advantages"],
+      "source": "s22_21",
+      "number": "5",
+      "question_text": "Each line of a text file contains data organised into fixed-length fields as shown:\n<Field 1><Field 2><Field 3>\nAn algorithm is required to search for the first instance of a given value of Field 2 and, if found, to output the corresponding values for Field 1 and Field 3.\nDescribe the algorithm needed. Do not include pseudocode statements in your answer. [6]",
+      "topics": ["Algorithm Design and Problem-solving", "Software Development"],
+      "types": ["Algorithm Design", "Description"],
+      "aos": ["AO3"],
+      "answer_text": "1. Open file in read mode.\n2. Set up a conditional loop, repeating until the value is found or the end of the file is reached.\n3. Read a line from the file in a loop.\n4. Extract Field 2 from the line, for example by using a substring function with the known lengths of Field 1 and Field 2.\n5. Compare the extracted field with the search value.\n6. If the search value is found, extract Field 1 and Field 3 and output them.\n7. Close the file after the loop has finished."
+    },
+    {
+      "source": "s22_21",
+      "number": "6(a)",
+      "question_text": "An algorithm will:\n- output each integer value between 100 and 200 that ends with the digit 7, for example, 107\n- output a final count of the number of values that are output.\n\nWrite pseudocode for this algorithm. Any variables used must be declared. [5]",
+      "topics": ["Algorithm Design and Problem-solving", "Programming"],
+      "types": ["Pseudocode", "Algorithm Design"],
+      "aos": ["AO3"],
+      "answer_text": "DECLARE ThisInt, Count : INTEGER\nCount <- 0\nFOR ThisInt <- 100 TO 200\n    IF ThisInt MOD 10 = 7 THEN\n        OUTPUT ThisInt\n        Count <- Count + 1\n    ENDIF\nNEXT ThisInt\nOUTPUT Count"
+    },
+    {
+      "source": "s22_21",
+      "number": "6(b)",
+      "question_text": "Study the following pseudocode.\n\nCASE OF MySwitch\n    1: ThisChar <- 'a'\n    2: ThisChar <- 'y'\n    3: ThisChar <- '7'\n    OTHERWISE: ThisChar <- '*'\nENDCASE\n\nWrite pseudocode with the same functionality without using a CASE structure. [4]",
+      "topics": ["Programming"],
+      "types": ["Pseudocode", "Refactoring"],
+      "aos": ["AO3"],
+      "answer_text": "IF MySwitch = 1 THEN\n    ThisChar <- 'a'\nELSE\n    IF MySwitch = 2 THEN\n        ThisChar <- 'y'\n    ELSE\n        IF MySwitch = 3 THEN\n            ThisChar <- '7'\n        ELSE\n            ThisChar <- '*'\n        ENDIF\n    ENDIF\nENDIF"
+    },
+    {
+      "source": "s22_21",
+      "number": "7(a)",
+      "question_text": "A string is a palindrome if it reads the same forwards as backwards.\nThe following strings are examples of palindromes:\n\"Racecar\"\n\"madam\"\n\"12344321\"\nUpper-case and lower-case characters need to be treated the same. For example, 'A' is equivalent to 'a'.\nA function IsPalindrome() will take a string parameter. The function will return TRUE if the string is a palindrome and will return FALSE if the string is not a palindrome.\nWrite pseudocode for IsPalindrome(). [7]",
+      "topics": ["Algorithm Design and Problem-solving", "Programming"],
+      "types": ["Pseudocode", "Algorithm Design"],
+      "aos": ["AO3"],
+      "answer_text": "FUNCTION IsPalindrome(InString : STRING) RETURNS BOOLEAN\n    DECLARE IsPal : BOOLEAN\n    DECLARE Index, Num : INTEGER\n    DECLARE CharA, CharB : CHAR\n\n    IsPal <- TRUE\n    Index <- 1\n    Num <- INT(LENGTH(InString) / 2)\n\n    WHILE Index <= Num AND IsPal = TRUE\n        CharA <- MID(InString, Index, 1)\n        CharB <- MID(InString, LENGTH(InString) - Index + 1, 1)\n\n        IF UCASE(CharA) <> UCASE(CharB) THEN\n            IsPal <- FALSE\n        ENDIF\n\n        Index <- Index + 1\n    ENDWHILE\n\n    RETURN IsPal\nENDFUNCTION"
+    },
+    {
+      "source": "s22_21",
+      "number": "7(b)",
+      "question_text": "Strings may consist of several words separated by spaces.\nFor example, the string \"never odd or even\" becomes a palindrome if the spaces are removed.\nThe program flowchart represents an algorithm to produce a string OutString by removing all spaces from a string InString.\n(Image of a flowchart with labels A, B, C, D, E, F, G)\n\nComplete the table by writing the text that should replace each of the labels B, C, D, F and G.\n\n| Label | Text |\n| :--- | :--- |\n| A | Set OutString to \"\" |\n| B | |\n| C | |\n| D | |\n| E | Set Index to Index + 1 |\n| F | |\n| G | |\n[4]",
+      "topics": ["Algorithm Design and Problem-solving"],
+      "types": ["Flowchart", "Analysis"],
+      "aos": ["AO2"],
+      "answer_text": "| Label | Text |\n| :--- | :--- |\n| B | Is Index > LENGTH(InString)? |\n| C | Is MID(InString, Index, 1) = \" \"? |\n| D | Set OutString to OutString & MID(InString, Index, 1) |\n| F | YES |\n| G | NO |"
+    },
+    {
+      "source": "s22_21",
+      "number": "8(a)",
+      "question_text": "A program allows a user to save passwords. A password will be of a fixed format, consisting of three groups of four alphanumeric characters, separated by hyphens. e.g., \"FxAf-3haV-Tq49\".\nA module RandomChar() is needed.\n- It generates a single random character from 'a'-'z', 'A'-'Z', or '0'-'9'.\n- It returns the character.\nFor reference, ASCII values are: 'a'-'z' (97-122), 'A'-'Z' (65-90), '0'-'9' (48-57).\nWrite pseudocode for module RandomChar(). You may use the CHR() function. [6]",
+      "topics": ["Algorithm Design and Problem-solving", "Programming"],
+      "types": ["Pseudocode", "Algorithm Design"],
+      "aos": ["AO3"],
+      "answer_text": "FUNCTION RandomChar() RETURNS CHAR\n    DECLARE ThisRange : INTEGER\n    DECLARE ThisChar : CHAR\n\n    // First select the range\n    ThisRange <- INT(RAND(3)) + 1 // 1 to 3\n\n    CASE OF ThisRange\n        1: // 'a' to 'z'\n            ThisChar <- CHR(INT(RAND(26)) + 97)\n        2: // 'A' to 'Z'\n            ThisChar <- CHR(INT(RAND(26)) + 65)\n        3: // '0' to '9'\n            ThisChar <- CHR(INT(RAND(10)) + 48)\n    ENDCASE\n\n    RETURN ThisChar\nENDFUNCTION"
+    },
+    {
+      "source": "s22_21",
+      "number": "8(b)",
+      "question_text": "A global 2D array `Secret` of size 500x2 stores website domain names and their encrypted passwords.\nA module `FindPassword()` is needed:\n- Takes a website domain name as a string parameter.\n- Searches for the domain name in the `Secret` array.\n- If found, it calls a pre-written `Decrypt()` function with the encrypted password and returns the decrypted password.\n- If not found, it outputs a warning message and returns an empty string.\nWrite pseudocode for module `FindPassword()`. [7]",
+      "topics": ["Algorithm Design and Problem-solving", "Programming", "Data Types and Structures"],
+      "types": ["Pseudocode", "Algorithm Design"],
+      "aos": ["AO3"],
+      "answer_text": "FUNCTION FindPassword(Name: STRING) RETURNS STRING\n    DECLARE Index : INTEGER\n    DECLARE Password : STRING\n    DECLARE Found : BOOLEAN\n\n    Password <- \"\"\n    Index <- 1\n    Found <- FALSE\n\n    WHILE Found = FALSE AND Index <= 500\n        IF Secret[Index, 1] = Name THEN\n            Password <- Decrypt(Secret[Index, 2])\n            Found <- TRUE\n        ELSE\n            Index <- Index + 1\n        ENDIF\n    ENDWHILE\n\n    IF Found = FALSE THEN\n        OUTPUT \"Domain name not found\"\n    ENDIF\n\n    RETURN Password\nENDFUNCTION"
+    },
+    {
+      "source": "s22_21",
+      "number": "8(c)",
+      "question_text": "The modules Encrypt() and Decrypt() are called from several places in the main program.\nIdentify a method that could have been used to test the main program before these modules were completed. Describe how this would work. [3]",
+      "topics": ["Software Development"],
+      "types": ["Testing", "Description"],
+      "aos": ["AO2"],
+      "answer_text": "Method: Stub testing\nDescription: A simple module is written to replace each of the modules (Encrypt and Decrypt). The simple module will return an expected, hard-coded value or will output a message to show it has been called, allowing the main program flow to be tested without the final logic of the module."
+    },
+    {
+      "source": "s22_21",
+      "number": "8(d)",
+      "question_text": "A validation function is written to check that the passwords generated are valid.\nTo be valid, each password must:\n- be 14 characters long\n- be organised as three groups of four case-sensitive alphanumeric characters. The groups are separated by hyphen characters\n- not include any duplicated characters, except for the hyphen characters.\nGive two password strings that could be used to test different areas of the validation rules. [2]",
+      "topics": ["Software Development"],
+      "types": ["Testing", "Test Data"],
+      "aos": ["AO3"],
+      "answer_text": "Password 1 (invalid length): \"Abc-defg-hijk\"\nPassword 2 (duplicated character): \"Abca-defg-hijk\""
+    },
+    {
+      "source": "s22_21",
+      "number": "8(e)",
+      "question_text": "The RandomChar() module is to be modified so that alphabetic characters are generated twice as often as numeric characters.\nDescribe how this might be achieved. [3]",
+      "topics": ["Algorithm Design and Problem-solving"],
+      "types": ["Algorithm Design", "Description"],
+      "aos": ["AO3"],
+      "answer_text": "1. Generate a random integer in a wider range, for example 1 to 3.\n2. If the random number is 1, generate a numeric character.\n3. If the random number is 2 or 3 (i.e., in the other two-thirds of the range), generate an alphabetic character. This makes alphabetic characters twice as likely as numeric ones."
+    },
+    {
+      "source": "s22_31",
+      "number": "1(a)",
+      "question_text": "Data types can be defined using pseudocode.\nThe data type, LibraryRecord, is defined in pseudocode as:\nTYPE LibraryRecord\n    DECLARE Title : STRING\n    DECLARE Fiction : BOOLEAN\n    DECLARE Author : STRING\n    DECLARE NumberOfCopies : INTEGER\nENDTYPE\nA variable, LibraryBook, is declared in pseudocode as:\nDECLARE LibraryBook : LibraryRecord\n\nWrite pseudocode statements to assign:\n- A Level Computer Science to Title of LibraryBook\n- FALSE to Fiction of LibraryBook.\n[2]",
+      "topics": ["Data Types and Structures", "Programming"],
+      "types": ["Pseudocode"],
+      "aos": ["AO2"],
+      "answer_text": "LibraryBook.Title <- \"A Level Computer Science\"\nLibraryBook.Fiction <- FALSE"
+    },
+    {
+      "source": "s22_31",
+      "number": "1(b)(i)",
+      "question_text": "The type definition for LibraryRecord is changed.\nThe value for NumberOfCopies must be between 1 and 10 inclusive.\nWrite the updated line of pseudocode from the type definition of LibraryRecord to implement the change. [1]",
+      "topics": ["Data Types and Structures"],
+      "types": ["Pseudocode", "Data Types"],
+      "aos": ["AO2"],
+      "answer_text": "DECLARE NumberOfCopies : 1..10"
+    },
+    {
+      "source": "s22_31",
+      "number": "1(b)(ii)",
+      "question_text": "The type definition for LibraryRecord is changed.\nEvery copy of every book is now uniquely identified by an accession number, AccessionNumber, as it is added to the library. Each library record will include one or more accession numbers. Each accession number is an integer.\nWrite the extra line of pseudocode needed in the type definition of LibraryRecord. [2]",
+      "topics": ["Data Types and Structures"],
+      "types": ["Pseudocode", "Data Types"],
+      "aos": ["AO2"],
+      "answer_text": "DECLARE AccessionNumber : ARRAY[1:NumberOfCopies] OF INTEGER"
+    },
+    {
+      "source": "s22_31",
+      "number": "1(c)",
+      "question_text": "A record is a user-defined composite data type.\nExplain what is meant by a user-defined composite data type.\nInclude an example of another user-defined composite data type in your answer. [3]",
+      "topics": ["Data Types and Structures"],
+      "types": ["Explanation", "Definition"],
       "aos": ["AO1"],
-      "answer_text": "A. 只有 (1)"
+      "answer_text": "A user-defined composite data type is a data type constructed by a programmer, not a built-in primitive type. It is composed of, or references, at least one other data type, which can be primitive or another user-defined type.\nExample: A Class or Object."
+    },
+    {
+      "source": "s22_31",
+      "number": "2(a)",
+      "question_text": "A declarative language is used to represent the following facts about cats.\n01 type(leopard, wild).\n02 type(lion, wild).\n03 type(cheetah, wild).\n04 type(savannah, hybrid).\n05 type(persian, domestic).\n...\nMore facts are to be included. A caracal is a wild cat with short hair.\nWrite the additional clauses to record these facts. [2]",
+      "topics": ["Artificial Intelligence (Al)"],
+      "types": ["Declarative Programming"],
+      "aos": ["AO2"],
+      "answer_text": "18 type(caracal, wild).\n19 hair(caracal, short)."
+    },
+    {
+      "source": "s22_31",
+      "number": "2(b)",
+      "question_text": "Background: A declarative language is used to represent facts about cats.\n\nUsing the variable Cat, the goal:\nhair(Cat, medium)\nreturns\nCat = leopard, cheetah, savannah\n\nWrite the result returned by the goal:\nhair(Cat, long) \n[1]",
+      "topics": ["Artificial Intelligence (Al)"],
+      "types": ["Declarative Programming", "Query"],
+      "aos": ["AO2"],
+      "answer_text": "Cat = persian"
+    },
+    {
+      "source": "s22_31",
+      "number": "2(c)(i)",
+      "question_text": "Background: A declarative language is used to represent facts about cats.\n\nWrite the goal, using the variable Pet, to find all the domestic cats. [1]",
+      "topics": ["Artificial Intelligence (Al)"],
+      "types": ["Declarative Programming", "Query"],
+      "aos": ["AO2"],
+      "answer_text": "type(Pet, domestic)."
+    },
+    {
+      "source": "s22_31",
+      "number": "2(c)(ii)",
+      "question_text": "Background: A declarative language is used to represent facts about cats.\n\nWrite the goal, using the variable WildSpotty, to find all the wild cats with spots. [2]",
+      "topics": ["Artificial Intelligence (Al)"],
+      "types": ["Declarative Programming", "Query"],
+      "aos": ["AO2"],
+      "answer_text": "spots(WildSpotty, yes), type(WildSpotty, wild)."
+    },
+    {
+      "source": "s22_31",
+      "number": "3",
+      "question_text": "Data can be sent over networks using either circuit switching or packet switching.\nDescribe both methods of data transmission. Include a different advantage and disadvantage for each method. [8]",
+      "topics": ["Communication and internet technologies"],
+      "types": ["Description", "Comparison"],
+      "aos": ["AO1"],
+      "answer_text": "Circuit switching:\n- A dedicated, physical circuit is established between the source and destination before transmission starts.\n- The entire bandwidth of the circuit is reserved for the duration of the communication.\n- All data follows the same single path.\n- The circuit is released after transmission ends.\nAdvantage: Data arrives in the correct order and does not need to be reassembled.\nDisadvantage: The circuit cannot be used by others even if it is idle, making it inefficient.\n\nPacket switching:\n- Data is split into smaller blocks called packets.\n- Each packet is given a header with the destination address and its sequence number.\n- Packets are sent independently and can take different routes to the destination depending on network traffic.\n- Packets are reassembled at the destination using their sequence numbers.\nAdvantage: More efficient use of the network as multiple communications can share the same lines. Packets can be rerouted if a path is congested or fails.\nDisadvantage: Packets may arrive out of order and require reassembly, which adds processing time. There can be delays (latency) due to routing and reassembly."
+    },
+    {
+      "source": "s22_31",
+      "number": "4(a)",
+      "question_text": "Reduced Instruction Set Computers (RISC) and Complex Instruction Set Computers (CISC) are two types of processor.\nDescribe what is meant by RISC and CISC processors. [4]",
+      "topics": ["Hardware and Virtual Machines"],
+      "types": ["Description", "Definition"],
+      "aos": ["AO1"],
+      "answer_text": "RISC:\n- Reduced Instruction Set Computer.\n- Uses a small set of simple, highly optimized instructions.\n- Each instruction is of a fixed length and typically executes in a single clock cycle.\n- Emphasises a software-based approach to complex tasks.\n\nCISC:\n- Complex Instruction Set Computer.\n- Uses a large set of complex instructions, some of which can perform multi-step operations.\n- Instructions are of variable length and may take multiple clock cycles to execute.\n- Emphasises a hardware-based approach to complex tasks."
+    },
+    {
+      "source": "s22_31",
+      "number": "4(b)",
+      "question_text": "Identify two differences between RISC and CISC processors. [2]",
+      "topics": ["Hardware and Virtual Machines"],
+      "types": ["Comparison", "Identification"],
+      "aos": ["AO1"],
+      "answer_text": "1. RISC has a smaller instruction set compared to CISC's larger set.\n2. RISC instructions are fixed-length, while CISC instructions are variable-length.\n3. RISC uses more general-purpose registers than CISC.\n4. RISC has more emphasis on pipelining than CISC."
+    },
+    {
+      "source": "s22_31",
+      "number": "5(a)",
+      "question_text": "Part of a program’s calculations uses the integer variables j, k, m, n and p.\nj = 3\nk = 2\nm = 10\nn = (j + k)/(j - k)\np = m * (m - j * k)\n\nWrite the Reverse Polish Notation (RPN) for the expression:\n(j + k)/(j - k) [2]",
+      "topics": ["Data Representation"],
+      "types": ["Conversion", "RPN"],
+      "aos": ["AO2"],
+      "answer_text": "j k + j k - /"
+    },
+    {
+      "source": "s22_31",
+      "number": "5(b)(i)",
+      "question_text": "Background: j=3, k=2, m=10.\nShow the changing contents of the stack as the value for p is calculated from its RPN expression:\nm m j k * - * [4]",
+      "topics": ["Data Representation", "Data Types and Structures"],
+      "types": ["Trace", "Stack"],
+      "aos": ["AO2"],
+      "answer_text": "1. Push m (10) -> Stack: [10]\n2. Push m (10) -> Stack: [10, 10]\n3. Push j (3)  -> Stack: [10, 10, 3]\n4. Push k (2)  -> Stack: [10, 10, 3, 2]\n5. Operator *  -> Pop 2, 3. Push 3*2=6. Stack: [10, 10, 6]\n6. Operator -  -> Pop 6, 10. Push 10-6=4. Stack: [10, 4]\n7. Operator *  -> Pop 4, 10. Push 10*4=40. Stack: [40]\nFinal value of p is 40."
+    },
+    {
+      "source": "s22_31",
+      "number": "5(b)(ii)",
+      "question_text": "Describe the main steps in the evaluation of this RPN expression using a stack. [4]",
+      "topics": ["Data Representation", "Algorithm Design and Problem-solving"],
+      "types": ["Description", "Algorithm"],
+      "aos": ["AO1"],
+      "answer_text": "1. Scan the RPN expression from left to right.\n2. If the item is an operand (a number or variable), push it onto the stack.\n3. If the item is an operator, pop the top two operands from the stack.\n4. Apply the operator to the two popped operands (note: the second popped operand is the first argument).\n5. Push the result of the operation back onto the stack.\n6. Repeat until the end of the expression is reached. The final result is the only item left on the stack."
+    },
+    {
+      "source": "s22_31",
+      "number": "5(c)",
+      "question_text": "State two other uses of a stack. [2]",
+      "topics": ["Data Types and Structures"],
+      "types": ["Identification", "Application"],
+      "aos": ["AO1"],
+      "answer_text": "1. Managing function/procedure calls (storing return addresses and local variables).\n2. Handling processor interrupts (storing the state of the current process).\n3. Reversing a sequence of items.\n4. Implementing undo/redo features in software."
+    },
+    {
+      "source": "s22_31",
+      "number": "6",
+      "question_text": "A virtual machine is used to emulate a new computer system.\nDescribe two benefits and one limitation of using a virtual machine for this purpose. [6]",
+      "topics": ["Hardware and Virtual Machines", "System Software"],
+      "types": ["Description"],
+      "aos": ["AO1"],
+      "answer_text": "Benefit 1: Testing & Isolation. A new system or software can be tested in an isolated environment. If the new system crashes or has malware, it does not affect the host operating system, which can be easily restored from a snapshot.\n\nBenefit 2: Hardware Independence. A VM can emulate hardware that is different from the host machine's hardware. This allows developers to create and test software for a specific target platform without needing to purchase the physical hardware, saving costs and space.\n\nLimitation: Performance Overhead. A virtual machine runs on top of a host OS and requires resources (CPU, RAM, storage) to be shared. This introduces a performance overhead, meaning the emulated system will almost always run slower than it would on native hardware."
+    },
+    {
+      "source": "s22_31",
+      "number": "7(a)",
+      "question_text": "A program is to be written using Object-Oriented Programming (OOP) for a shop that sells knitting yarn. There are three types of yarn: acrylic, wool or mix. The following data are stored for each type: Name, Colour, Batch code, Weight, Number of balls of yarn in stock, Type of yarn. Acrylic can be soft or not soft. Wool can be lamb, merino or alpaca. Mix contains a percentage of acrylic. Each type of yarn has a method that will display all the information about the yarn.\nComplete this class inheritance diagram to show the properties, methods and inheritance.\n(Diagram shows a base class Yarn and three empty derived classes Acrylic, Wool, and Mix)\n[5]",
+      "topics": ["Further Programming"],
+      "types": ["OOP", "Design", "Diagram"],
+      "aos": ["AO3"],
+      "answer_text": "Acrylic Class:\n- Property: Soft: BOOLEAN\n- Method: YarnInfo()\n- Inherits from Yarn\n\nWool Class:\n- Property: WoolType: STRING\n- Method: YarnInfo()\n- Inherits from Yarn\n\nMix Class:\n- Property: Percentage: INTEGER\n- Method: YarnInfo()\n- Inherits from Yarn"
+    },
+    {
+      "source": "s22_31",
+      "number": "7(b)",
+      "question_text": "Describe what is meant by the terms properties, methods and inheritance. [6]",
+      "topics": ["Further Programming"],
+      "types": ["Description", "Definition", "OOP"],
+      "aos": ["AO1"],
+      "answer_text": "Properties:\n- These are the attributes or data members of a class. They define the characteristics or state of an object. For example, 'Colour' and 'Weight' are properties of the Yarn class.\n\nMethods:\n- These are the procedures or functions defined within a class. They define the behaviours or actions that an object can perform. They operate on the object's properties. For example, 'YarnInfo()' is a method.\n\nInheritance:\n- This is a mechanism in OOP where a new class (derived or child class) acquires the properties and methods of an existing class (base or parent class). This promotes code reuse. For example, the Acrylic class inherits from the Yarn class."
+    },
+    {
+      "source": "s22_31",
+      "number": "8(a)(i)",
+      "question_text": "A message is to be sent securely. Software uses a key to encrypt the message before it is sent.\nGive two reasons for using key cryptography. [2]",
+      "topics": ["Security"],
+      "types": ["Identification", "Explanation"],
+      "aos": ["AO1"],
+      "answer_text": "1. Confidentiality: To ensure that only the intended recipient can understand the message, preventing unauthorized access to the information.\n2. Integrity: To ensure the message has not been altered during transmission.\n3. Authentication: To verify that the message came from a trusted and authentic source."
+    },
+    {
+      "source": "s22_31",
+      "number": "8(a)(ii)",
+      "question_text": "Give two methods of key cryptography that can be used. [2]",
+      "topics": ["Security"],
+      "types": ["Identification"],
+      "aos": ["AO1"],
+      "answer_text": "1. Symmetric (private-key) cryptography\n2. Asymmetric (public-key) cryptography"
+    },
+    {
+      "source": "s22_31",
+      "number": "8(b)(i)",
+      "question_text": "When there is a secure exchange of key(s), the message is sent.\nThe use of quantum cryptography is being considered for the secure exchange.\nState two possible benefits of using quantum cryptography. [2]",
+      "topics": ["Security"],
+      "types": ["Identification", "Benefit"],
+      "aos": ["AO1"],
+      "answer_text": "1. Enhanced Security: Any attempt to eavesdrop on the key exchange can be detected because the act of measuring a quantum state changes it. This makes it theoretically impossible to intercept the key without being discovered.\n2. Guaranteed Integrity: The integrity of the key can be guaranteed once transferred, as it cannot be copied and decrypted later."
+    },
+    {
+      "source": "s22_31",
+      "number": "8(b)(ii)",
+      "question_text": "State two possible drawbacks of using quantum cryptography. [2]",
+      "topics": ["Security"],
+      "types": ["Identification", "Drawback"],
+      "aos": ["AO1"],
+      "answer_text": "1. High Cost & Specialised Hardware: It requires dedicated fibre optic lines and specialist hardware which is very expensive to implement.\n2. Limited Range: The distance over which quantum keys can be securely transmitted is currently limited due to signal degradation in fibre optic cables."
+    },
+    {
+      "source": "s22_31",
+      "number": "9(a)",
+      "question_text": "The table shows assembly language instructions for a processor that has one general purpose register, the Accumulator (ACC).\n(Table of instructions for LDM, LDD, LDI, ADD, STO)\nThe address 500 contains the value 100 and the address 100 contains the value 20.\nState the addressing mode and the contents of ACC after each instruction has been executed.\nLDM #500\nLDD 500\nLDI 500\n[3]",
+      "topics": ["Processor Fundamentals"],
+      "types": ["Assembly", "Addressing Mode"],
+      "aos": ["AO2"],
+      "answer_text": "LDM #500:\n- Addressing mode: Immediate\n- Contents of ACC: 500\n\nLDD 500:\n- Addressing mode: Direct\n- Contents of ACC: 100\n\nLDI 500:\n- Addressing mode: Indirect\n- Contents of ACC: 20"
+    },
+    {
+      "source": "s22_31",
+      "number": "9(b)",
+      "question_text": "Background: Table of assembly language instructions.\n\nUse only the given instruction set to write assembly language code to:\n- use the constant 20 which needs to be stored\n- add this constant to the value stored in the address contained in the variable Y\n- store the result in variable Z.\n[7]",
+      "topics": ["Processor Fundamentals", "Further Programming"],
+      "types": ["Assembly", "Programming"],
+      "aos": ["AO3"],
+      "answer_text": "    LDM #20     ; Load the immediate value 20 into ACC\n    STO Twenty    ; Store the value 20 in a memory location labelled 'Twenty'\n    LDI Y         ; Load the value from the address pointed to by Y into ACC\n    ADD Twenty    ; Add the value stored at 'Twenty' to ACC\n    STO Z         ; Store the result from ACC into the memory location 'Z'\n\nTwenty: WORD 20   ; Reserve memory for the constant\nY:      WORD ...    ; Address of the value to be added\nZ:      WORD ...    ; Address to store the result"
+    },
+    {
+      "source": "s22_41",
+      "number": "1(a)",
+      "question_text": "The text file HighScore.txt stores the players who have scored the top ten scores in a game, in descending order of score. The file stores the 3-character name of the player, and their integer score, in the order: player, score.\nThe program stores the players and their scores in an array of 11 elements (10 elements to be read from the file, 1 element to be inserted by the user).\nWrite a program to declare one or more arrays, as global data structures, to store the player names and their scores. [2]",
+      "topics": ["Computational thinking and Problem-solving", "Further Programming"],
+      "types": ["Programming", "Data Structures"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\n# Global declaration\n# FileData is a 2D array of strings with 11 rows and 2 columns\nFileData = [[\"\", \"\"] for i in range(11)]\n\nJava:\npublic class HighScoreManager {\n    // Global declaration\n    public static String[][] FileData = new String[11][2];\n\n    public static void main(String[] args) {\n        // main program logic\n    }\n}\n\nVB.NET:\nModule HighScoreModule\n    ' Global declaration\n    Public FileData(0 To 10, 0 To 1) As String\n\n    Sub Main()\n        ' main program logic\n    End Sub\nEnd Module"
+    },
+    {
+      "source": "s22_41",
+      "number": "1(b)",
+      "question_text": "Background: The program uses a global array to store high scores from HighScore.txt.\n\nThe procedure ReadHighScores() opens the file HighScore.txt and reads the data into the data structure(s) declared in part 1(a).\nWrite program code to declare the procedure ReadHighScores(). [6]",
+      "topics": ["Computational thinking and Problem-solving", "Further Programming"],
+      "types": ["Programming", "File Handling"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\ndef ReadHighScores():\n    try:\n        Filename = \"HighScore.txt\"\n        with open(Filename, 'r') as File:\n            for x in range(0, 10):\n                FileData[x][0] = File.readline().strip()\n                FileData[x][1] = File.readline().strip()\n    except FileNotFoundError:\n        print(\"Error: HighScore.txt not found.\")\n\nJava:\npublic static void ReadHighScores() {\n    String Filename = \"HighScore.txt\";\n    try {\n        FileReader F = new FileReader(Filename);\n        BufferedReader Reader = new BufferedReader(F);\n        for (int x = 0; x < 10; x++) {\n            FileData[x][0] = Reader.readLine();\n            FileData[x][1] = Reader.readLine();\n        }\n        Reader.close();\n    } catch (IOException e) {\n        System.out.println(\"Error reading file: \" + e.getMessage());\n    }\n}\n\nVB.NET:\nSub ReadHighScores()\n    Dim Textfile As String = \"HighScore.txt\"\n    Try\n        Dim FileReader As New System.IO.StreamReader(Textfile)\n        Dim DataEntered As Integer = 0\n        While Not FileReader.EndOfStream AndAlso DataEntered < 10\n            FileData(DataEntered, 0) = FileReader.ReadLine()\n            FileData(DataEntered, 1) = FileReader.ReadLine()\n            DataEntered = DataEntered + 1\n        End While\n        FileReader.Close()\n    Catch ex As Exception\n        Console.WriteLine(\"Error reading file: \" & ex.Message)\n    End Try\nEnd Sub"
+    },
+    {
+      "source": "s22_41",
+      "number": "1(c)",
+      "question_text": "Background: The program uses a global array to store high scores.\n\nThe procedure OutputHighScores() outputs all the values in the data structure(s) in the format: PlayerName Score\nWrite program code to declare the procedure OutputHighScores(). [3]",
+      "topics": ["Computational thinking and Problem-solving", "Further Programming"],
+      "types": ["Programming", "Output"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\ndef OutputHighScores():\n    print(\"--- High Scores ---\")\n    for x in range(0, 10): # Only output the top 10\n        if FileData[x][0] != \"\":\n             print(FileData[x][0] + \" \" + FileData[x][1])\n\nJava:\npublic static void OutputHighScores() {\n    System.out.println(\"--- High Scores ---\");\n    for (int x = 0; x < 10; x++) { // Only output the top 10\n        if (FileData[x][0] != null && !FileData[x][0].isEmpty()) {\n            System.out.println(FileData[x][0] + \" \" + FileData[x][1]);\n        }\n    }\n}\n\nVB.NET:\nSub OutputHighScores()\n    Console.WriteLine(\"--- High Scores ---\")\n    For x = 0 To 9 ' Only output the top 10\n        If Not String.IsNullOrEmpty(FileData(x, 0)) Then\n            Console.WriteLine(FileData(x, 0) & \" \" & FileData(x, 1))\n        End If\n    Next\nEnd Sub"
+    },
+    {
+      "source": "s22_41",
+      "number": "1(d)(i)",
+      "question_text": "The main program should first call ReadHighScores() and then OutputHighScores().\nWrite the program code for the main program. [2]",
+      "topics": ["Computational thinking and Problem-solving", "Further Programming"],
+      "types": ["Programming", "Control Flow"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\n# Main program\nReadHighScores()\nOutputHighScores()\n\nJava:\n// Inside main method\npublic static void main(String[] args) {\n    ReadHighScores();\n    OutputHighScores();\n}\n\nVB.NET:\n' Inside Sub Main\nSub Main()\n    ReadHighScores()\n    OutputHighScores()\n    Console.ReadLine() ' To keep console open\nEnd Sub"
+    },
+    {
+      "source": "s22_41",
+      "number": "1(e)(i)",
+      "question_text": "Background: The main program reads and displays high scores.\n\nAmend the main program to ask the user to input a 3-character player name and an integer score that must be between 1 and 100000 inclusive. [3]",
+      "topics": ["Computational thinking and Problem-solving", "Further Programming"],
+      "types": ["Programming", "Input", "Validation"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\nUsername = \"\"\nwhile len(Username) != 3:\n    Username = input(\"Enter your 3-character Username: \")\n\nScore = -1\nwhile Score < 1 or Score > 100000:\n    try:\n        Score = int(input(\"Enter score (1-100000): \"))\n    except ValueError:\n        print(\"Invalid input. Please enter a number.\")\n        Score = -1"
+    },
+    {
+      "source": "s22_41",
+      "number": "1(e)(ii)",
+      "question_text": "Write program code to declare a procedure that:\n- takes the player name and score as parameters\n- creates a new top ten list that includes the parameter if appropriate.\n[5]",
+      "topics": ["Computational thinking and Problem-solving", "Further Programming"],
+      "types": ["Programming", "Algorithm Design", "Sorting"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\ndef AddNewScore(Username, Score):\n    # Place new score at the end of the 11-element array\n    FileData[10][0] = Username\n    FileData[10][1] = str(Score)\n\n    # Sort the array in descending order based on score\n    # First, handle empty slots by assigning a very low score for sorting\n    def get_score(item):\n        try:\n            return int(item[1])\n        except (ValueError, IndexError):\n            return -1 # Treat empty or invalid scores as lowest\n\n    # Sort the list of lists\n    # The global FileData is modified in place\n    FileData.sort(key=get_score, reverse=True)\n\n    # The array now holds the top 11, with the 11th to be ignored later."
+    },
+    {
+      "source": "s22_41",
+      "number": "1(f)",
+      "question_text": "The procedure WriteTopTen() stores the new top ten player names and scores in a text file called NewHighScore.txt\nWrite program code to declare the procedure WriteTopTen(). [4]",
+      "topics": ["Computational thinking and Problem-solving", "Further Programming"],
+      "types": ["Programming", "File Handling"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\ndef WriteTopTen():\n    try:\n        Filename = \"NewHighScore.txt\"\n        with open(Filename, 'w') as File:\n            for x in range(0, 10):\n                File.write(FileData[x][0] + '\\n')\n                File.write(FileData[x][1] + '\\n')\n    except IOError:\n        print(\"Error: Could not write to file NewHighScore.txt.\")"
+    },
+    {
+      "source": "s22_41",
+      "number": "2(a)",
+      "question_text": "A computer game is being developed using object-oriented programming. One element of the game is a balloon. This is designed as the class Balloon. It has attributes Health, Colour, DefenceItem. The constructor takes the name of the defence item and the balloon’s colour as parameters and sets these to the attributes. The health is initialised to 100.\nWrite program code to declare the class Balloon and its constructor. All attributes should be private. [5]",
+      "topics": ["Further Programming"],
+      "types": ["Programming", "OOP"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\nclass Balloon:\n    # __Health : INTEGER\n    # __Colour : STRING\n    # __DefenceItem : STRING\n\n    def __init__(self, PDefenceItem, PColour):\n        self.__Health = 100\n        self.__Colour = PColour\n        self.__DefenceItem = PDefenceItem"
+    },
+    {
+      "source": "s22_41",
+      "number": "2(b)",
+      "question_text": "Background: A Balloon class is defined.\n\nThe get method GetDefenceItem() returns the defence item of the object.\nAmend your program code to include the get method GetDefenceItem(). [2]",
+      "topics": ["Further Programming"],
+      "types": ["Programming", "OOP"],
+      "aos": ["AO3"],
+      "answer_text": "Python (added to Balloon class):\n    def GetDefenceItem(self):\n        return self.__DefenceItem"
+    },
+    {
+      "source": "s22_41",
+      "number": "2(c)",
+      "question_text": "Background: A Balloon class is defined.\n\nThe object’s method ChangeHealth() takes an integer number as a parameter and adds this to the health attribute of the object.\nAmend your program code to include the method ChangeHealth(). [2]",
+      "topics": ["Further Programming"],
+      "types": ["Programming", "OOP"],
+      "aos": ["AO3"],
+      "answer_text": "Python (added to Balloon class):\n    def ChangeHealth(self, Change):\n        self.__Health = self.__Health + Change"
+    },
+    {
+      "source": "s22_41",
+      "number": "2(d)",
+      "question_text": "Background: A Balloon class is defined.\n\nThe object’s method CheckHealth() returns TRUE if the health of the object is 0 or less (no health remaining) and returns FALSE otherwise (health remaining).\nAmend your program code to include the method CheckHealth(). [2]",
+      "topics": ["Further Programming"],
+      "types": ["Programming", "OOP"],
+      "aos": ["AO3"],
+      "answer_text": "Python (added to Balloon class):\n    def CheckHealth(self):\n        if self.__Health <= 0:\n            return True\n        else:\n            return False"
+    },
+    {
+      "source": "s22_41",
+      "number": "2(e)",
+      "question_text": "Amend the main program to:\n- take as input a defence item and colour from the user\n- create a new balloon with the identifier Balloon1 using the data input.\n[3]",
+      "topics": ["Further Programming"],
+      "types": ["Programming", "OOP", "Input"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\nMethod = input(\"Enter balloon defence method: \")\nColour = input(\"Enter the balloon colour: \")\nBalloon1 = Balloon(Method, Colour)"
+    },
+    {
+      "source": "s22_41",
+      "number": "2(f)",
+      "question_text": "The function Defend():\n- takes a balloon object as a parameter\n- takes as input the strength of an opponent from the user\n- uses the ChangeHealth() method to subtract the strength input from the object’s health\n- outputs the defence item of the balloon\n- checks the health of the object and outputs an appropriate message if it has no health remaining, or if it has health remaining\n- returns the amended balloon object.\nWrite program code to declare the function Defend(). [8]",
+      "topics": ["Further Programming", "Computational thinking and Problem-solving"],
+      "types": ["Programming", "OOP", "Algorithm Design"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\ndef Defend(MyBalloon):\n    Strength = int(input(\"Enter the strength of the opponent: \"))\n    MyBalloon.ChangeHealth(-Strength)\n    print(\"You defended with \" + MyBalloon.GetDefenceItem())\n    if MyBalloon.CheckHealth() == True:\n        print(\"Defence failed. Balloon has no health remaining.\")\n    else:\n        print(\"Defence succeeded. Balloon has health remaining.\")\n    return MyBalloon"
+    },
+    {
+      "source": "s22_41",
+      "number": "3(a)",
+      "question_text": "A program uses a circular queue to store strings. The queue is created as a 1D array, QueueArray, with 10 string items.\nThe following data is stored about the queue:\n- the head pointer initialised to 0\n- the tail pointer initialised to 0\n- the number of items in the queue initialised to 0.\nDeclare the array, head pointer, tail pointer and number of items. [2]",
+      "topics": ["Further Programming", "Data Types and Structures"],
+      "types": ["Programming", "Data Structures", "Queue"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\n# QueueArray: ARRAY[0:9] OF STRING\nQueueArray = [''] * 10\n# HeadPointer: INTEGER\nHeadPointer = 0\n# TailPointer: INTEGER\nTailPointer = 0\n# NumberOfItems: INTEGER\nNumberOfItems = 0"
+    },
+    {
+      "source": "s22_41",
+      "number": "3(b)",
+      "question_text": "The function Enqueue is written in pseudocode. The function adds DataToAdd to the queue. It returns FALSE if the queue is full and returns TRUE if the item is added. The function is incomplete.\n\nFUNCTION Enqueue(...)\n    IF NumberItems = ... THEN\n        RETURN ...\n    ENDIF\n    QueueArray[...] <- DataToAdd\n    IF TailPointer >= 9 THEN\n        TailPointer <- ...\n    ELSE\n        TailPointer <- TailPointer + 1\n    ENDIF\n    NumberItems <- NumberItems ...\n    RETURN TRUE\nENDFUNCTION\n\nWrite program code for the function Enqueue(). [7]",
+      "topics": ["Further Programming", "Data Types and Structures", "Algorithm Design and Problem-solving"],
+      "types": ["Programming", "Queue", "Algorithm"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\ndef Enqueue(DataToAdd):\n    global NumberOfItems, TailPointer\n    if NumberOfItems == 10:\n        return False\n    \n    QueueArray[TailPointer] = DataToAdd\n    \n    if TailPointer >= 9:\n        TailPointer = 0\n    else:\n        TailPointer = TailPointer + 1\n    \n    NumberOfItems = NumberOfItems + 1\n    return True"
+    },
+    {
+      "source": "s22_41",
+      "number": "3(c)",
+      "question_text": "The function Dequeue() returns \"FALSE\" if the queue is empty, or it returns the next data item in the queue.\nWrite program code for the function Dequeue(). [6]",
+      "topics": ["Further Programming", "Data Types and Structures", "Algorithm Design and Problem-solving"],
+      "types": ["Programming", "Queue", "Algorithm"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\ndef Dequeue():\n    global NumberOfItems, HeadPointer\n    if NumberOfItems == 0:\n        return \"FALSE\"\n    \n    ReturnValue = QueueArray[HeadPointer]\n    \n    if HeadPointer >= 9:\n        HeadPointer = 0\n    else:\n        HeadPointer = HeadPointer + 1\n    \n    NumberOfItems = NumberOfItems - 1\n    return ReturnValue"
+    },
+    {
+      "source": "s22_41",
+      "number": "3(d)(i)",
+      "question_text": "Amend the main program to:\n- take as input 11 string values from the user\n- use the Enqueue() function to add each element to the queue\n- output an appropriate message to state whether each addition was successful, or not\n- call Dequeue() function twice and output the return value each time.\n[5]",
+      "topics": ["Further Programming", "Data Types and Structures"],
+      "types": ["Programming", "Queue", "Control Flow"],
+      "aos": ["AO3"],
+      "answer_text": "Python:\nfor x in range(11):\n    InputString = input(\"Enter a string to add to the queue: \")\n    if Enqueue(InputString):\n        print(f'\"{InputString}\" was successfully added.')\n    else:\n        print(f'\"{InputString}\" was not added, queue is full.')\n\nprint('\\nDequeuing two items:')\nprint(Dequeue())\nprint(Dequeue())"
     }
   ]
 }
