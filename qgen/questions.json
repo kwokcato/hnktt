@@ -1,6 +1,33 @@
 {
   "questions": [
     {
+      "source": "2018-DSE-ICT-1A",
+      "number": "3",
+      "question_text": "下列哪項是改變學校內聯網帳戶密碼時的一個數據驗證例子？",
+      "topics": ["Data Validation"],
+      "types": ["Verification"],
+      "aos": ["AO1"],
+      "answer_text": "A. 輸入新密碼兩次"
+    },
+    {
+      "source": "2018-DSE-ICT-1A",
+      "number": "4",
+      "question_text": "下列所有原始檔的檔案大小均為1MB。在正常情況下，壓縮這些檔案後，哪個壓縮檔的大小是最大的？",
+      "topics": ["Data Compression"],
+      "types": ["File Compression"],
+      "aos": ["AO2"],
+      "answer_text": "D. testD.jpg    testD.zip"
+    },
+    {
+      "source": "2018-DSE-ICT-1A",
+      "number": "5",
+      "question_text": "下列為韓文文本例子：習習計測組。下列哪種字符編碼法可用來表示韓文文本？\n(1) ASCII\n(2) 統一碼\n(3) 大五碼",
+      "topics": ["Character Encoding"],
+      "types": ["Encoding Standards"],
+      "aos": ["AO1"],
+      "answer_text": "B. 只有 (2)"
+    },
+    {
       "source": "s22_11",
       "number": "1(a)",
       "question_text": "State the difference between a tebibyte and a terabyte. [1]",
