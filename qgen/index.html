@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Paper Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@400;700&display=swap');
+
+        :root {
+            --primary-color: #2c5e55; 
+            --secondary-color: #6c757d; 
+            --background-color: #fdfdfd;
+            --surface-color: #ffffff;
+            --text-color: #333333;
+            --heading-color: #2c3e50; 
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        header h1 {
+            font-family: 'Merriweather', serif;
+            color: var(--heading-color);
+            font-weight: 700;
+            font-size: 2.8rem;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .tab-link {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .tab-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .tab-link.active {
+            color: var(--primary-color);
+        }
+
+        .tab-link.active::after {
+            transform: scaleX(1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 2.5rem;
+            align-items: flex-start;
+        }
+
+        .filters {
+            background-color: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .filter-group {
+            margin-bottom: 1.75rem;
+        }
+        
+        .filter-group.inline {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-group label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .filter-group input[type="number"],
+        .filter-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            background-color: #fff;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .filter-group input[type="number"]:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(44, 94, 85, 0.2);
+        }
+
+        .filter-group select[multiple] {
+            height: 150px;
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+
+        .action-button:hover {
+            background-color: #224b43;
+        }
+        
+        .action-button:active {
+            transform: scale(0.98);
+        }
+
+        .results-area {
+            background-color: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            min-height: 300px;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .results-header h2 {
+            font-family: 'Merriweather', serif;
+            color: var(--heading-color);
+        }
+        
+        .results-header .action-buttons-group {
+             display: flex;
+             gap: 1rem;
+        }
+        
+        #print-pdf-btn-gen {
+            background-color: #c82333;
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            width: auto;
+        }
+        #print-pdf-btn-gen:hover {
+            background-color: #a21b29;
+        }
+
+        #questions-container-gen, #answers-container-gen {
+            padding-top: 1rem;
+        }
+
+        .question-item {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .question-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .question-header {
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .question-text {
+            white-space: pre-wrap;
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+        
+        .question-text table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+
+        .question-text th, .question-text td {
+            border: 1px solid var(--border-color);
+            padding: 0.6rem;
+            text-align: left;
+        }
+
+        .question-text th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        
+        .message {
+            color: var(--secondary-color);
+            text-align: center;
+            padding: 3rem 1rem;
+            font-size: 1.1rem;
+            font-style: italic;
+        }
+        
+        #answers-section-gen {
+            margin-top: 4rem;
+        }
+
+        .chart-container {
+            margin-bottom: 3rem;
+        }
+
+        .chart-title {
+            font-family: 'Merriweather', serif;
+            font-size: 1.5rem;
+            color: var(--heading-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .bar-item {
+            margin-bottom: 1rem;
+        }
+
+        .bar-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .bar-wrapper {
+            display: flex;
+            align-items: center;
+            height: 25px;
+        }
+
+        .bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .bar-info {
+            padding-left: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            color: var(--text-color);
+        }
+
+        @media (max-width: 992px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            .filters {
+                position: static;
+                margin-bottom: 2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                font-size: 15px;
+            }
+            header h1 {
+                font-size: 2.2rem;
+            }
+            .container {
+                padding: 0.5rem;
+                margin: 1rem auto;
+            }
+            .filters, .results-area {
+                padding: 1.5rem;
+            }
+            .results-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+        
+        @media print {
+            body {
+                font-size: 12pt;
+                color: #000;
+                background-color: #fff;
+            }
+            .filters, header, .results-header .action-buttons-group, .action-button, .tabs {
+                display: none !important;
+            }
+            .main-layout {
+                display: block;
+                grid-template-columns: 1fr;
+            }
+            .container {
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            .results-area {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+            }
+            .question-item {
+                page-break-inside: avoid;
+                border-bottom: 1px solid #ccc;
+            }
+            .question-text table {
+                font-size: 0.9rem;
+            }
+            #answers-section-gen {
+                page-break-before: always;
+            }
+            .chart-container {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>A-Level CS Question Platform</h1>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-link active" data-tab="generator-tab">Exercise Generator</button>
+            <button class="tab-link" data-tab="stats-tab">Statistics</button>
+        </nav>
+
+        <div id="generator-tab" class="tab-content active">
+            <div class="main-layout">
+                <aside class="filters">
+                    <div class="filter-group">
+                        <label for="gen-topics">Topics</label>
+                        <select id="gen-topics" multiple></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="gen-types">Question Types</label>
+                        <select id="gen-types" multiple></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="gen-aos">Assessment Objectives (AOs)</label>
+                        <select id="gen-aos" multiple></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="gen-num-questions">Number of Questions</label>
+                        <input type="number" id="gen-num-questions" value="10" min="1" max="100">
+                    </div>
+                    <button id="generate-btn" class="action-button">Generate Exercise</button>
+                </aside>
+                <section id="generator-results" class="results-area">
+                     <div id="printable-results-gen">
+                        <div class="results-header">
+                            <h2 id="printable-title-gen">Generated Exercise</h2>
+                             <div class="action-buttons-group">
+                                <button id="print-pdf-btn-gen" class="action-button">Print to PDF</button>
+                            </div>
+                        </div>
+                        <div id="questions-container-gen">
+                            <p class="message">Set your criteria and click 'Generate Exercise' to see questions here.</p>
+                        </div>
+                        <div id="answers-section-gen" style="display: none;">
+                            <div class="results-header">
+                                <h2>Mark Scheme</h2>
+                            </div>
+                            <div id="answers-container-gen"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <div id="stats-tab" class="tab-content">
+            <div class="main-layout">
+                <aside class="filters">
+                    <div class="filter-group">
+                        <label for="stats-year-start">Year Range</label>
+                        <div class="filter-group inline">
+                            <input type="number" id="stats-year-start" placeholder="From" value="2022">
+                            <input type="number" id="stats-year-end" placeholder="To" value="2022">
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label for="stats-paper-num">Paper Number</label>
+                        <select id="stats-paper-num">
+                            <option value="0">All Papers</option>
+                            <option value="1">Paper 1</option>
+                            <option value="2">Paper 2</option>
+                            <option value="3">Paper 3</option>
+                            <option value="4">Paper 4</option>
+                        </select>
+                    </div>
+                    <button id="show-stats-btn" class="action-button">Show Statistics</button>
+                </aside>
+                <section id="stats-results" class="results-area">
+                     <p class="message">Select criteria and click 'Show Statistics' to view analysis.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const allQuestions = [];
+            let generatedQuestions = [];
+
+            const ui = {
+                gen: {
+                    topics: document.getElementById('gen-topics'),
+                    types: document.getElementById('gen-types'),
+                    aos: document.getElementById('gen-aos'),
+                    numQuestions: document.getElementById('gen-num-questions'),
+                    button: document.getElementById('generate-btn'),
+                    resultsContainer: document.getElementById('printable-results-gen'),
+                    title: document.getElementById('printable-title-gen'),
+                    questions: document.getElementById('questions-container-gen'),
+                    answersSection: document.getElementById('answers-section-gen'),
+                    answers: document.getElementById('answers-container-gen'),
+                    printButton: document.getElementById('print-pdf-btn-gen'),
+                    message: document.querySelector('#generator-results .message')
+                },
+                stats: {
+                    yearStart: document.getElementById('stats-year-start'),
+                    yearEnd: document.getElementById('stats-year-end'),
+                    paperNum: document.getElementById('stats-paper-num'),
+                    button: document.getElementById('show-stats-btn'),
+                    results: document.getElementById('stats-results')
+                },
+                tabs: document.querySelectorAll('.tab-link'),
+                tabContents: document.querySelectorAll('.tab-content')
+            };
+
+            const helpers = {
+                parseYear: source => 2000 + parseInt(source.substring(1, 3), 10),
+                parsePaper: source => source.split('_')[1].charAt(0),
+                getSelectedOptions: select => Array.from(select.selectedOptions).map(opt => opt.value),
+                shuffleArray: array => {
+                    for (let i = array.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [array[i], array[j]] = [array[j], array[i]];
+                    }
+                },
+                convertMarkdownTableToHtml: text => {
+                    if (!text) return '';
+                    const tableRegex = /((?:\|.*\|(?:\r?\n|\r)?)+)/g;
+                    return text.replace(tableRegex, (tableString) => {
+                        let tableHtml = '<table>';
+                        const rows = tableString.trim().split(/\r?\n|\r/);
+                        const headerRowIndex = rows.findIndex(r => !r.includes('---'));
+                        if (headerRowIndex === -1) return tableString;
+                        const headerCells = rows[headerRowIndex].trim().slice(1, -1).split('|').map(c => c.trim());
+                        tableHtml += `<thead><tr>${headerCells.map(c => `<th>${c}</th>`).join('')}</tr></thead>`;
+                        tableHtml += '<tbody>';
+                        rows.forEach((row, i) => {
+                            if (i === headerRowIndex || row.includes('---')) return;
+                            const bodyCells = row.trim().slice(1, -1).split('|').map(c => c.trim());
+                            tableHtml += `<tr>${bodyCells.map(c => `<td>${c}</td>`).join('')}</tr>`;
+                        });
+                        tableHtml += '</tbody></table>';
+                        return tableHtml;
+                    });
+                }
+            };
+            
+            async function loadQuestions() {
+                try {
+                    const response = await fetch('questions.json');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    allQuestions.push(...data.questions);
+                    populateAllFilters();
+                } catch (error) {
+                    document.body.innerHTML = `<p style="color:red; text-align:center; padding: 2rem;">Error: Could not load the question bank. Please check the JSON file and refresh.</p>`;
+                    console.error('Failed to load questions:', error);
+                }
+            }
+
+            function populateAllFilters() {
+                const allTopics = new Set();
+                const allTypes = new Set();
+                const allAOs = new Set();
+                allQuestions.forEach(q => {
+                    q.topics.forEach(topic => allTopics.add(topic));
+                    q.types.forEach(type => allTypes.add(type));
+                    if (q.aos) q.aos.forEach(ao => allAOs.add(ao));
+                });
+
+                const sorted = {
+                    topics: Array.from(allTopics).sort(),
+                    types: Array.from(allTypes).sort(),
+                    aos: Array.from(allAOs).sort()
+                };
+
+                const populate = (select, items) => {
+                    select.innerHTML = '';
+                    items.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item;
+                        option.textContent = item;
+                        select.appendChild(option);
+                    });
+                };
+                
+                populate(ui.gen.topics, sorted.topics);
+                populate(ui.gen.types, sorted.types);
+                populate(ui.gen.aos, sorted.aos);
+            }
+
+            function displayGeneratorResults(questions) {
+                ui.gen.questions.innerHTML = '';
+                ui.gen.answers.innerHTML = '';
+
+                if (questions.length === 0) {
+                    ui.gen.questions.innerHTML = '<p class="message">No questions found matching your criteria.</p>';
+                    ui.gen.answersSection.style.display = 'none';
+                    return;
+                }
+                
+                if (ui.gen.message) ui.gen.message.style.display = 'none';
+
+                questions.forEach((q, index) => {
+                    const questionItem = document.createElement('div');
+                    questionItem.className = 'question-item';
+                    questionItem.innerHTML = `
+                        <div class="question-header">Q${index + 1}. (Source: ${q.source.toUpperCase()} ${q.number})</div>
+                        <div class="question-text">${helpers.convertMarkdownTableToHtml(q.question_text)}</div>
+                    `;
+                    ui.gen.questions.appendChild(questionItem);
+
+                    const answerItem = document.createElement('div');
+                    answerItem.className = 'question-item';
+                    answerItem.innerHTML = `
+                        <div class="question-header">Answer for Q${index + 1} (Source: ${q.source.toUpperCase()} ${q.number})</div>
+                        <div class="question-text">${helpers.convertMarkdownTableToHtml(q.answer_text)}</div>
+                    `;
+                    ui.gen.answers.appendChild(answerItem);
+                });
+                ui.gen.answersSection.style.display = 'block';
+            }
+
+            function handleGenerateExercise() {
+                const selectedTopics = helpers.getSelectedOptions(ui.gen.topics);
+                const selectedTypes = helpers.getSelectedOptions(ui.gen.types);
+                const selectedAOs = helpers.getSelectedOptions(ui.gen.aos);
+                const numQuestions = parseInt(ui.gen.numQuestions.value, 10);
+
+                let filteredQuestions = allQuestions.filter(q => {
+                    const topicMatch = selectedTopics.length === 0 || q.topics.some(t => selectedTopics.includes(t));
+                    const typeMatch = selectedTypes.length === 0 || q.types.some(t => selectedTypes.includes(t));
+                    const aoMatch = selectedAOs.length === 0 || (q.aos && q.aos.some(a => selectedAOs.includes(a)));
+                    return topicMatch && typeMatch && aoMatch;
+                });
+                
+                helpers.shuffleArray(filteredQuestions);
+                generatedQuestions = filteredQuestions.slice(0, numQuestions);
+                displayGeneratorResults(generatedQuestions);
+            }
+
+            function handleShowStats() {
+                const startYear = parseInt(ui.stats.yearStart.value, 10);
+                const endYear = parseInt(ui.stats.yearEnd.value, 10);
+                const paperNum = ui.stats.paperNum.value;
+
+                const filteredQuestions = allQuestions.filter(q => {
+                    const year = helpers.parseYear(q.source);
+                    const paper = helpers.parsePaper(q.source);
+                    const yearMatch = year >= startYear && year <= endYear;
+                    const paperMatch = paperNum === '0' || paper === paperNum;
+                    return yearMatch && paperMatch;
+                });
+
+                ui.stats.results.innerHTML = '';
+                if (filteredQuestions.length === 0) {
+                    ui.stats.results.innerHTML = '<p class="message">No data found for the selected criteria.</p>';
+                    return;
+                }
+
+                const getCounts = (collection, key) => {
+                    const counts = {};
+                    collection.forEach(q => {
+                        if (q[key]) {
+                            q[key].forEach(item => {
+                                counts[item] = (counts[item] || 0) + 1;
+                            });
+                        }
+                    });
+                    return counts;
+                };
+
+                const topicCounts = getCounts(filteredQuestions, 'topics');
+                const typeCounts = getCounts(filteredQuestions, 'types');
+                const aoCounts = getCounts(filteredQuestions, 'aos');
+
+                const displayChart = (title, counts) => {
+                    const chartContainer = document.createElement('div');
+                    chartContainer.className = 'chart-container';
+                    const chartTitle = document.createElement('h3');
+                    chartTitle.className = 'chart-title';
+                    chartTitle.textContent = title;
+                    chartContainer.appendChild(chartTitle);
+
+                    const totalInCat = Object.values(counts).reduce((sum, val) => sum + val, 0);
+                    if (totalInCat === 0) return;
+
+                    const sortedCounts = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                    
+                    sortedCounts.forEach(([label, count]) => {
+                        const percentage = (count / totalInCat) * 100;
+                        const barItem = document.createElement('div');
+                        barItem.className = 'bar-item';
+                        
+                        const barLabel = document.createElement('span');
+                        barLabel.className = 'bar-label';
+                        barLabel.textContent = label;
+
+                        const barWrapper = document.createElement('div');
+                        barWrapper.className = 'bar-wrapper';
+
+                        const bar = document.createElement('div');
+                        bar.className = 'bar';
+                        bar.style.width = `${percentage.toFixed(1)}%`;
+
+                        const barInfo = document.createElement('span');
+                        barInfo.className = 'bar-info';
+                        barInfo.textContent = `${count} (${percentage.toFixed(1)}%)`;
+                        
+                        barWrapper.appendChild(bar);
+                        barWrapper.appendChild(barInfo);
+                        barItem.appendChild(barLabel);
+                        barItem.appendChild(barWrapper);
+                        chartContainer.appendChild(barItem);
+                    });
+                    ui.stats.results.appendChild(chartContainer);
+                };
+
+                displayChart('Topic Distribution', topicCounts);
+                displayChart('Question Type Distribution', typeCounts);
+                displayChart('AO Distribution', aoCounts);
+            }
+
+            ui.tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    ui.tabs.forEach(t => t.classList.remove('active'));
+                    ui.tabContents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+
+            ui.gen.button.addEventListener('click', handleGenerateExercise);
+            ui.stats.button.addEventListener('click', handleShowStats);
+            ui.gen.printButton.addEventListener('click', () => window.print());
+            
+            loadQuestions();
+        });
+    </script>
+</body>
+</html>
