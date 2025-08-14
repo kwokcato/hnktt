@@ -1,13 +1,13 @@
 {
   "questions": [
     {
-      "source": "s22_11",
-      "number": "1(a)",
-      "question_text": "State the difference between a tebibyte and a terabyte. [1]",
-      "topics": ["Information representation"],
-      "types": ["Definition", "Comparison"],
-      "aos": ["AO1"],
-      "answer_text": "one tebibyte is 1024 gibibytes and one terabyte is 1000 gigabytes"
+      "source": "2018-DSE-ICT-1A",
+      "number": "1",
+      "question_text": "志明在试算表内建立了图表 1，他想修改图表 1，使它成为图表 2。他须修改哪项图表设定？",
+      "topics": ["Spreadsheet"],
+      "types": ["Chart Settings"],
+      "aos": ["AO2"],
+      "answer_text": "D. 图表類型"
     },
     {
       "source": "s22_11",
