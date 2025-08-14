@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>DSE ICT 試題庫系統</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        .container { display: flex; height: 100vh; }
+        .sidebar { width: 250px; background: #f0f0f0; padding: 15px; overflow-y: auto; }
+        .content { flex: 1; padding: 15px; overflow-y: auto; }
+        .question { margin-bottom: 20px; }
+        .options { margin-left: 20px; }
+        .answer { margin-top: 15px; padding: 10px; background: #e6f7ff; border-radius: 5px; }
+        .category { margin-bottom: 15px; }
+        .category-title { font-weight: bold; margin-bottom: 5px; }
+        .question-item { padding: 5px; cursor: pointer; }
+        .question-item:hover { background: #ddd; }
+        .selected { background: #b3d9ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <h2>題目分類</h2>
+            <div class="category">
+                <div class="category-title">按知識領域</div>
+                <div id="category-list"></div>
+            </div>
+            <div class="category">
+                <div class="category-title">按難度</div>
+                <div id="difficulty-list"></div>
+            </div>
+        </div>
+        <div class="content" id="content">
+            <div id="question-display"></div>
+            <div class="answer" id="answer-display"></div>
+        </div>
+    </div>
+
+    <script src="questions.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
