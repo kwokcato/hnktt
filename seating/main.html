@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課室座位編排系統</title>
+    <style>
+    :root {
+        --primary-color: #0056b3; 
+        --secondary-color: #007bff;
+        --light-bg: #f8f9fa;
+        --text-color: #343a40;
+        --border-color: #dee2e6;
+        --hover-bg: #e9ecef;
+        --pill-bg: #e0e0e0;
+        --pill-text: #333;
+        --success-bg: #d4edda;
+        --warning-bg: #fff3cd;
+        --danger-color: #dc3545;
+        --font-size-base: 1rem; 
+        --font-size-small: 0.875rem; 
+        --font-size-smaller: 0.75rem; 
+        --corridor-width: 20px;
+    }
+
+    body {
+        font-family: "Helvetica Neue", "Helvetica", "Arial", "PingFang TC", "Hiragino Sans GB", "Microsoft JhengHei", "WenQuanYi Micro Hei", sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: var(--light-bg);
+        color: var(--text-color);
+        font-size: var(--font-size-base);
+        line-height: 1.6;
+        min-width: 320px; 
+    }
+
+    .container {
+        display: flex;
+        gap: 25px;
+        max-width: 1600px; 
+        margin: 0 auto; 
+    }
+
+    .sidebar {
+        width: 450px;
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        height: fit-content;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex-shrink: 0;
+    }
+
+    .main-content {
+        flex-grow: 1;
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        overflow-x: hidden;
+    }
+
+    h1, h2, h3 {
+        color: var(--primary-color);
+        margin-top: 0;
+    }
+    h1 { text-align: center; margin-bottom: 25px; font-size: 2rem; }
+    h2 { font-size: 1.5rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 15px;}
+    h3 { font-size: 1.25rem; margin-top: 20px; margin-bottom: 10px; color: var(--secondary-color);}
+
+    .section-box {
+        padding: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        background-color: #fff;
+    }
+
+    .simple-layout-config-item {
+        margin-bottom: 10px;
+    }
+    .simple-layout-config-item label {
+        display: block;
+        margin-bottom: 3px;
+        font-weight: 500;
+        font-size: var(--font-size-small);
+    }
+    .simple-layout-config-item input[type="number"],
+    .simple-layout-config-item input[type="text"] {
+        width: 100%;
+        padding: 8px 10px;
+        font-size: var(--font-size-small);
+        box-sizing: border-box;
+    }
+
+    .student-list-container {
+        max-height: 180px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        padding: 10px;
+        border-radius: 4px;
+        background-color: #fdfdfd;
+        margin-bottom: 10px;
+    }
+
+    .student-list-item {
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        background-color: #fff;
+        border: 1px solid var(--border-color);
+        cursor: grab;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: var(--font-size-base);
+    }
+    .student-list-item:hover {
+        background-color: var(--hover-bg);
+    }
+    .student-list-item.dragging-student {
+        opacity: 0.6;
+        background-color: #cce5ff;
+    }
+    .student-list-item input[type="checkbox"] {
+        margin-left: 10px;
+        transform: scale(1.2);
+        flex-shrink: 0;
+    }
+
+    #selectedStudentsDropZone {
+        border: 2px dashed var(--secondary-color);
+        border-radius: 6px;
+        padding: 15px;
+        margin-top: 10px;
+        min-height: 70px;
+        background-color: #f0f8ff;
+        text-align: center;
+    }
+    #selectedStudentsDropZone.drag-over {
+        background-color: #e0f0ff;
+        border-style: solid;
+    }
+    #selectedStudentsDropZone p {
+        margin: 0 0 10px 0;
+        color: #555;
+        font-size: var(--font-size-small);
+    }
+    .student-pills-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    .student-pill {
+        background-color: var(--pill-bg);
+        color: var(--pill-text);
+        padding: 6px 10px;
+        border-radius: 15px;
+        font-size: var(--font-size-small);
+        display: flex;
+        align-items: center;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .student-pill .remove-pill {
+        margin-left: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        color: var(--danger-color);
+    }
+    .student-pill .remove-pill:hover {
+        color: darkred;
+    }
+
+    .criteria-list {
+        list-style-type: none;
+        padding: 0;
+        min-height: 50px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-color: #fdfdfd;
+        padding: 10px;
+    }
+    .criteria-list li {
+        padding: 12px 15px;
+        margin-bottom: 8px;
+        background-color: #e9f5ff;
+        border: 1px solid #b3d7ff;
+        border-radius: 4px;
+        cursor: grab;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: var(--font-size-small);
+        word-break: break-word;
+    }
+    .criteria-list li .remove-criterion {
+        cursor: pointer;
+        color: var(--danger-color);
+        font-weight: bold;
+        padding: 3px 6px;
+        border-radius: 3px;
+        flex-shrink: 0;
+        margin-left: 8px;
+    }
+     .criteria-list li .remove-criterion:hover {
+        background-color: #f8d7da;
+    }
+    .criterion-dragging {
+        opacity: 0.5;
+        background: #cce5ff;
+    }
+
+    .classroom-container {
+        text-align: center;
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+    .blackboard {
+        width: 80%;
+        min-width: 200px;
+        margin: 0 auto 25px auto;
+        padding: 18px;
+        background-color: #4A5568;
+        color: white;
+        border-radius: 6px;
+        font-size: 1.2rem;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    }
+
+    .seating-grid-container {
+        display: inline-flex;
+        justify-content: flex-start;
+        gap: 0;
+        min-height: 200px;
+        align-items: flex-start;
+        padding: 5px;
+    }
+    .seat-column-group {
+        display: flex;
+        gap: 6px;
+    }
+    .seat-column-group + .seat-column-group {
+        margin-left: var(--corridor-width);
+    }
+    .seat-column {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .seat {
+        width: 80px;
+        height: 55px;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #f0f2f5;
+        font-size: var(--font-size-small);
+        position: relative;
+        overflow: hidden;
+        transition: background-color 0.2s ease;
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+    .seat.occupied {
+        background-color: var(--success-bg);
+        border-color: #b8dfc5;
+    }
+    .seat .seat-number {
+        font-size: var(--font-size-smaller);
+        color: #777;
+        position: absolute;
+        top: 3px;
+        right: 5px;
+    }
+    .seat .student-name {
+        font-weight: bold;
+        font-size: var(--font-size-small);
+        text-align: center;
+        padding: 3px;
+        word-break: break-all;
+        line-height: 1.2;
+        max-height: calc(100% - 6px);
+        overflow: hidden;
+    }
+    .seat.dragging-over-seat { background-color: #ffeeba; }
+    .student-in-seat.dragging { opacity: 0.5; background-color: #add8e6; }
+
+    .file-input-label {
+        margin-bottom: 10px;
+        padding: 10px 15px;
+        border-radius: 5px;
+        background-color: var(--secondary-color);
+        color: white;
+        cursor: pointer;
+        font-size: var(--font-size-base);
+        display: inline-block;
+        transition: background-color 0.2s ease;
+        box-sizing: border-box;
+        text-align: center;
+    }
+    .file-input-label:hover {
+        background-color: var(--primary-color);
+    }
+
+    .actions, .criteria-section, .student-actions, .layout-actions {
+         display: flex;
+         flex-wrap: wrap;
+         gap: 8px;
+    }
+    .actions {
+        margin-top: 20px;
+        justify-content: center;
+    }
+
+    .criteria-section button,
+    .student-actions button,
+    .layout-actions button,
+    #clearCurrentCriterionStudents,
+    #resetAllCriteria,
+    #applySimpleLayoutConfig {
+        padding: 10px 15px;
+        margin: 0;
+        border: none;
+        border-radius: 5px;
+        background-color: var(--secondary-color);
+        color: white;
+        cursor: pointer;
+        font-size: var(--font-size-base);
+        transition: background-color 0.2s ease;
+        box-sizing: border-box;
+        flex-grow: 1;
+        text-align: center;
+    }
+
+    .criteria-section button:hover,
+    .student-actions button:hover,
+    .layout-actions button:hover,
+    #clearCurrentCriterionStudents:hover,
+    #resetAllCriteria:hover,
+    #applySimpleLayoutConfig:hover {
+        background-color: var(--primary-color);
+    }
+
+    #addCriterion { background-color: #28a745; }
+    #addCriterion:hover { background-color: #1e7e34; }
+    #applySimpleLayoutConfig { background-color: #17a2b8; }
+    #applySimpleLayoutConfig:hover { background-color: #117a8b; }
+
+
+    button.secondary,
+    #resetAllCriteria,
+    #clearCurrentCriterionStudents {
+        background-color: #6c757d;
+    }
+    button.secondary:hover,
+    #resetAllCriteria:hover,
+    #clearCurrentCriterionStudents:hover {
+        background-color: #545b62;
+    }
+    #clearCurrentCriterionStudents {
+        font-size: var(--font-size-small);
+        padding: 6px 10px;
+        flex-grow: 0;
+    }
+
+    .actions > button,
+    .actions > .file-input-label {
+        padding: 10px 15px;
+        margin: 0;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+        font-size: var(--font-size-base);
+        transition: background-color 0.2s ease;
+        box-sizing: border-box;
+        flex-grow: 1;
+        flex-basis: 0;
+        min-width: 130px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border: none;
+    }
+
+    .actions > #rearrangeSeats,
+    .actions > button:not(.secondary),
+    .actions > .file-input-label:not(.secondary) {
+        background-color: var(--secondary-color);
+    }
+    .actions > #rearrangeSeats:hover,
+    .actions > button:not(.secondary):hover,
+    .actions > .file-input-label:not(.secondary):hover {
+        background-color: var(--primary-color);
+    }
+    .actions > button.secondary,
+    .actions > .file-input-label.secondary {
+        background-color: #6c757d;
+    }
+    .actions > button.secondary:hover,
+    .actions > .file-input-label.secondary:hover {
+        background-color: #545b62;
+    }
+
+
+    select, input[type="number"], input[type="text"] {
+        padding: 10px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: var(--font-size-base);
+        box-sizing: border-box;
+        width: 100%;
+    }
+    #criteriaInputs input[type="number"],
+    #criteriaInputs input[type="text"] {
+         width: 100%;
+         margin-right: 0;
+    }
+
+
+    #warnings {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: var(--warning-bg);
+        border: 1px solid #ffeeba;
+        border-radius: 4px;
+        color: #856404;
+    }
+    #warnings p { margin: 5px 0; font-size: var(--font-size-small); word-break: break-word; }
+    #warnings:empty { display: none; }
+
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 160px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 0;
+        position: absolute;
+        z-index: 10;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -80px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: var(--font-size-smaller);
+    }
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    @media (max-width: 992px) {
+        .container {
+            flex-direction: column;
+            padding: 15px;
+        }
+        .sidebar, .main-content {
+            width: 100%;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .sidebar:last-child, .main-content:last-child {
+            margin-bottom: 0;
+        }
+        .sidebar {
+            height: auto;
+        }
+        h1 { font-size: 1.8rem; }
+        h2 { font-size: 1.3rem; }
+        h3 { font-size: 1.1rem; }
+
+        .seat { width: 70px; height: 50px; }
+        .seat .student-name { font-size: calc(var(--font-size-small) - 1px); }
+        .seat .seat-number { font-size: calc(var(--font-size-smaller) - 1px); }
+        :root { --corridor-width: 15px; }
+        .blackboard { padding: 15px; font-size: 1.1rem; }
+
+        .student-actions, .layout-actions {
+             flex-direction: column;
+        }
+        .student-actions button, .layout-actions button {
+            width: 100%;
+            margin-right: 0;
+            margin-left: 0;
+        }
+        .actions > button,
+        .actions > .file-input-label {
+        }
+    }
+
+    @media (max-width: 768px) {
+         body { padding: 10px; }
+        .sidebar, .main-content { padding: 15px; }
+        .seat { width: 60px; height: 45px; }
+        .seat .student-name { font-size: 0.75rem; }
+        .seat .seat-number { font-size: 0.7rem; }
+
+        .actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .actions > button,
+        .actions > .file-input-label {
+            min-width: 0;
+            flex-grow: 0;
+        }
+        .actions > *:not(:last-child) {
+            margin-bottom: 8px;
+        }
+
+        .actions button, .actions .file-input-label,
+        .criteria-section button, .student-actions button, .layout-actions button,
+        #clearCurrentCriterionStudents, #resetAllCriteria, #applySimpleLayoutConfig {
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 600px) {
+        body {
+            padding: 10px 5px;
+            font-size: 0.95rem;
+        }
+        .container { padding: 5px; }
+        .sidebar, .main-content { padding: 10px; }
+        h1 { font-size: 1.6rem; margin-bottom: 20px; }
+        h2 { font-size: 1.25rem; margin-bottom: 12px; padding-bottom: 6px; }
+        h3 { font-size: 1.05rem; margin-bottom: 8px; }
+
+        :root {
+            --font-size-base: 0.9rem;
+            --font-size-small: 0.8rem;
+            --font-size-smaller: 0.65rem;
+            --corridor-width: 10px;
+        }
+
+        .seat { width: 50px; height: 40px; min-width: 40px; }
+        .seat .student-name { font-size: 0.7rem; line-height: 1.1; }
+        .seat .seat-number { font-size: 0.6rem; top: 2px; right: 3px; }
+
+        .seating-grid-container { padding-left: 0; padding-right: 0; }
+        .seat-column-group { gap: 4px; }
+        .seat-column { gap: 4px; }
+
+        .actions, .criteria-section, .student-actions, .layout-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .actions > *, .criteria-section > *, .student-actions > *, .layout-actions > * {
+            margin-bottom: 10px;
+            width: 100% !important;
+            min-width: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        .actions > *:last-child, .criteria-section > *:last-child,
+        .student-actions > *:last-child, .layout-actions > *:last-child {
+            margin-bottom: 0;
+        }
+
+        .actions button, .actions .file-input-label,
+        .criteria-section button, .student-actions button, .layout-actions button,
+        #clearCurrentCriterionStudents, #resetAllCriteria, #applySimpleLayoutConfig {
+            padding: 12px 10px;
+            font-size: 0.9rem;
+        }
+
+        select, input[type="number"], input[type="text"] {
+            font-size: 0.9rem;
+            padding: 10px 8px;
+        }
+        #selectedStudentsDropZone p { font-size: 0.8rem; }
+        .student-pill { padding: 5px 8px; font-size: 0.75rem; }
+        .student-list-item { padding: 8px 10px; font-size: 0.9rem; }
+        .criteria-list li { padding: 10px 12px; font-size: 0.85rem; }
+        .blackboard { font-size: 1rem; padding: 12px; width: 90%; margin-bottom: 20px; }
+    }
+
+    @media (max-width: 420px) {
+         body { font-size: 0.9rem; }
+         h1 { font-size: 1.4rem; }
+         h2 { font-size: 1.15rem; }
+         h3 { font-size: 1rem; }
+        .seat { width: 40px; height: 32px; min-width: 35px; }
+        .seat .student-name { font-size: 0.6rem; max-height: calc(100% - 4px); }
+        .seat .seat-number { font-size: 0.55rem; }
+        :root { --corridor-width: 8px; }
+        .seat-column-group + .seat-column-group { margin-left: var(--corridor-width); }
+
+        .actions button, .actions .file-input-label,
+        .criteria-section button, .student-actions button, .layout-actions button {
+            font-size: 0.85rem;
+        }
+        .student-list-container { max-height: 150px; }
+    }
+</style>
+    <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body oncontextmenu="return false;">
+    
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+    <script>
+        document.addEventListener('keydown', (e) => {
+            // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.key === 'u') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'J')
+            ) {
+                e.preventDefault();
+            }
+        });
+    </script>
+    <h1>課室座位編排系統</h1>
+    <div class="container">
+        <div class="sidebar">
+            <div class="section-box">
+                <h2>課室佈局設定</h2>
+                <div id="simpleLayoutConfigContainer">
+                    <div class="simple-layout-config-item">
+                        <label for="numTotalPhysicalCols">總欄 (column) 數:</label>
+                        <input type="number" id="numTotalPhysicalCols" value="6" min="1">
+                    </div>
+                    <div class="simple-layout-config-item">
+                        <label for="rowsInEachCol">每欄座位數 (逗號分隔):</label>
+                        <input type="text" id="rowsInEachCol" value="5,5,5,5,5,5" placeholder="例如: 5,5,4,4,5">
+                    </div>
+                    <div class="simple-layout-config-item">
+                        <label for="corridorsAfterCols">走廊位置 (在哪一欄之後, 逗號分隔):</label>
+                        <input type="text" id="corridorsAfterCols" value="1,3,5" placeholder="例如: 1,3 (即第1欄後有走廊, 第3欄後有走廊)">
+                    </div>
+                </div>
+                <div class="layout-actions">
+                    <button id="applySimpleLayoutConfig">套用</button>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h2>學生名單</h2>
+                <label for="uploadStudentList" class="file-input-label">上載學生名單 (.csv, .xlsx, .xls)</label>
+                <input type="file" id="uploadStudentList" accept=".csv,.xlsx,.xls" style="display: none;">
+                <div id="studentListContainer" class="student-list-container">
+                    <p style="text-align:center; color:#777; margin-top:10px;">請先上載學生名單</p>
+                </div>
+                <div class="student-actions">
+                    <button id="selectAllStudents">全選</button>
+                    <button id="deselectAllStudents">取消全選</button>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h2>設定條件</h2>
+                 <div id="selectedStudentsDropZone">
+                    <p>將學生拖曳至此處，或使用上方列表勾選以選取學生</p>
+                    <div id="currentCriterionStudents" class="student-pills-container">
+                        </div>
+                    <button id="clearCurrentCriterionStudents" style="margin-top: 10px;">清除已選學生</button>
+                </div>
+                <div class="criteria-section" style="margin-top:15px;">
+                    <select id="criteriaType" style="width: 100%; margin-bottom: 10px;">
+                        <option value="fixedSeat">固定座位號碼</option>
+                        <option value="cannotSitTogether">不能坐在一起</option>
+                        <option value="sitFrontRow">坐前排</option>
+                        <option value="sitLastRow">坐後排</option>
+                        <option value="sitLeftSide">靠左邊</option>
+                        <option value="sitRightSide">靠右邊</option>
+                        <option value="nearTeacher">需靠近老師</option>
+                        <option value="farFromTeacher">較後排(遠離老師)</option>
+                        <option value="groupPartners">小組活動夥伴</option>
+                    </select>
+                    <div id="criteriaInputs">
+                        </div>
+                    <button id="addCriterion">新增條件</button>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h2>已選條件 (可拖曳排序)</h2>
+                <ul id="criteriaList" class="criteria-list">
+                    </ul>
+                <button id="resetAllCriteria" class="secondary" style="width:100%; margin-top:10px;">重設所有條件</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <h2>課室座位表</h2>
+            <div class="classroom-container">
+                <div class="blackboard">黑板</div>
+                <div id="seatingChart" class="seating-grid-container">
+                    </div>
+            </div>
+            <div id="warnings"></div>
+            <div class="actions" style="margin-top: 20px; text-align:center;">
+                <button id="rearrangeSeats">自動編排</button>
+                <button id="exportCSV" class="secondary">匯出CSV</button>
+                <button id="exportExcel" class="secondary">匯出Excel (.xlsx)</button>
+                <label for="uploadSeatingPlan" class="file-input-label secondary tooltip">
+                    上載座位表
+                    <span class="tooltiptext">上載先前匯出的CSV或Excel座位表</span>
+                </label>
+                <input type="file" id="uploadSeatingPlan" accept=".csv,.xlsx,.xls" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let students = []; 
+        let seatAssignments = {};
+        let criteria = [];
+        let currentCriterionSelectedStudents = [];
+
+        let classroomLayoutConfig = [];
+        let TOTAL_SEATS = 0;
+        let MAX_ROWS_IN_LAYOUT = 0;
+        let TOTAL_LOGICAL_COLS = 0;
+        let physicalSeatMap = [];
+
+        const studentListContainerDiv = document.getElementById('studentListContainer');
+        const uploadStudentListInput = document.getElementById('uploadStudentList');
+        const criteriaTypeSelect = document.getElementById('criteriaType');
+        const criteriaInputsDiv = document.getElementById('criteriaInputs');
+        const addCriterionButton = document.getElementById('addCriterion');
+        const criteriaListUl = document.getElementById('criteriaList');
+        const resetAllCriteriaButton = document.getElementById('resetAllCriteria');
+        const seatingChartDiv = document.getElementById('seatingChart');
+        const rearrangeSeatsButton = document.getElementById('rearrangeSeats');
+        const exportCSVButton = document.getElementById('exportCSV');
+        const exportExcelButton = document.getElementById('exportExcel');
+        const uploadSeatingPlanInput = document.getElementById('uploadSeatingPlan');
+        const warningsDiv = document.getElementById('warnings');
+        const selectAllStudentsButton = document.getElementById('selectAllStudents');
+        const deselectAllStudentsButton = document.getElementById('deselectAllStudents');
+        const selectedStudentsDropZone = document.getElementById('selectedStudentsDropZone');
+        const currentCriterionStudentsDiv = document.getElementById('currentCriterionStudents');
+        const clearCurrentCriterionStudentsButton = document.getElementById('clearCurrentCriterionStudents');
+
+        const numTotalPhysicalColsInput = document.getElementById('numTotalPhysicalCols');
+        const rowsInEachColInput = document.getElementById('rowsInEachCol');
+        const corridorsAfterColsInput = document.getElementById('corridorsAfterCols');
+        const applySimpleLayoutConfigButton = document.getElementById('applySimpleLayoutConfig');
+        const positionalCriteriaTypes = ['sitFrontRow', 'sitLastRow', 'sitLeftSide', 'sitRightSide', 'nearTeacher', 'farFromTeacher'];
+
+
+        uploadStudentListInput.addEventListener('change', handleStudentListUpload);
+        exportExcelButton.addEventListener('click', exportToExcel);
+        uploadSeatingPlanInput.addEventListener('change', handleSeatingPlanUpload);
+        applySimpleLayoutConfigButton.addEventListener('click', parseSimpleLayoutInputAndApply);
+
+
+        function parseSimpleLayoutInputAndApply() {
+            const numColsStr = numTotalPhysicalColsInput.value.trim();
+            const rowsPerColStr = rowsInEachColInput.value.trim();
+            const corridorsStr = corridorsAfterColsInput.value.trim();
+
+            const numCols = parseInt(numColsStr);
+            if (isNaN(numCols) || numCols < 1) {
+                warningsDiv.innerHTML = '<p>錯誤：總欄數必須為正整數。</p>';
+                setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                return;
+            }
+
+            const rowsPerColArray = rowsPerColStr.split(',').map(s => parseInt(s.trim()));
+            if (rowsPerColArray.some(isNaN) || rowsPerColArray.some(r => r < 1)) {
+                warningsDiv.innerHTML = '<p>錯誤：每欄座位數必須為正整數列表 (用逗號分隔)。</p>';
+                setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                return;
+            }
+            if (rowsPerColArray.length !== numCols) {
+                warningsDiv.innerHTML = '<p>錯誤：每欄座位數的數量與總欄數不符。</p>';
+                setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                return;
+            }
+
+            const corridorAfterColNumbers = corridorsStr === "" ? [] : corridorsStr.split(',').map(s => parseInt(s.trim()));
+            if (corridorAfterColNumbers.some(isNaN) || corridorAfterColNumbers.some(c => c < 1 || c > numCols)) {
+                warningsDiv.innerHTML = `<p>錯誤：走廊位置必須是有效的欄號列表 (1 至 ${numCols}，用逗號分隔)。</p>`;
+                setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                return;
+            }
+            const corridorAfterColIndexes = corridorAfterColNumbers.map(c => c - 1).sort((a, b) => a - b);
+
+            const newClassroomLayoutConfig = [];
+            let currentGroupCols = 0;
+            let currentGroupRowsPerCol = [];
+
+            for (let i = 0; i < numCols; i++) {
+                currentGroupCols++;
+                currentGroupRowsPerCol.push(rowsPerColArray[i]);
+
+                if (corridorAfterColIndexes.includes(i) || i === numCols - 1) {
+                    newClassroomLayoutConfig.push({ numCols: currentGroupCols, rowsPerCol: [...currentGroupRowsPerCol] });
+                    currentGroupCols = 0;
+                    currentGroupRowsPerCol = [];
+                }
+            }
+            classroomLayoutConfig = newClassroomLayoutConfig;
+            recalculateLayoutParametersAndCreateChart();
+            warningsDiv.innerHTML = '<p>課室佈局已更新。</p>';
+            setTimeout(() => warningsDiv.innerHTML = '', 3000);
+        }
+
+        function recalculateLayoutParametersAndCreateChart() {
+            TOTAL_LOGICAL_COLS = 0;
+            let maxRows = 0;
+
+            if (!classroomLayoutConfig || classroomLayoutConfig.length === 0) {
+                seatingChartDiv.innerHTML = "<p style='color:#777; text-align:center;'>佈局設定無效。</p>";
+                TOTAL_SEATS = 0; MAX_ROWS_IN_LAYOUT = 0; TOTAL_LOGICAL_COLS = 0; physicalSeatMap = [];
+                return;
+            }
+
+            classroomLayoutConfig.forEach(group => {
+                TOTAL_LOGICAL_COLS += group.numCols;
+                group.rowsPerCol.forEach(rowsInCol => {
+                    if (rowsInCol > maxRows) maxRows = rowsInCol;
+                });
+            });
+            MAX_ROWS_IN_LAYOUT = maxRows;
+
+            createClassroomLayout();
+            updateCriteriaInputs();
+        }
+
+
+        function handleStudentListUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const fileName = file.name.toLowerCase();
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const fileContent = e.target.result;
+                try {
+                    if (fileName.endsWith('.csv')) {
+                        parseStudentListCSV(fileContent);
+                    } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                        if (typeof XLSX === 'undefined') {
+                            warningsDiv.innerHTML = '<p>錯誤：處理Excel文件需要XLSX資料庫。請確保已正確引入。正在嘗試從CDN加載...</p>';
+                            const script = document.createElement('script');
+                            script.src = "https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js";
+                            script.onload = () => {
+                                warningsDiv.innerHTML = '<p>XLSX資料庫已加載，請重新上載檔案。</p>';
+                                setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                            };
+                            script.onerror = () => {
+                                warningsDiv.innerHTML = '<p>錯誤：無法從CDN加載XLSX資料庫。請檢查網絡連接或手動引入資料庫。</p>';
+                            };
+                            document.head.appendChild(script);
+                            return;
+                        }
+                        parseStudentListExcel(file); 
+                    } else {
+                        warningsDiv.innerHTML = '<p>錯誤：不支援的學生名單檔案格式。請上載 .csv, .xlsx, 或 .xls 檔案。</p>';
+                        setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                        return;
+                    }
+                } catch (error) {
+                    warningsDiv.innerHTML = `<p>處理學生名單檔案時發生錯誤: ${error.message}</p>`;
+                }
+            };
+
+            if (fileName.endsWith('.csv')) {
+                reader.readAsText(file, 'UTF-8');
+            } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                 reader.readAsArrayBuffer(file);
+            }
+             event.target.value = null;
+        }
+
+        function parseStudentListCSV(csvText) {
+            students = [];
+            const lines = csvText.split(/[\r\n]+/).filter(line => line.trim() !== '');
+            if (lines.length === 0) {
+                 warningsDiv.innerHTML = '<p>警告：上載的學生名單CSV檔案為空或格式不正確。</p>';
+                 return;
+            }
+            const header = lines[0].trim().replace(/\uFEFF/g, '');
+            let studentNameColIndex = -1;
+
+            if (header.includes("學生姓名")) {
+                 studentNameColIndex = header.split(',').findIndex(h => h.trim() === "學生姓名");
+            } else {
+                studentNameColIndex = 0; 
+                const firstLineName = lines[0].split(',')[studentNameColIndex]?.trim();
+                if(firstLineName && !isNaN(parseInt(firstLineName))) { 
+                } else if (firstLineName) { 
+                     students.push({ id: students.length + 1, name: firstLineName });
+                }
+            }
+            const startRow = (header.includes("學生姓名")) ? 1 : (studentNameColIndex === 0 && students.length > 0 ? 1: 0);
+
+
+            for (let i = startRow; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length > studentNameColIndex && parts[studentNameColIndex]?.trim()) {
+                    const name = parts[studentNameColIndex].trim();
+                    if (!(startRow === 0 && i === 0 && students.length > 0 && students[0].name === name)) {
+                        students.push({ id: students.length + 1, name: name });
+                    }
+                }
+            }
+            if (students.length === 0 && lines.length > 0){
+                 warningsDiv.innerHTML = '<p>警告：未能從CSV中解析任何學生姓名。請檢查檔案格式和 "學生姓名" 欄位。</p>';
+            }
+            initializeStudentList();
+            warningsDiv.innerHTML = `<p>學生名單 CSV 已成功處理。</p>`;
+            setTimeout(() => warningsDiv.innerHTML = '', 3000);
+        }
+
+        function parseStudentListExcel(file) { 
+            if (typeof XLSX === 'undefined') {
+                throw new Error("XLSX library is not loaded.");
+            }
+            students = []; 
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                if (jsonData.length === 0) {
+                    warningsDiv.innerHTML = '<p>警告：上載的學生名單Excel檔案為空或格式不正確。</p>';
+                    initializeStudentList();
+                    return;
+                }
+                let studentNameColIndex = -1;
+                const headerRow = jsonData[0];
+                if (headerRow && Array.isArray(headerRow)) {
+                    studentNameColIndex = headerRow.findIndex(h => typeof h === 'string' && h.trim() === "學生姓名");
+                }
+
+                if (studentNameColIndex === -1) {
+                    studentNameColIndex = 0; 
+                    if (jsonData[0] && jsonData[0][0]?.toString().trim()){
+                        const name = jsonData[0][0].toString().trim();
+                        if (isNaN(parseInt(name))) {
+                            students.push({ id: students.length + 1, name: name });
+                        }
+                    }
+                }
+                
+                const startRow = (studentNameColIndex !== -1 && headerRow && headerRow[studentNameColIndex]?.toString().trim() === "學生姓名") 
+                                 ? 1 
+                                 : (studentNameColIndex === 0 && students.length > 0 ? 1: 0);
+
+
+                for (let i = startRow; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    if (row && row[studentNameColIndex]?.toString().trim()) {
+                        const name = row[studentNameColIndex].toString().trim();
+                        if (!(startRow === 0 && i === 0 && students.length > 0 && students[0].name === name)) {
+                           students.push({ id: students.length + 1, name: name });
+                        }
+                    }
+                }
+
+                if (students.length === 0 && jsonData.length > 0) {
+                     warningsDiv.innerHTML = '<p>警告：未能從Excel中解析任何學生姓名。請檢查檔案格式和 "學生姓名" 欄位。</p>';
+                }
+                initializeStudentList();
+                 warningsDiv.innerHTML = `<p>學生名單 "${file.name}" 已成功上載。</p>`;
+                 setTimeout(() => warningsDiv.innerHTML = '', 3000);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+
+        function initializeStudentList() {
+            studentListContainerDiv.innerHTML = '';
+            if (students.length === 0) {
+                studentListContainerDiv.innerHTML = '<p style="text-align:center; color:#777; margin-top:10px;">學生名單為空或未上載</p>';
+                selectAllStudentsButton.disabled = true;
+                deselectAllStudentsButton.disabled = true;
+                return;
+            }
+            selectAllStudentsButton.disabled = false;
+            deselectAllStudentsButton.disabled = false;
+
+            students.forEach(student => {
+                const studentItemDiv = document.createElement('div');
+                studentItemDiv.className = 'student-list-item';
+                studentItemDiv.textContent = student.name;
+                studentItemDiv.draggable = true;
+                studentItemDiv.dataset.studentName = student.name;
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = student.name;
+                checkbox.dataset.studentName = student.name;
+                checkbox.addEventListener('change', (e) => handleStudentSelectionChange(student.name, e.target.checked));
+
+                studentItemDiv.appendChild(checkbox);
+                studentListContainerDiv.appendChild(studentItemDiv);
+
+                studentItemDiv.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/student-name', student.name);
+                    e.target.classList.add('dragging-student');
+                });
+                studentItemDiv.addEventListener('dragend', (e) => {
+                    e.target.classList.remove('dragging-student');
+                });
+            });
+            renderCurrentCriterionStudentPills();
+        }
+
+
+        function handleStudentSelectionChange(studentName, isSelected) {
+            if (isSelected) {
+                if (!currentCriterionSelectedStudents.includes(studentName)) {
+                    currentCriterionSelectedStudents.push(studentName);
+                }
+            } else {
+                currentCriterionSelectedStudents = currentCriterionSelectedStudents.filter(s => s !== studentName);
+            }
+            renderCurrentCriterionStudentPills();
+        }
+
+        function renderCurrentCriterionStudentPills() {
+            currentCriterionStudentsDiv.innerHTML = '';
+            currentCriterionSelectedStudents.forEach(studentName => {
+                const pill = document.createElement('div');
+                pill.className = 'student-pill';
+                pill.textContent = studentName;
+                const removeSpan = document.createElement('span');
+                removeSpan.className = 'remove-pill';
+                removeSpan.textContent = '×';
+                removeSpan.onclick = () => {
+                    currentCriterionSelectedStudents = currentCriterionSelectedStudents.filter(s => s !== studentName);
+                    renderCurrentCriterionStudentPills();
+                    const checkbox = studentListContainerDiv.querySelector(`input[type="checkbox"][value="${studentName}"]`);
+                    if (checkbox) checkbox.checked = false;
+                };
+                pill.appendChild(removeSpan);
+                currentCriterionStudentsDiv.appendChild(pill);
+            });
+            studentListContainerDiv.querySelectorAll('.student-list-item input[type="checkbox"]').forEach(cb => {
+                cb.checked = currentCriterionSelectedStudents.includes(cb.value);
+            });
+        }
+
+        clearCurrentCriterionStudentsButton.addEventListener('click', () => {
+            currentCriterionSelectedStudents = [];
+            renderCurrentCriterionStudentPills();
+            studentListContainerDiv.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        });
+
+        selectedStudentsDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            selectedStudentsDropZone.classList.add('drag-over');
+        });
+        selectedStudentsDropZone.addEventListener('dragleave', () => {
+            selectedStudentsDropZone.classList.remove('drag-over');
+        });
+        selectedStudentsDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            selectedStudentsDropZone.classList.remove('drag-over');
+            const studentName = e.dataTransfer.getData('text/student-name');
+            if (studentName && !currentCriterionSelectedStudents.includes(studentName) && students.find(s => s.name === studentName)) {
+                currentCriterionSelectedStudents.push(studentName);
+                renderCurrentCriterionStudentPills();
+                const checkbox = studentListContainerDiv.querySelector(`input[type="checkbox"][value="${studentName}"]`);
+                if (checkbox) checkbox.checked = true;
+            }
+        });
+
+        selectAllStudentsButton.addEventListener('click', () => {
+            if (students.length === 0) return;
+            currentCriterionSelectedStudents = students.map(s => s.name);
+            renderCurrentCriterionStudentPills();
+        });
+
+        deselectAllStudentsButton.addEventListener('click', () => {
+            currentCriterionSelectedStudents = [];
+            renderCurrentCriterionStudentPills();
+        });
+
+        function updateCriteriaInputs() {
+            criteriaInputsDiv.innerHTML = '';
+            const type = criteriaTypeSelect.value;
+            if (type === 'fixedSeat') {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = 'seatNumberInput';
+                input.min = 1;
+                input.max = TOTAL_SEATS > 0 ? TOTAL_SEATS : 30; 
+                input.placeholder = `座位號碼 (1-${TOTAL_SEATS > 0 ? TOTAL_SEATS : 'N'})`;
+                criteriaInputsDiv.appendChild(input);
+            }
+        }
+
+        function generateUUID() {
+            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+            );
+        }
+
+        addCriterionButton.addEventListener('click', () => {
+            const type = criteriaTypeSelect.value;
+            const studentsForThisCriterion = [...currentCriterionSelectedStudents];
+
+            let value = null;
+            let criterionText = `${criteriaTypeSelect.options[criteriaTypeSelect.selectedIndex].text}`;
+
+            if (students.length === 0 && studentsForThisCriterion.length === 0 && type !== 'fixedSeat' ) {
+                 warningsDiv.innerHTML = '<p>請先上載學生名單，然後選擇學生以新增條件。</p>';
+                 setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                 return;
+            }
+             if (studentsForThisCriterion.length === 0 && !['fixedSeat'].includes(type) && !positionalCriteriaTypes.some(t => type === t && studentsForThisCriterion.length === 0 ) ) {
+             }
+
+
+            if (type === 'fixedSeat') {
+                if (studentsForThisCriterion.length !== 1) {
+                    warningsDiv.innerHTML = '<p>固定座位號碼：請選擇一位學生。</p>';
+                    setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                    return;
+                }
+                const seatNumInput = document.getElementById('seatNumberInput');
+                if (!seatNumInput || !seatNumInput.value) {
+                    warningsDiv.innerHTML = '<p>請輸入座位號碼。</p>';
+                    setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                    return;
+                }
+                value = parseInt(seatNumInput.value);
+                if (TOTAL_SEATS === 0 && (value < 1)) { 
+                     warningsDiv.innerHTML = `<p>警告：課室佈局尚未完全設定，但座位號碼必須為正數。</p>`;
+                     setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                     return;
+                }
+                if (TOTAL_SEATS > 0 && (value < 1 || value > TOTAL_SEATS)) {
+                    warningsDiv.innerHTML = `<p>無效的座位號碼 (必須介於 1 與 ${TOTAL_SEATS} 之間)。</p>`;
+                    setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                    return;
+                }
+                 if (TOTAL_SEATS === 0) {
+                     warningsDiv.innerHTML = `<p>提醒：課室佈局未定義，固定座位 ${value} 的有效性將在佈局套用後確認。</p>`;
+                 }
+                criterionText += `: ${studentsForThisCriterion[0]} -> 座位 ${value}`;
+            } else if (type === 'cannotSitTogether' || type === 'groupPartners') {
+                if (studentsForThisCriterion.length < 2) {
+                    warningsDiv.innerHTML = `<p>${criterionText}: 請選擇至少兩位學生。</p>`;
+                    setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                    return;
+                }
+                criterionText += `: ${studentsForThisCriterion.join(', ')}`;
+            } else { 
+                if (studentsForThisCriterion.length < 1) {
+                    warningsDiv.innerHTML = `<p>${criterionText}: 請選擇至少一位學生。</p>`;
+                    setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                    return;
+                }
+                criterionText += `: ${studentsForThisCriterion.join(', ')}`;
+            }
+
+            criteria.push({ id: generateUUID(), type, students: studentsForThisCriterion, value, text: criterionText });
+            renderCriteriaList();
+
+            currentCriterionSelectedStudents = []; 
+            renderCurrentCriterionStudentPills();
+            updateCriteriaInputs(); 
+        });
+
+        function renderCriteriaList() {
+            criteriaListUl.innerHTML = '';
+            if (criteria.length === 0) {
+                criteriaListUl.innerHTML = '<li style="text-align:center; background-color:transparent; border:none; color:#777; cursor:default;">暫未新增任何條件</li>';
+            } else {
+                criteria.forEach(c => {
+                    const li = document.createElement('li');
+                    li.textContent = c.text;
+                    li.dataset.id = c.id;
+                    li.draggable = true;
+
+                    const removeSpan = document.createElement('span');
+                    removeSpan.textContent = '×';
+                    removeSpan.className = 'remove-criterion';
+                    removeSpan.title = '移除此條件';
+                    removeSpan.onclick = () => {
+                        criteria = criteria.filter(item => item.id !== c.id);
+                        renderCriteriaList();
+                    };
+                    li.appendChild(removeSpan);
+                    criteriaListUl.appendChild(li);
+                });
+            }
+            addDragAndDropToCriteriaList();
+        }
+
+        let draggedCriterionLi = null;
+
+        function addDragAndDropToCriteriaList() {
+            const items = criteriaListUl.querySelectorAll('li[draggable="true"]');
+            items.forEach(item => {
+                item.addEventListener('dragstart', handleCriterionDragStart);
+                item.addEventListener('dragover', handleCriterionDragOver);
+                item.addEventListener('drop', handleCriterionDrop);
+                item.addEventListener('dragend', handleCriterionDragEnd);
+            });
+        }
+
+        function handleCriterionDragStart(e) {
+            draggedCriterionLi = e.target;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', e.target.dataset.id);
+            setTimeout(() => { e.target.classList.add('criterion-dragging'); }, 0);
+        }
+        function handleCriterionDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+        function handleCriterionDrop(e) {
+            e.preventDefault();
+            const targetItem = e.target.closest('li[draggable="true"]');
+            if (targetItem && targetItem !== draggedCriterionLi) {
+                const targetId = targetItem.dataset.id;
+                const draggedId = draggedCriterionLi.dataset.id;
+                const draggedIndex = criteria.findIndex(c => c.id === draggedId);
+                const targetIndex = criteria.findIndex(c => c.id === targetId);
+                if (draggedIndex !== -1 && targetIndex !== -1) {
+                    const [draggedItemData] = criteria.splice(draggedIndex, 1);
+                    criteria.splice(targetIndex, 0, draggedItemData);
+                    renderCriteriaList();
+                }
+            }
+            if(draggedCriterionLi) draggedCriterionLi.classList.remove('criterion-dragging');
+        }
+        function handleCriterionDragEnd() {
+            if(draggedCriterionLi) draggedCriterionLi.classList.remove('criterion-dragging');
+            draggedCriterionLi = null;
+        }
+
+        resetAllCriteriaButton.addEventListener('click', () => {
+            criteria = [];
+            renderCriteriaList();
+            warningsDiv.innerHTML = '';
+        });
+
+        function createClassroomLayout() {
+            seatingChartDiv.innerHTML = '';
+            physicalSeatMap = [];
+            if (TOTAL_LOGICAL_COLS === 0 || MAX_ROWS_IN_LAYOUT === 0 || !classroomLayoutConfig || classroomLayoutConfig.length === 0) {
+                seatingChartDiv.innerHTML = "<p style='color:#777; text-align:center;'>請先設定並套用有效的課室佈局。</p>";
+                TOTAL_SEATS = 0;
+                updateSeatingChart(); 
+                return;
+            }
+
+            let seatNumberCounter = 1;
+            for (let r_logical = 0; r_logical < MAX_ROWS_IN_LAYOUT; r_logical++) {
+                let currentOverallPhysicalColIndexTracker = 0; 
+                for (let grpIdx = 0; grpIdx < classroomLayoutConfig.length; grpIdx++) {
+                    const group = classroomLayoutConfig[grpIdx];
+                    for (let colInGroupIdx = 0; colInGroupIdx < group.numCols; colInGroupIdx++) {
+                        const physicalColRows = group.rowsPerCol[colInGroupIdx];
+                        if (r_logical < physicalColRows) { 
+                            physicalSeatMap.push({
+                                seatNumber: seatNumberCounter, 
+                                logicalRow: r_logical,
+                                logicalCol: currentOverallPhysicalColIndexTracker, 
+                                groupIndex: grpIdx,
+                                physicalColInGroupIndex: colInGroupIdx, 
+                                physicalColTotalRows: physicalColRows, 
+                                actualRowInPhysicalCol: r_logical 
+                            });
+                            seatNumberCounter++;
+                        }
+                        currentOverallPhysicalColIndexTracker++;
+                    }
+                }
+            }
+            TOTAL_SEATS = seatNumberCounter - 1;
+
+            seatingChartDiv.innerHTML = ''; 
+            classroomLayoutConfig.forEach((group, groupIndex) => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'seat-column-group';
+                groupDiv.dataset.groupIndex = groupIndex;
+
+                for (let colInGroup = 0; colInGroup < group.numCols; colInGroup++) {
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'seat-column';
+                    colDiv.dataset.colInGroupIndex = colInGroup;
+
+                    const actualRowsInThisPhysicalCol = group.rowsPerCol[colInGroup];
+                    for (let r = 0; r < actualRowsInThisPhysicalCol; r++) {
+                        let overallLogicalColForThisSeat = 0;
+                        for(let prevGrpIdx = 0; prevGrpIdx < groupIndex; prevGrpIdx++) {
+                            overallLogicalColForThisSeat += classroomLayoutConfig[prevGrpIdx].numCols;
+                        }
+                        overallLogicalColForThisSeat += colInGroup;
+
+                        const seatMapEntry = physicalSeatMap.find(
+                            smp => smp.logicalRow === r &&
+                                   smp.logicalCol === overallLogicalColForThisSeat
+                        );
+
+                        if (seatMapEntry) {
+                            const seatDiv = document.createElement('div');
+                            seatDiv.className = 'seat';
+                            seatDiv.id = `seat-${seatMapEntry.seatNumber}`;
+                            seatDiv.dataset.seatNumber = seatMapEntry.seatNumber;
+                            seatDiv.dataset.logicalRow = seatMapEntry.logicalRow;
+                            seatDiv.dataset.logicalCol = seatMapEntry.logicalCol;
+
+
+                            const seatNumSpan = document.createElement('span');
+                            seatNumSpan.className = 'seat-number';
+                            seatNumSpan.textContent = seatMapEntry.seatNumber;
+                            const studentNameSpan = document.createElement('span');
+                            studentNameSpan.className = 'student-name';
+                            studentNameSpan.textContent = '空位';
+
+                            seatDiv.appendChild(seatNumSpan);
+                            seatDiv.appendChild(studentNameSpan);
+                            colDiv.appendChild(seatDiv);
+                        }
+                    }
+                    groupDiv.appendChild(colDiv);
+                }
+                seatingChartDiv.appendChild(groupDiv);
+            });
+
+            addSeatDragDropEvents();
+            updateSeatingChart(); 
+            updateCriteriaInputs(); 
+        }
+
+
+        let draggedStudentElement = null;
+
+        function addSeatDragDropEvents() {
+            document.querySelectorAll('.seat').forEach(seatDiv => {
+                seatDiv.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    seatDiv.classList.add('dragging-over-seat');
+                });
+                seatDiv.addEventListener('dragleave', () => {
+                    seatDiv.classList.remove('dragging-over-seat');
+                });
+                seatDiv.addEventListener('drop', e => {
+                    e.preventDefault();
+                    seatDiv.classList.remove('dragging-over-seat');
+                    if (draggedStudentElement) { 
+                        const sourceSeatNumber = parseInt(draggedStudentElement.closest('.seat').dataset.seatNumber);
+                        const targetSeatNumber = parseInt(seatDiv.dataset.seatNumber);
+                        
+                        if (sourceSeatNumber === targetSeatNumber) {
+                            draggedStudentElement = null;
+                            return;
+                        }
+
+                        const studentNameToMove = draggedStudentElement.textContent;
+                        const targetSeatStudentNameElement = seatDiv.querySelector('.student-name');
+                        const studentInTargetSeat = targetSeatStudentNameElement.textContent;
+
+                        const sourceSeatDiv = document.getElementById(`seat-${sourceSeatNumber}`);
+                        const sourceSeatStudentElement = sourceSeatDiv.querySelector('.student-name');
+
+                        delete seatAssignments[studentNameToMove];
+                        if (studentInTargetSeat !== '空位' && studentInTargetSeat !== studentNameToMove) {
+                            sourceSeatStudentElement.textContent = studentInTargetSeat;
+                            seatAssignments[studentInTargetSeat] = sourceSeatNumber;
+                            makeStudentDraggableInSeat(sourceSeatStudentElement); 
+                            sourceSeatDiv.classList.add('occupied');
+                        } else { 
+                            sourceSeatStudentElement.textContent = '空位';
+                            sourceSeatDiv.classList.remove('occupied');
+                            makeStudentDraggableInSeat(sourceSeatStudentElement); 
+                        }
+
+                        targetSeatStudentNameElement.textContent = studentNameToMove;
+                        seatAssignments[studentNameToMove] = targetSeatNumber;
+                        makeStudentDraggableInSeat(targetSeatStudentNameElement); 
+                        seatDiv.classList.add('occupied');
+                    }
+                    draggedStudentElement = null;
+                });
+            });
+        }
+
+        function makeStudentDraggableInSeat(studentNameElement) {
+            const seatDiv = studentNameElement.closest('.seat');
+            if (studentNameElement.textContent !== '空位') {
+                studentNameElement.draggable = true;
+                studentNameElement.classList.add('student-in-seat');
+                const newElement = studentNameElement.cloneNode(true); 
+                studentNameElement.parentNode.replaceChild(newElement, studentNameElement);
+
+                newElement.addEventListener('dragstart', e => {
+                    draggedStudentElement = e.target; 
+                    e.dataTransfer.setData('text/plain', e.target.textContent); 
+                    e.target.classList.add('dragging');
+                });
+                newElement.addEventListener('dragend', e => {
+                    if (e.target.classList) e.target.classList.remove('dragging');
+                });
+            } else { 
+                 studentNameElement.draggable = false;
+                 studentNameElement.classList.remove('student-in-seat');
+                 const newEmptyElement = studentNameElement.cloneNode(true);
+                 studentNameElement.parentNode.replaceChild(newEmptyElement, studentNameElement);
+            }
+        }
+
+        function updateSeatingChart() {
+            document.querySelectorAll('.seat').forEach(seatDiv => {
+                const seatNum = parseInt(seatDiv.dataset.seatNumber);
+                const studentNameSpan = seatDiv.querySelector('.student-name');
+                let studentAssignedThisSeat = getKeyByValue(seatAssignments, seatNum);
+
+                if (studentAssignedThisSeat) {
+                    studentNameSpan.textContent = studentAssignedThisSeat;
+                    seatDiv.classList.add('occupied');
+                } else {
+                    studentNameSpan.textContent = '空位';
+                    seatDiv.classList.remove('occupied');
+                }
+                makeStudentDraggableInSeat(studentNameSpan); 
+            });
+        }
+
+        function getSeatLogicalRowCol(seatNumber) {
+            const seatInfo = physicalSeatMap.find(s => s.seatNumber === seatNumber);
+            if (!seatInfo) return null;
+            return { r: seatInfo.logicalRow, c: seatInfo.logicalCol };
+        }
+        
+        function getSeatByLogicalCoords(logicalRow, logicalCol) {
+            return physicalSeatMap.find(s => s.logicalRow === logicalRow && s.logicalCol === logicalCol);
+        }
+
+        function getSeatNumberByLogicalRowCol(r_logical, c_logical) {
+            const seatInfo = physicalSeatMap.find(s => s.logicalRow === r_logical && s.logicalCol === c_logical);
+            return seatInfo ? seatInfo.seatNumber : null;
+        }
+
+        function getAdjacentSeats(seatNumber, considerCorridorsAsTrueSeparators = true) {
+            const currentSeatMapEntry = physicalSeatMap.find(s => s.seatNumber === seatNumber);
+            if (!currentSeatMapEntry) return [];
+
+            const adjSeats = new Set();
+            const { logicalRow, logicalCol, groupIndex } = currentSeatMapEntry;
+
+            const deltas = [
+                { dr: 0, dc: -1 }, { dr: 0, dc: 1 }, 
+                { dr: -1, dc: 0 }, { dr: 1, dc: 0 }, 
+                { dr: -1, dc: -1 }, { dr: -1, dc: 1 }, 
+                { dr: 1, dc: -1 }, { dr: 1, dc: 1 }  
+            ];
+
+            deltas.forEach(delta => {
+                const adjLogicalRow = logicalRow + delta.dr;
+                const adjLogicalCol = logicalCol + delta.dc;
+
+                const otherSeat = getSeatByLogicalCoords(adjLogicalRow, adjLogicalCol);
+
+                if (otherSeat) {
+                    if (considerCorridorsAsTrueSeparators) {
+                        if (otherSeat.groupIndex === groupIndex) {
+                            adjSeats.add(otherSeat.seatNumber);
+                        }
+                    } else {
+                        adjSeats.add(otherSeat.seatNumber);
+                    }
+                }
+            });
+            return Array.from(adjSeats);
+        }
+        
+        function getSeatsForCriterionTier(criterionType, tier, currentOccupiedMap) {
+            let seats = [];
+            const occupiedSeatNumbers = currentOccupiedMap 
+                ? Object.values(currentOccupiedMap).filter(val => val !== null) 
+                : (seatAssignments ? Object.values(seatAssignments) : []);
+
+            let seatPool = physicalSeatMap; 
+
+            if ((criterionType === 'sitLastRow' || criterionType === 'farFromTeacher') && 
+                students.length > 0 && students.length < TOTAL_SEATS && TOTAL_SEATS > 0 && (TOTAL_LOGICAL_COLS || 0) > 0) {
+                
+                const studentCount = students.length;
+                const corePopulationSeatNumbers = physicalSeatMap
+                    .map(s => s.seatNumber)
+                    .sort((a, b) => a - b)
+                    .slice(0, studentCount);
+
+                if (corePopulationSeatNumbers.length > 0) {
+                    seatPool = physicalSeatMap.filter(s => corePopulationSeatNumbers.includes(s.seatNumber));
+                }
+            }
+            
+            if (seatPool.length === 0) return [];
+
+            let effectiveMaxRowsInPool = seatPool.length > 0 ? Math.max(0, ...seatPool.map(s => s.logicalRow)) + 1 : 0;
+            let effectiveMaxColsInPool = seatPool.length > 0 ? Math.max(0, ...seatPool.map(s => s.logicalCol)) + 1 : 0;
+
+
+            switch (criterionType) {
+                case 'sitFrontRow': 
+                    if (tier >= 0 && tier < MAX_ROWS_IN_LAYOUT) { 
+                        seats = physicalSeatMap.filter(s => s.logicalRow === tier && !occupiedSeatNumbers.includes(s.seatNumber)).map(s => s.seatNumber);
+                    }
+                    break;
+                case 'sitLastRow': 
+                    const targetLastRowInPool = effectiveMaxRowsInPool - 1 - tier;
+                    if (tier >= 0 && targetLastRowInPool >= 0 && effectiveMaxRowsInPool > 0) {
+                         seats = seatPool.filter(s => s.logicalRow === targetLastRowInPool && !occupiedSeatNumbers.includes(s.seatNumber)).map(s => s.seatNumber);
+                    }
+                    break;
+                case 'sitLeftSide': 
+                    const targetLeftCol = TOTAL_LOGICAL_COLS - 1 - tier; 
+                    if (tier >= 0 && targetLeftCol >= 0 && TOTAL_LOGICAL_COLS > 0) {
+                        seats = physicalSeatMap.filter(s => s.logicalCol === targetLeftCol && !occupiedSeatNumbers.includes(s.seatNumber)).map(s => s.seatNumber);
+                    }
+                    break;
+                case 'sitRightSide': 
+                     if (tier >= 0 && tier < TOTAL_LOGICAL_COLS && TOTAL_LOGICAL_COLS > 0) { 
+                        seats = physicalSeatMap.filter(s => s.logicalCol === tier && !occupiedSeatNumbers.includes(s.seatNumber)).map(s => s.seatNumber);
+                    }
+                    break;
+                case 'nearTeacher': {
+                    let allAvailableSeats = physicalSeatMap.map(s => s.seatNumber) 
+                        .filter(sNum => !occupiedSeatNumbers.includes(sNum))
+                        .sort((a, b) => a - b); 
+                    
+                    const numProximityTiers = Math.max(3, Math.min(MAX_ROWS_IN_LAYOUT || 1, TOTAL_LOGICAL_COLS || 1));
+                    const chunkSize = Math.max(1, Math.ceil(allAvailableSeats.length / numProximityTiers)); 
+                    
+                    const startIndex = tier * chunkSize;
+                    const endIndex = Math.min((tier + 1) * chunkSize, allAvailableSeats.length);
+                    seats = allAvailableSeats.slice(startIndex, endIndex);
+                    break;
+                }
+                case 'farFromTeacher': {
+                    let availableSeatsInZone = seatPool.map(s => s.seatNumber) 
+                        .filter(sNum => !occupiedSeatNumbers.includes(sNum))
+                        .sort((a, b) => b - a); 
+
+                    const numProximityTiersForFar = Math.max(3, Math.min(effectiveMaxRowsInPool || 1, effectiveMaxColsInPool || 1));
+                    const chunkSizeFar = Math.max(1, Math.ceil(availableSeatsInZone.length / numProximityTiersForFar));
+
+                    const startIndexFar = tier * chunkSizeFar;
+                    const endIndexFar = Math.min((tier + 1) * chunkSizeFar, availableSeatsInZone.length);
+                    seats = availableSeatsInZone.slice(startIndexFar, endIndexFar);
+                    break;
+                }
+            }
+            return [...new Set(seats)]; 
+        }
+
+
+        rearrangeSeatsButton.addEventListener('click', () => {
+            if (students.length === 0) {
+                warningsDiv.innerHTML = '<p>請先上載學生名單才能編排座位。</p>';
+                setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                return;
+            }
+            if (TOTAL_SEATS === 0) {
+                warningsDiv.innerHTML = '<p>課室佈局未定義或沒有座位。請先設定並套用佈局。</p>';
+                setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                return;
+            }
+
+            seatAssignments = {}; 
+            const occupiedSeatsMap = {}; 
+            const processedStudents = new Set(); 
+            let currentWarnings = [];
+
+            function assign(studentName, seatNum, markAsFullyProcessed = false) {
+                if (seatNum === null || seatNum < 1 || seatNum > TOTAL_SEATS) return false;
+                
+                if (seatAssignments[studentName] && seatAssignments[studentName] !== seatNum) {
+                     const oldSeat = seatAssignments[studentName];
+                     if (occupiedSeatsMap[oldSeat] === studentName) delete occupiedSeatsMap[oldSeat];
+                }
+                if (occupiedSeatsMap[seatNum] && occupiedSeatsMap[seatNum] !== studentName) return false; 
+                
+                seatAssignments[studentName] = seatNum;
+                occupiedSeatsMap[seatNum] = studentName;
+                if(markAsFullyProcessed) processedStudents.add(studentName);
+                return true;
+            }
+            
+            criteria.filter(c => c.type === 'fixedSeat').forEach(c => {
+                const studentToFix = c.students[0];
+                const seatToAssign = c.value;
+
+                if (!getStudentByName(studentToFix)) { 
+                    currentWarnings.push(`固定座位警告：規則 "${c.text}" 中的學生 ${studentToFix} 不在當前學生名單中。`);
+                    return;
+                }
+                if (processedStudents.has(studentToFix)) return; 
+
+                if (seatToAssign < 1 || seatToAssign > TOTAL_SEATS) {
+                    currentWarnings.push(`固定座位錯誤：規則 "${c.text}" 的目標座位 ${seatToAssign} 無效 (總座位數 ${TOTAL_SEATS})。`);
+                    return;
+                }
+
+                if (occupiedSeatsMap[seatToAssign] && occupiedSeatsMap[seatToAssign] !== studentToFix) {
+                    currentWarnings.push(`固定座位衝突：座位 ${seatToAssign} 已被 ${occupiedSeatsMap[seatToAssign]} 佔用。規則 "${c.text}" 無法將 ${studentToFix} 固定於此。`);
+                } else {
+                    let tempOldAssignment = null;
+                    if (seatAssignments[studentToFix]) {
+                        tempOldAssignment = seatAssignments[studentToFix];
+                        delete occupiedSeatsMap[tempOldAssignment];
+                        delete seatAssignments[studentToFix];
+                    }
+
+                    if (satisfiesAllConstraints(seatToAssign, studentToFix, occupiedSeatsMap, criteria, c.id)) {
+                        if (!assign(studentToFix, seatToAssign, true)) {
+                             currentWarnings.push(`系統錯誤：嘗試為 ${studentToFix} 分配固定座位 ${seatToAssign} (規則 "${c.text}") 失敗。`);
+                        }
+                    } else {
+                        if (tempOldAssignment) {
+                           assign(studentToFix, tempOldAssignment, false); 
+                        }
+                        currentWarnings.push(`固定座位衝突：將 ${studentToFix} 安排在座位 ${seatToAssign} (規則 "${c.text}") 會違反其他相關條件。`);
+                    }
+                }
+            });
+
+            const studentsWithPositionalNeeds = students.filter(s => 
+                !processedStudents.has(s.name) && 
+                criteria.some(cr => cr.students.includes(s.name) && positionalCriteriaTypes.includes(cr.type))
+            );
+
+            studentsWithPositionalNeeds.forEach(studentObj => {
+                const studentName = studentObj.name;
+
+                const studentPositionalRules = criteria.filter(
+                    cr => cr.students.includes(studentName) && positionalCriteriaTypes.includes(cr.type)
+                );
+
+                if (studentPositionalRules.length === 0) return; 
+
+                let placedThisStudent = false;
+                
+                const getMaxTierForRule = (ruleType) => {
+                    let poolForTierCount = physicalSeatMap;
+                    let effRows, effCols;
+
+                    if ((ruleType === 'sitLastRow' || ruleType === 'farFromTeacher') &&
+                        students.length > 0 && students.length < TOTAL_SEATS && TOTAL_SEATS > 0 && (TOTAL_LOGICAL_COLS || 0) > 0) {
+                        const studentCount = students.length;
+                        const corePopulationSeatNumbers = physicalSeatMap
+                            .map(s => s.seatNumber).sort((a, b) => a - b).slice(0, studentCount);
+                        if (corePopulationSeatNumbers.length > 0) {
+                            poolForTierCount = physicalSeatMap.filter(s => corePopulationSeatNumbers.includes(s.seatNumber));
+                        }
+                    }
+                    
+                    if (poolForTierCount.length === 0) { 
+                        effRows = MAX_ROWS_IN_LAYOUT > 0 ? MAX_ROWS_IN_LAYOUT : 1;
+                        effCols = TOTAL_LOGICAL_COLS > 0 ? TOTAL_LOGICAL_COLS : 1;
+                    } else {
+                        effRows = Math.max(0, ...poolForTierCount.map(s => s.logicalRow)) + 1;
+                        effCols = Math.max(0, ...poolForTierCount.map(s => s.logicalCol)) + 1;
+                    }
+
+                    if (ruleType === 'sitFrontRow') return MAX_ROWS_IN_LAYOUT > 0 ? MAX_ROWS_IN_LAYOUT : 1;
+                    if (ruleType === 'sitLastRow') return effRows > 0 ? effRows : 1;
+                    if (ruleType === 'sitLeftSide' || ruleType === 'sitRightSide') return TOTAL_LOGICAL_COLS > 0 ? TOTAL_LOGICAL_COLS : 1;
+                    if (ruleType === 'nearTeacher') return Math.max(3, Math.min(MAX_ROWS_IN_LAYOUT || 1, TOTAL_LOGICAL_COLS || 1));
+                    if (ruleType === 'farFromTeacher') return Math.max(3, Math.min(effRows || 1, effCols || 1));
+                    
+                    return 1;
+                };
+
+
+                const numPosRules = studentPositionalRules.length;
+                let maxTotalTierSum = 0;
+                studentPositionalRules.forEach(r => { maxTotalTierSum += (getMaxTierForRule(r.type) -1); });
+
+
+                for (let currentTierSumAttempt = 0; currentTierSumAttempt <= maxTotalTierSum; currentTierSumAttempt++) {
+                    if (placedThisStudent) break;
+
+                    function findTierCombinationsRecursive(ruleIdx, accumulatedSumOfTiers, tiersForRules) {
+                        if (placedThisStudent) return;
+
+                        if (ruleIdx === numPosRules) { 
+                            if (accumulatedSumOfTiers === currentTierSumAttempt) {
+                                let candidateSeatsForCombo = physicalSeatMap.map(s => s.seatNumber).filter(sNum => !occupiedSeatsMap[sNum]);
+                                let comboIsPossible = true;
+
+                                for (let i = 0; i < numPosRules; i++) {
+                                    const currentRule = studentPositionalRules[i];
+                                    const tierForCurrentRule = tiersForRules[i];
+                                    const seatsFromThisRuleTier = getSeatsForCriterionTier(currentRule.type, tierForCurrentRule, occupiedSeatsMap);
+                                    
+                                    candidateSeatsForCombo = candidateSeatsForCombo.filter(seat => seatsFromThisRuleTier.includes(seat));
+                                    if (candidateSeatsForCombo.length === 0) {
+                                        comboIsPossible = false;
+                                        break;
+                                    }
+                                }
+
+                                if (comboIsPossible && candidateSeatsForCombo.length > 0) {
+                                    candidateSeatsForCombo.sort(() => Math.random() - 0.5); 
+                                    for (const seat of candidateSeatsForCombo) {
+                                        if (satisfiesAllConstraints(seat, studentName, occupiedSeatsMap, criteria, studentPositionalRules[0].id )) {
+                                            if (assign(studentName, seat, true)) {
+                                                placedThisStudent = true;
+                                                return; 
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            return; 
+                        }
+
+                        const currentRuleToAssignTier = studentPositionalRules[ruleIdx];
+                        const maxTierForThisRule = getMaxTierForRule(currentRuleToAssignTier.type);
+                        for (let t = 0; t < maxTierForThisRule; t++) {
+                            if (accumulatedSumOfTiers + t <= currentTierSumAttempt) { 
+                                tiersForRules[ruleIdx] = t;
+                                findTierCombinationsRecursive(ruleIdx + 1, accumulatedSumOfTiers + t, tiersForRules);
+                                if (placedThisStudent) return;
+                            } else {
+                                break; 
+                            }
+                        }
+                    }
+                    findTierCombinationsRecursive(0, 0, new Array(numPosRules).fill(0));
+                } 
+
+                if (!placedThisStudent) {
+                    const rulesText = studentPositionalRules.map(r => r.text).join(' AND ');
+                    currentWarnings.push(`位置偏好 (${rulesText}): 未能為 ${studentName} 找到一個能完全滿足所有指定區域組合條件的座位。`);
+                }
+            });
+            
+            criteria.filter(c => c.type === 'groupPartners').forEach(c => {
+                const groupMembersInCriterion = c.students.filter(sName => getStudentByName(sName));
+                let membersToPlaceOrRecheck = groupMembersInCriterion.filter(sName => !processedStudents.has(sName) || !seatAssignments[sName]); 
+                let alreadyPlacedInThisGroup = groupMembersInCriterion.filter(sName => seatAssignments[sName] && processedStudents.has(sName));
+                
+                membersToPlaceOrRecheck.sort(() => Math.random() - 0.5); 
+
+                for (const studentToPlace of membersToPlaceOrRecheck) {
+                    if (processedStudents.has(studentToPlace) && seatAssignments[studentToPlace]) continue; 
+                    
+                    let placedThisStudentInGroup = false;
+                    let potentialSpots = [];
+
+                    if (alreadyPlacedInThisGroup.length > 0) { 
+                        for (const placedPartner of alreadyPlacedInThisGroup) {
+                            const partnerSeat = seatAssignments[placedPartner];
+                            if (partnerSeat) {
+                                getAdjacentSeats(partnerSeat, true) 
+                                    .filter(s => s && !occupiedSeatsMap[s] && satisfiesAllConstraints(s, studentToPlace, occupiedSeatsMap, criteria, c.id))
+                                    .forEach(s => potentialSpots.push(s));
+                            }
+                        }
+                    } else { 
+                        potentialSpots = physicalSeatMap.map(s => s.seatNumber)
+                            .filter(s => !occupiedSeatsMap[s] && satisfiesAllConstraints(s, studentToPlace, occupiedSeatsMap, criteria, c.id));
+                    }
+                    
+                    potentialSpots = [...new Set(potentialSpots)].sort(() => Math.random() - 0.5);
+
+                    for (const spot of potentialSpots) {
+                        if (assign(studentToPlace, spot, true)) {
+                            alreadyPlacedInThisGroup.push(studentToPlace); 
+                            placedThisStudentInGroup = true;
+                            break;
+                        }
+                    }
+
+                    if (!placedThisStudentInGroup) {
+                        currentWarnings.push(`小組活動夥伴 (${c.text}): 未能為 ${studentToPlace} 找到與夥伴相鄰或任何合適的位置。`);
+                    }
+                }
+            });
+
+            const unassignedStudents = students.filter(s => !processedStudents.has(s.name) && getStudentByName(s.name));
+            let availableSeatsForRandomFill = physicalSeatMap.map(s => s.seatNumber)
+                .filter(sNum => !occupiedSeatsMap[sNum])
+                .sort((a,b) => a-b); 
+
+            unassignedStudents.sort(() => Math.random() - 0.5); 
+
+            unassignedStudents.forEach(sObj => {
+                const sName = sObj.name;
+                if (processedStudents.has(sName)) return; 
+
+                let assignedRandom = false;
+                for (let i = 0; i < availableSeatsForRandomFill.length; i++) {
+                    const seat = availableSeatsForRandomFill[i];
+                    if (satisfiesAllConstraints(seat, sName, occupiedSeatsMap, criteria, null)) {
+                        if (assign(sName, seat, true)) { 
+                            availableSeatsForRandomFill.splice(i, 1); 
+                            assignedRandom = true;
+                            break;
+                        }
+                    }
+                }
+                 if (!assignedRandom) {
+                    const fallBackSeatAttempt = physicalSeatMap.map(s => s.seatNumber).filter(s => !occupiedSeatsMap[s])[0];
+                    if (fallBackSeatAttempt) {
+                        let hardConflict = false;
+                        for (const rule of criteria) {
+                            if (rule.type === 'fixedSeat' && rule.value === fallBackSeatAttempt && rule.students[0] !== sName) {
+                                hardConflict = true;
+                                break;
+                            }
+                        }
+                        if (!hardConflict && assign(sName, fallBackSeatAttempt, true)) {
+                             currentWarnings.push(`學生 ${sName} 被隨機分配至 ${fallBackSeatAttempt} (可能未完全滿足所有非強制性條件)。`);
+                             availableSeatsForRandomFill = availableSeatsForRandomFill.filter(s => s !== fallBackSeatAttempt);
+                        } else {
+                             currentWarnings.push(`隨機分配失敗: ${sName} - 沒有可用座位或存在硬性衝突。`);
+                        }
+                    } else {
+                         currentWarnings.push(`隨機分配失敗: ${sName} - 沒有可用座位。`);
+                    }
+                }
+            });
+
+            criteria.filter(crit => crit.type === 'cannotSitTogether').forEach(crit => {
+                for (let i = 0; i < crit.students.length; i++) {
+                    for (let j = i + 1; j < crit.students.length; j++) {
+                        const s1 = crit.students[i];
+                        const s2 = crit.students[j];
+                        if (seatAssignments[s1] && seatAssignments[s2] && 
+                            getAdjacentSeats(seatAssignments[s1], false).includes(seatAssignments[s2])) { 
+                            currentWarnings.push(`警告(最終檢查): ${s1} 與 ${s2} 被安排坐在一起，違反了 "${crit.text}" 条件。`);
+                        }
+                    }
+                }
+            });
+
+            warningsDiv.innerHTML = currentWarnings.length > 0 
+                ? currentWarnings.map(w => `<p>${w}</p>`).join('') 
+                : '<p>座位編排完成，未發現明顯衝突。</p>';
+            
+            const stillUnassignedAfterAllSteps = students.filter(s => !seatAssignments[s.name] && getStudentByName(s.name));
+            if (stillUnassignedAfterAllSteps.length > 0) {
+                 warningsDiv.innerHTML += `<p style="color:var(--danger-color); font-weight:bold;">警告：有 ${stillUnassignedAfterAllSteps.length} 位學生 (${stillUnassignedAfterAllSteps.map(s=>s.name).join(', ')}) 未能安排座位！</p>`;
+            }
+             if (students.length > TOTAL_SEATS && TOTAL_SEATS > 0) { 
+                warningsDiv.innerHTML += `<p style="color:var(--danger-color); font-weight:bold;">警告：學生人數 (${students.length}) 多於可用座位 (${TOTAL_SEATS})！</p>`;
+            }
+
+            updateSeatingChart();
+        });
+
+
+        function getStudentByName(studentName) {
+            return students.find(s => s.name === studentName);
+        }
+
+        function satisfiesAllConstraints(seatNum, studentNameToPlace, currentOccupiedSeats, allRules, currentRuleIdDrivingPlacement) {
+            if (seatNum === null || seatNum < 1 || seatNum > TOTAL_SEATS) return false;
+
+            if (currentOccupiedSeats[seatNum] && currentOccupiedSeats[seatNum] !== studentNameToPlace) {
+                return false; 
+            }
+
+            for (const rule of allRules) {
+                if (rule.id === currentRuleIdDrivingPlacement && 
+                    !['cannotSitTogether', 'groupPartners'].includes(rule.type)) {
+                    if (rule.type === 'fixedSeat' && rule.students[0] === studentNameToPlace && rule.value === seatNum) {
+                        continue; 
+                    }
+                    if (positionalCriteriaTypes.includes(rule.type) && rule.students.includes(studentNameToPlace)) {
+                        continue;
+                    }
+                }
+
+                if (rule.students.includes(studentNameToPlace)) { 
+                    switch (rule.type) {
+                        case 'cannotSitTogether':
+                            const otherStudentsInThisConstraint = rule.students.filter(s => s !== studentNameToPlace);
+                            for (const otherStudent of otherStudentsInThisConstraint) {
+                                const otherStudentActualSeat = currentOccupiedSeats[otherStudent] || seatAssignments[otherStudent]; 
+                                if (otherStudentActualSeat && getAdjacentSeats(seatNum, false).includes(otherStudentActualSeat)) { 
+                                    return false; 
+                                }
+                            }
+                            break;
+                        case 'fixedSeat':
+                            if (rule.students[0] === studentNameToPlace && rule.value !== seatNum && rule.id !== currentRuleIdDrivingPlacement) {
+                                return false; 
+                            }
+                            break;
+                        default: break;
+                    }
+                }
+                 if (rule.type === 'fixedSeat' && rule.value === seatNum && rule.students[0] !== studentNameToPlace) {
+                    return false; 
+                }
+            }
+            return true; 
+        }
+
+        function getKeyByValue(object, value) {
+          return Object.keys(object).find(key => object[key] === value);
+        }
+
+        exportCSVButton.addEventListener('click', () => {
+            if (TOTAL_SEATS === 0 && Object.keys(seatAssignments).length === 0) {
+                warningsDiv.innerHTML = "<p>沒有座位資料可供匯出。請先設定佈局並編排座位。</p>";
+                setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                return;
+            }
+            let csvContent = "\uFEFF"; 
+
+            csvContent += `#LAYOUT_CONFIG_TOTAL_COLS:${numTotalPhysicalColsInput.value}\n`;
+            csvContent += `#LAYOUT_CONFIG_ROWS_IN_EACH_COL:${rowsInEachColInput.value}\n`;
+            csvContent += `#LAYOUT_CONFIG_CORRIDORS_AFTER_COLS:${corridorsAfterColsInput.value}\n\n`;
+
+
+            csvContent += "座位號碼,學生姓名\n";
+            
+            let allStudentsInPlan = new Set(Object.keys(seatAssignments));
+            students.forEach(s => allStudentsInPlan.add(s.name)); 
+
+            const maxSeatNumToIterate = TOTAL_SEATS > 0 ? TOTAL_SEATS : 
+                                        (Object.values(seatAssignments).length > 0 ? Math.max(...Object.values(seatAssignments)) : 0);
+
+            for(let i=1; i<= maxSeatNumToIterate; i++){
+                const studentName = getKeyByValue(seatAssignments, i) || "";
+                csvContent += `${i},"${studentName.replace(/"/g, '""')}"\n`;
+                if (studentName) allStudentsInPlan.delete(studentName); 
+            }
+            allStudentsInPlan.forEach(unassignedStudentName => {
+                 csvContent += `,"${unassignedStudentName.replace(/"/g, '""')}"\n`; 
+            });
+
+
+            if (TOTAL_SEATS > 0 && classroomLayoutConfig && classroomLayoutConfig.length > 0 && physicalSeatMap.length > 0) {
+                csvContent += "\n課室座位分佈圖\n";
+                let headerRowCsv = [];
+                let currentLogicalColCsv = 0;
+                classroomLayoutConfig.forEach((group, grpIdx) => {
+                    for(let c=0; c < group.numCols; c++) {
+                        headerRowCsv.push(`"欄位 ${currentLogicalColCsv +1}"`);
+                        currentLogicalColCsv++;
+                    }
+                    if (grpIdx < classroomLayoutConfig.length -1) headerRowCsv.push("\"走廊\"");
+                });
+                csvContent += headerRowCsv.join(",") + "\n";
+
+                for (let r = 0; r < MAX_ROWS_IN_LAYOUT; r++) {
+                    let rowStrParts = [];
+                    let logicalColCsvCursor = 0;
+                    classroomLayoutConfig.forEach((group, grpIdx) => {
+                        for (let c = 0; c < group.numCols; c++) {
+                            const seatMapEntry = physicalSeatMap.find(smp => smp.logicalRow === r && smp.logicalCol === logicalColCsvCursor);
+                            if (seatMapEntry) {
+                                const studentName = getKeyByValue(seatAssignments, seatMapEntry.seatNumber) || "空";
+                                rowStrParts.push(`"${studentName}(${seatMapEntry.seatNumber})"`);
+                            } else {
+                                rowStrParts.push("\"\""); 
+                            }
+                            logicalColCsvCursor++;
+                        }
+                        if (grpIdx < classroomLayoutConfig.length - 1) {
+                            rowStrParts.push("\"\""); 
+                        }
+                    });
+                    csvContent += rowStrParts.join(",") + "\n";
+                }
+            }
+
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "seating_plan.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            warningsDiv.innerHTML = "<p>座位表已成功匯出為CSV檔案。</p>";
+            setTimeout(() => warningsDiv.innerHTML = '', 3000);
+        });
+
+        function exportToExcel() {
+            if (typeof XLSX === 'undefined') {
+                warningsDiv.innerHTML = '<p>錯誤：匯出Excel需要XLSX資料庫。請確保已正確引入。</p>';
+                return;
+            }
+             if (TOTAL_SEATS === 0 && students.length === 0 && Object.keys(seatAssignments).length === 0) {
+                warningsDiv.innerHTML = "<p>沒有座位或學生資料可供匯出。</p>";
+                setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            const wsDataLayoutConfig = [
+                ["ConfigKey", "ConfigValue"],
+                ["TotalPhysicalCols", numTotalPhysicalColsInput.value],
+                ["RowsInEachCol", rowsInEachColInput.value],
+                ["CorridorsAfterCols", corridorsAfterColsInput.value]
+            ];
+            const wsLayoutConfig = XLSX.utils.aoa_to_sheet(wsDataLayoutConfig);
+            wsLayoutConfig['!cols'] = [{wch: 20}, {wch: 30}]; 
+            XLSX.utils.book_append_sheet(wb, wsLayoutConfig, "LayoutConfig");
+
+
+            const wsDataAssignments = [["座位號碼", "學生姓名"]];
+            let allStudentsInPlanExcel = new Set(Object.keys(seatAssignments));
+            students.forEach(s => allStudentsInPlanExcel.add(s.name));
+
+            const maxSeatNumToIterateExcel = TOTAL_SEATS > 0 ? TOTAL_SEATS : 
+                                            (Object.values(seatAssignments).length > 0 ? Math.max(...Object.values(seatAssignments)) : 0);
+
+            for (let i = 1; i <= maxSeatNumToIterateExcel; i++) {
+                const studentName = getKeyByValue(seatAssignments, i) || "";
+                wsDataAssignments.push([i, studentName]);
+                if(studentName) allStudentsInPlanExcel.delete(studentName);
+            }
+            allStudentsInPlanExcel.forEach(unassignedStudentName => {
+                wsDataAssignments.push(["", unassignedStudentName]); 
+            });
+
+            const wsAssignments = XLSX.utils.aoa_to_sheet(wsDataAssignments);
+            wsAssignments['!cols'] = [{wch: 10}, {wch: 20}];
+            XLSX.utils.book_append_sheet(wb, wsAssignments, "座位列表");
+
+            if (TOTAL_SEATS > 0 && classroomLayoutConfig && classroomLayoutConfig.length > 0 && physicalSeatMap.length > 0) {
+                const wsDataVisualLayout = [];
+                let headerRowExcel = [];
+                let currentLogicalColExcel = 0;
+                classroomLayoutConfig.forEach((group, grpIdx) => {
+                    for(let c=0; c < group.numCols; c++) {
+                        headerRowExcel.push(`欄位 ${currentLogicalColExcel +1}`);
+                        currentLogicalColExcel++;
+                    }
+                    if (grpIdx < classroomLayoutConfig.length -1) headerRowExcel.push("走廊");
+                });
+                wsDataVisualLayout.push(headerRowExcel);
+
+                for (let r = 0; r < MAX_ROWS_IN_LAYOUT; r++) {
+                    let rowDataExcel = [];
+                    let logicalColExcelCursor = 0;
+                    classroomLayoutConfig.forEach((group, grpIdx) => {
+                        for (let c = 0; c < group.numCols; c++) {
+                            const seatMapEntry = physicalSeatMap.find(smp => smp.logicalRow === r && smp.logicalCol === logicalColExcelCursor);
+                            if (seatMapEntry) {
+                                const studentName = getKeyByValue(seatAssignments, seatMapEntry.seatNumber) || "空";
+                                rowDataExcel.push(`${studentName}(${seatMapEntry.seatNumber})`);
+                            } else {
+                                rowDataExcel.push("");
+                            }
+                            logicalColExcelCursor++;
+                        }
+                        if (grpIdx < classroomLayoutConfig.length - 1) {
+                            rowDataExcel.push(""); 
+                        }
+                    });
+                    wsDataVisualLayout.push(rowDataExcel);
+                }
+                const wsVisualLayout = XLSX.utils.aoa_to_sheet(wsDataVisualLayout);
+                const colWidthsVisual = headerRowExcel.map((_, i) => ({ 
+                    wch: wsDataVisualLayout.reduce((w, row) => Math.max(w, row[i] ? row[i].toString().length : 10), 15) 
+                }));
+                wsVisualLayout['!cols'] = colWidthsVisual;
+                XLSX.utils.book_append_sheet(wb, wsVisualLayout, "課室座位分佈圖");
+            }
+
+
+            XLSX.writeFile(wb, "seating_plan.xlsx");
+            warningsDiv.innerHTML = "<p>座位表已成功匯出為Excel檔案。</p>";
+            setTimeout(() => warningsDiv.innerHTML = '', 3000);
+        }
+
+        function handleSeatingPlanUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const fileName = file.name.toLowerCase();
+            const reader = new FileReader();
+            let localWarnings = [];
+
+            reader.onload = function(e) {
+                let parsedData = { studentsFromPlan: [], assignmentsFromPlan: {}, layoutFromPlan: null };
+                try {
+                    if (fileName.endsWith('.csv')) {
+                        parsedData = parseSeatingPlanCSV(e.target.result);
+                    } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                        if (typeof XLSX === 'undefined') {
+                            localWarnings.push('錯誤：處理Excel文件需要XLSX資料庫。');
+                            warningsDiv.innerHTML = localWarnings.map(w => `<p>${w}</p>`).join('');
+                            event.target.value = null; return;
+                        }
+                        parsedData = parseSeatingPlanExcel(e.target.result);
+                    } else {
+                        localWarnings.push('錯誤：不支援的座位表檔案格式。');
+                        warningsDiv.innerHTML = localWarnings.map(w => `<p>${w}</p>`).join('');
+                        return;
+                    }
+
+                    if (parsedData.layoutFromPlan && 
+                        parsedData.layoutFromPlan.totalCols &&
+                        parsedData.layoutFromPlan.rowsPerCol) { 
+                        numTotalPhysicalColsInput.value = parsedData.layoutFromPlan.totalCols;
+                        rowsInEachColInput.value = parsedData.layoutFromPlan.rowsPerCol;
+                        corridorsAfterColsInput.value = parsedData.layoutFromPlan.corridors || ""; 
+                        parseSimpleLayoutInputAndApply(); 
+                        localWarnings.push('已從檔案更新課室佈局。');
+                    } else {
+                        localWarnings.push('檔案中未找到有效佈局資訊，或佈局資訊不完整。使用現有佈局或預設佈局。');
+                        if (TOTAL_SEATS === 0) parseSimpleLayoutInputAndApply(); 
+                    }
+
+                    if (parsedData.studentsFromPlan && parsedData.studentsFromPlan.length > 0) {
+                        students = parsedData.studentsFromPlan.map((name, idx) => ({ id: idx + 1, name: name.trim() })).filter(s => s.name);
+                        localWarnings.push('學生名單已根據上載的座位表更新。');
+                    } else {
+                        if (Object.keys(parsedData.assignmentsFromPlan || {}).length > 0) {
+                            const studentsFromAssignments = Object.keys(parsedData.assignmentsFromPlan);
+                            students = studentsFromAssignments.map((name, idx) => ({ id: idx + 1, name: name.trim() })).filter(s => s.name);
+                            localWarnings.push('從座位分配中提取學生名單。');
+                        } else {
+                            students = []; 
+                            localWarnings.push('上載的座位表不包含學生資訊，或學生名單為空。現有學生名單已清除 (如有)。');
+                        }
+                    }
+                    initializeStudentList(); 
+
+                    seatAssignments = {}; 
+                    const tempAssignments = parsedData.assignmentsFromPlan || {};
+                    let maxSeatInFile = 0;
+                    Object.keys(tempAssignments).forEach(studentName => {
+                        const seatNum = parseInt(tempAssignments[studentName]);
+                        if (studentName.trim() && !isNaN(seatNum) && seatNum > 0) {
+                            seatAssignments[studentName.trim()] = seatNum;
+                            if (seatNum > maxSeatInFile) maxSeatInFile = seatNum;
+                        }
+                    });
+                    
+                    if (maxSeatInFile > TOTAL_SEATS && TOTAL_SEATS > 0) {
+                        localWarnings.push(`警告：上載的座位表包含的座位號碼 (${maxSeatInFile}) 超出現有佈局的總座位數 (${TOTAL_SEATS})。部分座位可能無法正確顯示。`);
+                    } else if (TOTAL_SEATS === 0 && maxSeatInFile > 0) {
+                         localWarnings.push(`警告：課室佈局未定義，但座位表包含座位分配。請先設定佈局以正確顯示。`);
+                    }
+
+                    updateSeatingChart(); 
+
+                    localWarnings.push(`座位表 "${file.name}" 已成功上載並嘗試套用。`);
+
+                } catch (error) {
+                    localWarnings.push(`處理座位表檔案時發生錯誤: ${error.message}`);
+                } finally {
+                     warningsDiv.innerHTML = localWarnings.map(w => `<p>${w}</p>`).join('');
+                     setTimeout(() => { 
+                         if(warningsDiv.textContent.includes("已成功上載並嘗試套用")) warningsDiv.innerHTML = '';
+                     }, 7000); 
+                     event.target.value = null; 
+                }
+            };
+
+            if (fileName.endsWith('.csv')) reader.readAsText(file, 'UTF-8');
+            else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) reader.readAsArrayBuffer(file);
+        }
+
+        function parseSeatingPlanCSV(csvText) {
+            const lines = csvText.split(/[\r\n]+/).filter(line => line.trim() !== '');
+            let localAssignments = {};
+            let localStudentNames = new Set();
+            let localLayout = { totalCols: null, rowsPerCol: null, corridors: null };
+            let readingAssignments = false;
+            let foundAssignmentsHeader = false;
+
+            lines.forEach(line => {
+                const trimmedLine = line.trim().replace(/\uFEFF/g, ''); 
+                if (trimmedLine.startsWith("#LAYOUT_CONFIG_TOTAL_COLS:")) {
+                    localLayout.totalCols = trimmedLine.split(':')[1]?.trim();
+                } else if (trimmedLine.startsWith("#LAYOUT_CONFIG_ROWS_IN_EACH_COL:")) {
+                    localLayout.rowsPerCol = trimmedLine.split(':')[1]?.trim();
+                } else if (trimmedLine.startsWith("#LAYOUT_CONFIG_CORRIDORS_AFTER_COLS:")) {
+                    localLayout.corridors = trimmedLine.split(':')[1]?.trim();
+                } else if (trimmedLine.toLowerCase() === "座位號碼,學生姓名") {
+                    readingAssignments = true; 
+                    foundAssignmentsHeader = true;
+                    return; 
+                } else if (trimmedLine.toLowerCase().startsWith("課室座位分佈圖")) {
+                     readingAssignments = false; 
+                     return;
+                }
+
+                if (readingAssignments || (!foundAssignmentsHeader && !trimmedLine.startsWith("#") && trimmedLine.includes(","))) {
+                    const parts = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || []; 
+                    if (parts.length >= 1) { 
+                        const seatNumStr = parts[0].trim();
+                        let studentName = (parts[1] || "").replace(/^"|"$/g, '').trim(); 
+                        
+                        const seatNum = parseInt(seatNumStr);
+
+                        if (!isNaN(seatNum) && seatNum > 0 && studentName && studentName !== "空") {
+                            localAssignments[studentName] = seatNum;
+                            localStudentNames.add(studentName);
+                        } else if (studentName && studentName !== "空" && (seatNumStr === "" || isNaN(seatNum))) {
+                            localStudentNames.add(studentName);
+                        }
+                    }
+                }
+            });
+            return {
+                studentsFromPlan: Array.from(localStudentNames),
+                assignmentsFromPlan: localAssignments,
+                layoutFromPlan: (localLayout.totalCols && localLayout.rowsPerCol) ? localLayout : null 
+            };
+        }
+
+        function parseSeatingPlanExcel(arrayBuffer) {
+            if (typeof XLSX === 'undefined') throw new Error("XLSX library is not loaded.");
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            let localAssignments = {};
+            let localStudentNames = new Set();
+            let localLayout = { totalCols: null, rowsPerCol: null, corridors: null };
+
+            if (workbook.SheetNames.includes("LayoutConfig")) {
+                const layoutWorksheet = workbook.Sheets["LayoutConfig"];
+                const layoutJson = XLSX.utils.sheet_to_json(layoutWorksheet, { header: 1 });
+                layoutJson.forEach(row => {
+                    if (!Array.isArray(row) || row.length < 2) return;
+                    const key = row[0]?.toString().trim();
+                    const value = row[1]?.toString().trim();
+                    if (key === "TotalPhysicalCols") localLayout.totalCols = value;
+                    if (key === "RowsInEachCol") localLayout.rowsPerCol = value;
+                    if (key === "CorridorsAfterCols") localLayout.corridors = value;
+                });
+            }
+
+            let assignmentWorksheet;
+            if (workbook.SheetNames.includes("座位列表")) {
+                assignmentWorksheet = workbook.Sheets["座位列表"];
+            } else {
+                const firstSheetName = workbook.SheetNames[0];
+                if (firstSheetName && firstSheetName !== "LayoutConfig" && firstSheetName !== "課室座位分佈圖") {
+                    assignmentWorksheet = workbook.Sheets[firstSheetName];
+                } else if (workbook.SheetNames.length > 1) { 
+                    const secondSheetName = workbook.SheetNames[1];
+                     if (secondSheetName && secondSheetName !== "LayoutConfig" && secondSheetName !== "課室座位分佈圖") {
+                        assignmentWorksheet = workbook.Sheets[secondSheetName];
+                     }
+                }
+            }
+
+
+            if (assignmentWorksheet) {
+                const assignmentJson = XLSX.utils.sheet_to_json(assignmentWorksheet, { header: 1 });
+                if (assignmentJson.length > 0) {
+                    let headerRowIndex = assignmentJson.findIndex(row =>
+                        Array.isArray(row) &&
+                        row[0]?.toString().trim().toLowerCase() === "座位號碼" &&
+                        row[1]?.toString().trim().toLowerCase() === "學生姓名"
+                    );
+                    
+                    let startDataRow = 0;
+                    if (headerRowIndex !== -1) {
+                        startDataRow = headerRowIndex + 1;
+                    } else {
+                        if (assignmentJson[0] && assignmentJson[0].length >=2 &&
+                            !isNaN(parseInt(assignmentJson[0][0]?.toString().trim())) &&
+                            typeof assignmentJson[0][1]?.toString().trim() === 'string' ) {
+                            startDataRow = 0;
+                        } else {
+                            startDataRow = assignmentJson.length; 
+                        }
+                    }
+
+                    for (let i = startDataRow; i < assignmentJson.length; i++) {
+                        const row = assignmentJson[i];
+                        if (row && row.length >= 1) { 
+                            const seatNumStr = row[0]?.toString().trim();
+                            const studentName = (row[1] || "")?.toString().trim(); 
+                            const seatNum = parseInt(seatNumStr);
+
+                            if (!isNaN(seatNum) && seatNum > 0 && studentName && studentName !== "空") {
+                                localAssignments[studentName] = seatNum;
+                                localStudentNames.add(studentName);
+                            } else if (studentName && studentName !== "空" && (seatNumStr === "" || isNaN(seatNum))) {
+                                localStudentNames.add(studentName);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return {
+                studentsFromPlan: Array.from(localStudentNames),
+                assignmentsFromPlan: localAssignments,
+                layoutFromPlan: (localLayout.totalCols && localLayout.rowsPerCol) ? localLayout : null
+            };
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const criteriaSelect = document.getElementById('criteriaType');
+            const implementedValues = ["fixedSeat", "cannotSitTogether", "sitFrontRow", "sitLastRow", "sitLeftSide", "sitRightSide", "nearTeacher", "farFromTeacher", "groupPartners"];
+            for (let i = criteriaSelect.options.length - 1; i >= 0; i--) {
+                if (!implementedValues.includes(criteriaSelect.options[i].value)) {
+                    criteriaSelect.remove(i);
+                }
+            }
+
+            parseSimpleLayoutInputAndApply(); 
+            initializeStudentList(); 
+            updateCriteriaInputs(); 
+            renderCriteriaList(); 
+            criteriaTypeSelect.addEventListener('change', updateCriteriaInputs);
+        });
+
+    </script>
+</body>
+</html>
