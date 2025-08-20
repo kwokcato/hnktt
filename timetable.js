@@ -318,7 +318,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                         const hasBM = dayLessons.some(l => l.subject.includes('BM'));
                         
-                        if (hasChem) {
+                        if (hasChem && hasIct) {
+                            tableHTML += `<td>
+                                <div>
+                                    <span style="color:blue;font-size:12px">X2/X3<br></span>
+                                    <span style="font-size:8px">(${teachers})</span>
+                                </div>
+                            </td>`;
+                        } else if (hasChem) {
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue;font-size:12px">X2<br></span>
@@ -551,7 +558,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                             const hasBM = dayLessons.some(l => l.subject.includes('BM'));
                             
-                            if (hasChem) {
+                            if (hasChem && hasIct) {
+                                row.push(`X2/X3 (${teachers})`);
+                            } else if (hasChem) {
                                 row.push(`X2 (${teachers})`);
                             } else if (hasIct) {
                                 row.push(`X3 (${teachers})`);
@@ -856,7 +865,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                         
-                        if (hasChem) {
+                        if (hasChem && hasIct) {
+                            tableHTML += `<td>
+                                <div class="main-lesson">
+                                    <span class="subject" style="color:blue;font-size:14px;">X2/X3<bR></span>
+                                    <span class="teacher" style="font-size:10px;">(${teachers})</span>
+                                </div>
+                            </td>`;
+                        } else if (hasChem) {
                             tableHTML += `<td>
                                 <div class="main-lesson">
                                     <span class="subject" style="color:blue;font-size:14px;">X2<bR></span>
@@ -1025,6 +1041,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isClassQuery) {
             let subject = lesson.subject;
             if (subject.includes('BM') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
+            
             if (subject.includes('CHEM')) subject = 'X2';
             if (subject.includes('ICT')) subject = 'X3';
             return `<span class="subject" style="color:blue;font-size:12px;">${subject}</span> <span class="teacher" style="font-size:10px;">(${lesson.teacher})</span>`;
