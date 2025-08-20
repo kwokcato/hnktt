@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="hnkstyle.css">
+    <title>教師/班別時間表查詢</title>
+   <script>
+    // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
+    const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 假設的網域名稱，請務必修改
+
+    // 解碼 JWT
+    function decodeJwtResponse(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // 檢查 sessionStorage 中是否有有效的登入憑證
+    const id_token = window.sessionStorage.getItem('google_id_token');
+    let is_authenticated = false;
+
+    if (id_token) {
+        const payload = decodeJwtResponse(id_token);
+        // 檢查憑證是否存在、網域是否正確，以及憑證是否已過期
+        // if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp * 1000 > Date.now()) {
+        if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp && (payload.exp * 1000) > Date.now()) {
+            is_authenticated = true;
+        }
+    }
+
+    // 如果未通過驗證，則導向到主登入頁面
+    if (!is_authenticated) {
+        // 使用 window.top 來確保是整個視窗跳轉，而不是只有 iframe 跳轉
+        window.top.location.href = 'index.html';
+    }
+    </script>
+ 
+    <style>
+        #result h3 {
+            margin: 5px 0;  /* 減少上下邊距 */
+            padding: 0;     /* 移除內邊距 */
+        }
+    
+        #timetable {
+            margin-top: 0;  /* 移除表格上方的邊距 */
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0px; <!-- 20px -->
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 0px; <!-- 20px -->
+        }
+        .input-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background-color: #f5f5f5;
+            padding: 7px; <!-- 15px -->
+            border-radius: 5px;
+            flex-wrap: wrap;
+        }
+        .dropdown-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-grow: 1;
+            position: relative;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px; <!-- 20px -->
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            width: 18ch;
+            max-width: 18ch;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        .period-col {
+            width: 4ch !important;
+            max-width: 4ch;
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        .time-col {
+            width: 10ch !important;
+            max-width: 10ch;
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        .period-col {
+            width: 5ch !important;
+            max-width: 5ch;
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+        .empty-cell {
+            background-color: #ffffff;
+        }
+        .break-cell {
+            background-color: #e6e6e6;
+            color: #777;
+            font-style: italic;
+        }
+        .main-lesson {
+            font-weight: bold;
+            white-space: normal;
+            word-wrap: break-word;
+            display: inline-block;
+            max-width: 100%;
+            text-align: center;
+        }
+        .co-teachers {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .dismissal-time {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+        }
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        input {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            width: 120px; <!-- 200px -->
+        }
+        .hidden {
+            display: none;
+        }
+        .export-btn {
+            padding: 10px 15px;
+            margin: 0 5px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .export-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        /* 上方按鈕組靠右對齊 */
+        .dropdown-group #exportBtnGroup {
+            margin-left: auto;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        /* 下方按鈕組置中對齊 */
+        .container > #exportBtnGroup {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+    
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+    <script>
+        document.addEventListener('keydown', (e) => {
+            // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.key === 'u') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'J')
+            ) {
+                e.preventDefault();
+            }
+        });
+    </script>
+    <div class="refresh-btn" title="重整頁面">
+        <div class="refresh-icon"></div>
+    </div>
+    
+    <script>
+        document.querySelector('.refresh-btn').addEventListener('click', function() {
+            // 添加簡單的動畫效果
+            this.style.transform = 'scale(1.2) rotate(360deg)';
+            this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
+            
+            // 1秒後重整頁面
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        });
+    </script>
+    <div class="container">
+        <B>教師/班別時間表查詢</B>
+              
+        <div class="input-section">
+            <input type="text" id="teacherName" placeholder="輸入教師姓名或班別 (如 1A)">
+            
+            <div class="dropdown-group">
+                <span>或</span>
+                <select id="teacherDropdown">
+                    <option value="">選擇教師...</option>
+                </select>
+                <span>或</span>
+                <select id="classDropdown">
+                    <option value="">選擇班別...</option>
+                </select>
+                <!-- 上方按鈕組 (靠右對齊) -->
+                <div id="exportBtnGroup"></div>
+                <!-- 重新下載 JS 檔案 -->
+                <!-- <button id="reloadBtn" class="export-btn">重新下載資料庫</button> -->
+            </div>
+        </div>
+        
+        <div id="result"></div>
+        <table id="timetable">
+            <div id="loading">載入時間表數據中...</div>
+            <!-- 時間表將在這裡動態生成 -->
+        </table>
+
+
+        <!-- 下方按鈕組 (置中對齊) -->
+        <!-- <div id="exportBtnGroup"></div> -->
+        
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- <script src="timetable.js"></script> -->
+    <!-- <script src="timetable.js?v=${new Date().getTime()}"></script> -->
+    <script>
+        document.write('<script src="timetable.js?t=' + new Date().getTime() + '"><\/script>');
+    </script>
+</body>
+</html>
