@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         // 檢查是否有CHEM或ICT科目
                         const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
-                        const hasBM = dayLessons.some(l => l.subject.includes('BM'));
+                        const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
                         
                         if (hasChem && hasIct) {
                             tableHTML += `<td>
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <span style="font-size:7px">(${teachers})</span>
                                 </div>
                             </td>`;
-                        } else if (hasBM && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
+                        } else if (hasPHY && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue;font-size:12px">X1<br></span>
@@ -556,7 +556,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
-                            const hasBM = dayLessons.some(l => l.subject.includes('BM'));
+                            const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
                             
                             if (hasChem && hasIct) {
                                 row.push(`X2/X3 (${teachers})`);
@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 row.push(`X2 (${teachers})`);
                             } else if (hasIct) {
                                 row.push(`X3 (${teachers})`);
-                            } else if (hasBM && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
+                            } else if (hasPHY && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
                                 row.push(`X1 (${teachers})`);
                             } else if (hasMaup) {
                                 row.push(`MAUP (${teachers})`);
@@ -646,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatLessonForExport(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
-            if (subject.includes('BM') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
+            if (subject.includes('PHY') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
             if (subject.includes('CHEM')) subject = 'X2';
             if (subject.includes('ICT')) subject = 'X3';
             return `<span style="color:blue;font-size:12px">${subject}<br></span> <span style="font-size:8px">(${lesson.teacher})</span>`;
@@ -861,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(','); // '/'
                         
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
-                        const hasBM = dayLessons.some(l => l.subject.includes('BM'));
+                        const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
                         const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                         
@@ -886,7 +886,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                 </div>
                             </td>`;
-                        } else if (hasBM && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
+                        } else if (hasPHY && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
                             tableHTML += `<td>
                                 <div class="main-lesson">
                                     <span class="subject" style="color:blue;font-size:14px;">X1<br></span>
@@ -1040,7 +1040,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatLesson(lesson, isClassQuery) {
         if (isClassQuery) {
             let subject = lesson.subject;
-            if (subject.includes('BM') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
+            if (subject.includes('PHY') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
             
             if (subject.includes('CHEM')) subject = 'X2';
             if (subject.includes('ICT')) subject = 'X3';
