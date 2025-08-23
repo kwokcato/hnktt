@@ -452,8 +452,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="text-align:left;margin-top:10px;font-size:9px;">
                         <strong>Form 4:</strong><br>
                         X1: PHY<sub>(PHY)</sub>/BM<sub>(R204)</sub> / ACC<sub>(R203)</sub> / ERS<sub>(R401)</sub> / VAD<sub>(AD)</sub><br>
-                        X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R204)</sub> / ECON<sub>(R203)</sub> / HMSC<sub>(R401)</sub><br>
-                        X3: BIO3<sub>(BIO/R201/BIO)</sub> / ERS3<sub>(R401)</sub> / ICT<sub>(CR2)</sub> / MAM2<sub>(R204)</sub> / THS<sub>(R203)</sub> / VAD3<sub>(DF)</sub><br><br>
+                        X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R204)</sub> / ECON<sub>(R203)</sub> / HMSC<sub>(R401)</sub>/ THS2<sub>(R321)</sub><br>
+                        X3: BIO3<sub>(BIO/R201/BIO)</sub> / ERS3<sub>(R401)</sub> / ICT<sub>(CR2)</sub> / MAM2<sub>(R204)</sub> / THS3<sub>(R203)</sub> / VAD3<sub>(DF)</sub><br><br>
                 </div>
             `;
         } else if (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) {
@@ -999,8 +999,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>選修科目組合:</strong><br>
                         <strong>Form 4:</strong><br>
                         X1: PHY<sub>(PHY)</sub> / BM<sub>(R204)</sub> / ACC<sub>(R203)</sub> / ERS<sub>(R401)</sub> / VAD<sub>(AD)</sub><br>
-                        X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R204)</sub> / ECON<sub>(R203)</sub> / HMSC<sub>(R401)</sub><br>
-                        X3: BIO3<sub>(BIO/R201/BIO)</sub> / ERS3<sub>(R401)</sub> / ICT<sub>(CR2)</sub> / MAM2<sub>(R204)</sub> / THS<sub>(R203)</sub> / VAD3<sub>(DF)</sub><br><br>
+                        X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R204)</sub> / ECON<sub>(R203)</sub> / HMSC<sub>(R401)</sub>/ THS2<sub>(R321)</sub><br>
+                        X3: BIO3<sub>(BIO/R201/BIO)</sub> / ERS3<sub>(R401)</sub> / ICT<sub>(CR2)</sub> / MAM2<sub>(R204)</sub> / THS3<sub>(R203)</sub> / VAD3<sub>(DF)</sub><br><br>
                         
                     </td></tr>
                 </tfoot>
