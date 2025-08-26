@@ -610,27 +610,10 @@
     }
 </style>
     <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- 重要：先載入 html2canvas，避免未定義 -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
 </head>
-<body oncontextmenu="return false;">
-    
-    <script>
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-        });
-    </script>
-    <script>
-        document.addEventListener('keydown', (e) => {
-            // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
-            if (
-                e.key === 'F12' ||
-                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
-                (e.ctrlKey && e.key === 'u') ||
-                (e.ctrlKey && e.shiftKey && e.key === 'J')
-            ) {
-                e.preventDefault();
-            }
-        });
-    </script>
+<body>
     <h1>課室座位編排系統</h1>
     <div class="container">
         <div class="sidebar">
@@ -719,6 +702,9 @@
                     <span class="tooltiptext">上載先前匯出的CSV或Excel座位表</span>
                 </label>
                 <input type="file" id="uploadSeatingPlan" accept=".csv,.xlsx,.xls" style="display: none;">
+                <!-- 新增：列印與輸出PNG -->
+                <button id="printSeating" class="secondary">列印座位表</button>
+                <button id="exportPNG" class="secondary">輸出座位表 (PNG)</button>
             </div>
         </div>
     </div>
@@ -766,6 +752,130 @@
         uploadSeatingPlanInput.addEventListener('change', handleSeatingPlanUpload);
         applySimpleLayoutConfigButton.addEventListener('click', parseSimpleLayoutInputAndApply);
 
+        // 新增事件：列印與輸出PNG
+        const printSeatingButton = document.getElementById('printSeating');
+        const exportPNGButton = document.getElementById('exportPNG');
+
+        // 安全檢查：如 html2canvas 未就緒則動態載入
+        function ensureHtml2CanvasReady() {
+            return new Promise((resolve, reject) => {
+                if (window.html2canvas) {
+                    resolve(window.html2canvas);
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                script.onload = () => resolve(window.html2canvas);
+                script.onerror = () => reject(new Error('無法載入 html2canvas CDN'));
+                document.head.appendChild(script);
+            });
+        }
+
+        if (printSeatingButton) {
+            printSeatingButton.addEventListener('click', () => {
+                if (TOTAL_SEATS === 0) {
+                    warningsDiv.innerHTML = '<p>課室佈局未定義或沒有座位。請先設定並套用佈局。</p>';
+                    setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                    return;
+                }
+                const printWin = window.open('', '_blank');
+                const title = document.title || '課室座位編排系統';
+                const classroomContainer = document.querySelector('.classroom-container');
+                const cloned = classroomContainer.cloneNode(true);
+
+                const style = `
+                    <style>
+                        * { box-sizing: border-box; }
+                        body { font-family: "Helvetica Neue","Helvetica","Arial","Microsoft JhengHei",sans-serif; margin: 0; padding: 20px; color: #343a40; }
+                        h1 { text-align: center; margin: 0 0 10px; font-size: 1.6rem; color: #0056b3; }
+                        .classroom-container { text-align: center; overflow: visible; }
+                        .blackboard { width: 80%; margin: 0 auto 15px auto; padding: 14px; background:#4A5568; color:#fff; border-radius:6px; font-size:1.1rem; }
+                        .seating-grid-container { display: inline-flex; justify-content: flex-start; gap: 0; padding: 5px; }
+                        .seat-column-group { display:flex; gap:6px; }
+                        .seat-column-group + .seat-column-group { margin-left: 20px; }
+                        .seat-column { display:flex; flex-direction:column; gap:6px; }
+                        .seat { width: 80px; height: 55px; border: 1px solid #dee2e6; border-radius:5px; background:#f0f2f5; position: relative; overflow: hidden; display:flex; align-items:center; justify-content:center; }
+                        .seat.occupied { background:#d4edda; border-color:#b8dfc5; }
+                        .seat .seat-number { position:absolute; top:3px; right:5px; font-size: 0.75rem; color:#777; }
+                        .seat .student-name { font-weight:bold; font-size: 0.875rem; padding:3px; text-align:center; line-height:1.2; }
+                        @media print {
+                            @page { size: A4; margin: 12mm; }
+                        }
+                    </style>
+                `;
+
+                printWin.document.write(`
+                    <html>
+                        <head>
+                            <meta charset="utf-8" />
+                            <title>${title} - 列印</title>
+                            ${style}
+                        </head>
+                        <body>
+                            <h1>${title}</h1>
+                            ${cloned.outerHTML}
+                        </body>
+                    </html>
+                `);
+                printWin.document.close();
+
+                printWin.onload = () => {
+                    setTimeout(() => {
+                        printWin.focus();
+                        printWin.print();
+                        printWin.close();
+                    }, 300);
+                };
+            });
+        }
+
+        if (exportPNGButton) {
+            exportPNGButton.addEventListener('click', async () => {
+                if (TOTAL_SEATS === 0) {
+                    warningsDiv.innerHTML = '<p>課室佈局未定義或沒有座位。請先設定並套用佈局。</p>';
+                    setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                    return;
+                }
+
+                try {
+                    await ensureHtml2CanvasReady(); // 確保已載入
+                } catch (e) {
+                    warningsDiv.innerHTML = `<p>輸出 PNG 失敗：${e.message}</p>`;
+                    return;
+                }
+
+                const classroomContainer = document.querySelector('.classroom-container');
+                const cloneWrapper = classroomContainer.cloneNode(true);
+                cloneWrapper.style.position = 'fixed';
+                cloneWrapper.style.left = '-99999px';
+                cloneWrapper.style.top = '0';
+                cloneWrapper.style.maxWidth = 'none';
+                const grid = cloneWrapper.querySelector('.seating-grid-container');
+                if (grid) grid.style.overflow = 'visible';
+                document.body.appendChild(cloneWrapper);
+
+                try {
+                    const canvas = await window.html2canvas(cloneWrapper, {
+                        backgroundColor: '#ffffff',
+                        scale: Math.min(2, window.devicePixelRatio || 1.5),
+                        useCORS: true
+                    });
+                    const dataURL = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = dataURL;
+                    link.download = 'seating_plan.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    warningsDiv.innerHTML = '<p>已輸出座位表 PNG 圖片。</p>';
+                    setTimeout(() => warningsDiv.innerHTML = '', 3000);
+                } catch (err) {
+                    warningsDiv.innerHTML = `<p>輸出 PNG 時發生錯誤：${err.message}</p>`;
+                } finally {
+                    document.body.removeChild(cloneWrapper);
+                }
+            });
+        }
 
         function parseSimpleLayoutInputAndApply() {
             const numColsStr = numTotalPhysicalColsInput.value.trim();
@@ -1129,7 +1239,7 @@
                  setTimeout(() => warningsDiv.innerHTML = '', 3000);
                  return;
             }
-             if (studentsForThisCriterion.length === 0 && !['fixedSeat'].includes(type) && !positionalCriteriaTypes.some(t => type === t && studentsForThisCriterion.length === 0 ) ) {
+             if (studentsForThisCriterion.length === 0 && !['fixedSeat'].includes(type) && !positionalCriteriaTypes.some(t => type === t &&學生為0 ) ) {
              }
 
 
@@ -1688,69 +1798,69 @@
                 };
 
 
-                const numPosRules = studentPositionalRules.length;
-                let maxTotalTierSum = 0;
-                studentPositionalRules.forEach(r => { maxTotalTierSum += (getMaxTierForRule(r.type) -1); });
+            const numPosRules = studentPositionalRules.length;
+            let maxTotalTierSum = 0;
+            studentPositionalRules.forEach(r => { maxTotalTierSum += (getMaxTierForRule(r.type) -1); });
 
 
-                for (let currentTierSumAttempt = 0; currentTierSumAttempt <= maxTotalTierSum; currentTierSumAttempt++) {
-                    if (placedThisStudent) break;
+            for (let currentTierSumAttempt = 0; currentTierSumAttempt <= maxTotalTierSum; currentTierSumAttempt++) {
+                if (placedThisStudent) break;
 
-                    function findTierCombinationsRecursive(ruleIdx, accumulatedSumOfTiers, tiersForRules) {
-                        if (placedThisStudent) return;
+                function findTierCombinationsRecursive(ruleIdx, accumulatedSumOfTiers, tiersForRules) {
+                    if (placedThisStudent) return;
 
-                        if (ruleIdx === numPosRules) { 
-                            if (accumulatedSumOfTiers === currentTierSumAttempt) {
-                                let candidateSeatsForCombo = physicalSeatMap.map(s => s.seatNumber).filter(sNum => !occupiedSeatsMap[sNum]);
-                                let comboIsPossible = true;
+                    if (ruleIdx === numPosRules) { 
+                        if (accumulatedSumOfTiers === currentTierSumAttempt) {
+                            let candidateSeatsForCombo = physicalSeatMap.map(s => s.seatNumber).filter(sNum => !occupiedSeatsMap[sNum]);
+                            let comboIsPossible = true;
 
-                                for (let i = 0; i < numPosRules; i++) {
-                                    const currentRule = studentPositionalRules[i];
-                                    const tierForCurrentRule = tiersForRules[i];
-                                    const seatsFromThisRuleTier = getSeatsForCriterionTier(currentRule.type, tierForCurrentRule, occupiedSeatsMap);
-                                    
-                                    candidateSeatsForCombo = candidateSeatsForCombo.filter(seat => seatsFromThisRuleTier.includes(seat));
-                                    if (candidateSeatsForCombo.length === 0) {
-                                        comboIsPossible = false;
-                                        break;
-                                    }
+                            for (let i = 0; i < numPosRules; i++) {
+                                const currentRule = studentPositionalRules[i];
+                                const tierForCurrentRule = tiersForRules[i];
+                                const seatsFromThisRuleTier = getSeatsForCriterionTier(currentRule.type, tierForCurrentRule, occupiedSeatsMap);
+                                
+                                candidateSeatsForCombo = candidateSeatsForCombo.filter(seat => seatsFromThisRuleTier.includes(seat));
+                                if (candidateSeatsForCombo.length === 0) {
+                                    comboIsPossible = false;
+                                    break;
                                 }
+                            }
 
-                                if (comboIsPossible && candidateSeatsForCombo.length > 0) {
-                                    candidateSeatsForCombo.sort(() => Math.random() - 0.5); 
-                                    for (const seat of candidateSeatsForCombo) {
-                                        if (satisfiesAllConstraints(seat, studentName, occupiedSeatsMap, criteria, studentPositionalRules[0].id )) {
-                                            if (assign(studentName, seat, true)) {
-                                                placedThisStudent = true;
-                                                return; 
-                                            }
+                            if (comboIsPossible && candidateSeatsForCombo.length > 0) {
+                                candidateSeatsForCombo.sort(() => Math.random() - 0.5); 
+                                for (const seat of candidateSeatsForCombo) {
+                                    if (satisfiesAllConstraints(seat, studentName, occupiedSeatsMap, criteria, studentPositionalRules[0].id )) {
+                                        if (assign(studentName, seat, true)) {
+                                            placedThisStudent = true;
+                                            return; 
                                         }
                                     }
                                 }
                             }
-                            return; 
                         }
+                        return; 
+                    }
 
-                        const currentRuleToAssignTier = studentPositionalRules[ruleIdx];
-                        const maxTierForThisRule = getMaxTierForRule(currentRuleToAssignTier.type);
-                        for (let t = 0; t < maxTierForThisRule; t++) {
-                            if (accumulatedSumOfTiers + t <= currentTierSumAttempt) { 
-                                tiersForRules[ruleIdx] = t;
-                                findTierCombinationsRecursive(ruleIdx + 1, accumulatedSumOfTiers + t, tiersForRules);
-                                if (placedThisStudent) return;
-                            } else {
-                                break; 
-                            }
+                    const currentRuleToAssignTier = studentPositionalRules[ruleIdx];
+                    const maxTierForThisRule = getMaxTierForRule(currentRuleToAssignTier.type);
+                    for (let t = 0; t < maxTierForThisRule; t++) {
+                        if (accumulatedSumOfTiers + t <= currentTierSumAttempt) { 
+                            tiersForRules[ruleIdx] = t;
+                            findTierCombinationsRecursive(ruleIdx + 1, accumulatedSumOfTiers + t, tiersForRules);
+                            if (placedThisStudent) return;
+                        } else {
+                            break; 
                         }
                     }
-                    findTierCombinationsRecursive(0, 0, new Array(numPosRules).fill(0));
-                } 
-
-                if (!placedThisStudent) {
-                    const rulesText = studentPositionalRules.map(r => r.text).join(' AND ');
-                    currentWarnings.push(`位置偏好 (${rulesText}): 未能為 ${studentName} 找到一個能完全滿足所有指定區域組合條件的座位。`);
                 }
-            });
+                findTierCombinationsRecursive(0, 0, new Array(numPosRules).fill(0));
+            } 
+
+            if (!placedThisStudent) {
+                const rulesText = studentPositionalRules.map(r => r.text).join(' AND ');
+                currentWarnings.push(`位置偏好 (${rulesText}): 未能為 ${studentName} 找到一個能完全滿足所有指定區域組合條件的座位。`);
+            }
+        });
             
             criteria.filter(c => c.type === 'groupPartners').forEach(c => {
                 const groupMembersInCriterion = c.students.filter(sName => getStudentByName(sName));
