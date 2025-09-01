@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Content Security Policy：使用 nonce 允許本頁內嵌腳本；允許 Google 登入與（若未來需要）CDN 腳本 -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'nonce-r4nd0m123' https://accounts.google.com https://cdnjs.cloudflare.com;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data:;
+      frame-src 'self' https://accounts.google.com;
+      connect-src 'self';
+      frame-ancestors 'self';
+      base-uri 'self';
+      form-action 'self';
+      object-src 'none';
+      upgrade-insecure-requests
+    ">
+
+    <title>時間表查詢系統 - 佛教何南金中學</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        #login-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+        #login-error {
+            color: red;
+            margin-top: 15px;
+            font-weight: bold;
+            white-space: pre-line;
+            display: none;
+        }
+        .footer {
+            margin-top: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+        @media (prefers-color-scheme: dark) {
+            html, body { background-color: #111; color: #eee; }
+            #login-container { background-color: #1c1c1c; color: #eee; box-shadow: none; }
+        }
+        @media (max-width: 480px) {
+            #login-container { padding: 20px; }
+        }
+    </style>
+
+    <!-- Google Sign-In -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div id="login-container">
+        <h1>佛教何南金中學</h1>
+        <p>請使用學校 Google 帳戶登入</p>
+        <div id="google-signin-button"></div>
+        <div id="login-error" role="alert" aria-live="polite"></div>
+    </div>
+    
+    <div class="footer">
+        <p>© <span id="current-year"></span> 佛教何南金中學 - 時間表查詢系統</p>
+    </div>
+
+    <script nonce="r4nd0m123">
+        // 參數設定
+        const CLIENT_ID = "920942611875-eikfedkn3rno9am41fi08sbqniml566c.apps.googleusercontent.com";
+        const SCHOOL_DOMAIN = "bhnkc.edu.hk";
+        const STUDENT_ACCOUNT_REGEX = /^s[a-zA-Z0-9]{7}@bhnkc\.edu\.hk$/i;
+        const TOKEN_SKEW_MS = 60 * 1000; // 時間偏移保險（1分鐘）
+        const ENABLE_DEVTOOLS_BLOCK = false;
+
+        // 選擇性：封鎖右鍵與開發者工具（預設關閉）
+        if (ENABLE_DEVTOOLS_BLOCK) {
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.addEventListener('keydown', e => {
+                if (e.key === 'F12' ||
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+                    (e.ctrlKey && e.key.toLowerCase() === 'u')) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        function decodeJwtResponse(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+                    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+                ).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) { return null; }
+        }
+        function isTokenValid(token) {
+            const p = decodeJwtResponse(token);
+            if (!p) return false;
+            const issOk = p.iss === "https://accounts.google.com" || p.iss === "accounts.google.com";
+            const audOk = p.aud === CLIENT_ID;
+            const hdOk = p.hd === SCHOOL_DOMAIN;
+            const notStudent = !STUDENT_ACCOUNT_REGEX.test(p.email || "");
+            const notExpired = p.exp && Date.now() < (p.exp * 1000 - TOKEN_SKEW_MS);
+            return issOk && audOk && hdOk && notStudent && notExpired;
+        }
+        function showLoginError(message) {
+            const el = document.getElementById('login-error');
+            el.innerText = message;
+            el.style.display = 'block';
+            if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
+            setTimeout(() => { el.style.display = 'none'; }, 5000);
+        }
+        function handleCredentialResponse(response) {
+            if (!response?.credential) {
+                showLoginError("登入失敗：無效的回應");
+                return;
+            }
+            if (!isTokenValid(response.credential)) {
+                showLoginError(`登入失敗：請使用有效且未過期的 @${SCHOOL_DOMAIN} 教職員帳戶`);
+                return;
+            }
+            sessionStorage.setItem('google_id_token', response.credential);
+            // 清理任何舊的閒置計時資料
+            sessionStorage.removeItem('inactivity.logoutAt');
+            sessionStorage.removeItem('inactivity.warningAt');
+            sessionStorage.removeItem('inactivity.lastActiveAt');
+            window.location.href = "main.html";
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            const idToken = sessionStorage.getItem('google_id_token');
+            if (idToken && isTokenValid(idToken)) {
+                window.location.href = "main.html";
+                return;
+            } else {
+                sessionStorage.removeItem('google_id_token');
+            }
+            if (window.google?.accounts?.id) {
+                google.accounts.id.initialize({
+                    client_id: CLIENT_ID,
+                    callback: handleCredentialResponse,
+                    ux_mode: "popup"
+                });
+                google.accounts.id.renderButton(
+                    document.getElementById("google-signin-button"),
+                    { type: "standard", theme: "outline", size: "large", text: "signin_with", shape: "rectangular", logo_alignment: "left" }
+                );
+                google.accounts.id.prompt(n => {
+                    if (n.isNotDisplayed() || n.isSkipped()) console.log("One Tap 未顯示或已跳過");
+                });
+            } else {
+                showLoginError("無法載入 Google 登入服務，請稍後再試。");
+            }
+        });
+
+        // 回到本頁（例如上一頁）時，若 token 已過期，避免誤導
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                const idToken = sessionStorage.getItem('google_id_token');
+                if (idToken && !isTokenValid(idToken)) {
+                    sessionStorage.removeItem('google_id_token');
+                }
+            }
+        });
+        window.addEventListener('focus', () => {
+            const idToken = sessionStorage.getItem('google_id_token');
+            if (idToken && !isTokenValid(idToken)) {
+                sessionStorage.removeItem('google_id_token');
+            }
+        });
+    </script>
+</body>
+</html>
