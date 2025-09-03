@@ -908,113 +908,125 @@
             }
             
             // 按科目生成時間表HTML
-            function generateTimetableBySubject(subject) {
-                const teachers = Array.from(subjectTeachersMap[subject] || []);
-                const subjectEntries = timetableData.filter(entry => entry.subject === subject);
+// 按科目生成時間表HTML
+function generateTimetableBySubject(subject) {
+    const teachers = Array.from(subjectTeachersMap[subject] || []);
+    const subjectEntries = timetableData.filter(entry => entry.subject === subject);
+    
+    let html = `<h2>${subject} 共同時間表</h2>`;
+    html += `<p>教師: ${teachers.join(', ')}</p>`;
+    
+    html += '<div style="overflow-x: auto;"><table>';
+    html += '<thead><tr><th>節/星期</th>';
+    allWeeks.forEach(week => {
+        html += `<th>星期 ${week}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    
+    allPeriods.forEach(period => {
+        html += `<tr><td>第 ${period} 節</td>`;
+        
+        allWeeks.forEach(week => {
+            const entries = subjectEntries.filter(
+                entry => entry.week === week && entry.period === period
+            );
+            
+            // 判斷是否為星期三第十節
+            const isWedPeriod10 = (week === 3 && period === 10);
+            const cellClass = isWedPeriod10 ? 'wed-period10' : '';
+            
+            if (entries.length > 0) {
+                const allClasses = entries.map(entry => entry.class);
+                const simplifiedClasses = simplifyClassList(allClasses);
                 
-                let html = `<h2>${subject} 共同時間表</h2>`;
-                html += `<p>教師: ${teachers.join(', ')}</p>`;
-                
-                html += '<div style="overflow-x: auto;"><table>';
-                html += '<thead><tr><th>節/星期</th>';
-                allWeeks.forEach(week => {
-                    html += `<th>星期 ${week}</th>`;
+                // 修改這裡：組合教師名稱和房間信息
+                const teachersWithRooms = entries.map(entry => {
+                    return entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher;
                 });
-                html += '</tr></thead><tbody>';
+                const uniqueTeachersWithRooms = [...new Set(teachersWithRooms)];
                 
-                allPeriods.forEach(period => {
-                    html += `<tr><td>第 ${period} 節</td>`;
-                    
-                    allWeeks.forEach(week => {
-                        const entries = subjectEntries.filter(
-                            entry => entry.week === week && entry.period === period
-                        );
-                        
-                        // 判斷是否為星期三第十節
-                        const isWedPeriod10 = (week === 3 && period === 10);
-                        const cellClass = isWedPeriod10 ? 'wed-period10' : '';
-                        
-                        if (entries.length > 0) {
-                            const allClasses = entries.map(entry => entry.class);
-                            const simplifiedClasses = simplifyClassList(allClasses);
-                            const teachersInSlot = [...new Set(entries.map(entry => entry.teacher))];
-                            
-                            html += `<td class="timetable-cell ${cellClass}">
-                                <div class="class-list">${simplifiedClasses.join(', ')}</div>
-                                <div class="teacher-names">${teachersInSlot.join(', ')}</div>
-                            </td>`;
-                        } else {
-                            html += `<td class="empty-cell ${cellClass}"></td>`;
-                        }
-                    });
-                    
-                    html += '</tr>';
-                    
-                    if (period === 2 || period === 4 || period === 7) {
-                        html += '<tr class="break-row"><td colspan="' + (allWeeks.length + 1) + '"></td></tr>';
-                    }
-                });
-                
-                html += '</tbody></table></div>';
-                timetableContainer.innerHTML = html;
+                html += `<td class="timetable-cell ${cellClass}">
+                    <div class="class-list">${simplifiedClasses.join(', ')}</div>
+                    <div class="teacher-names">${uniqueTeachersWithRooms.join(', ')}</div>
+                </td>`;
+            } else {
+                html += `<td class="empty-cell ${cellClass}"></td>`;
             }
+        });
+        
+        html += '</tr>';
+        
+        if (period === 2 || period === 4 || period === 7) {
+            html += '<tr class="break-row"><td colspan="' + (allWeeks.length + 1) + '"></td></tr>';
+        }
+    });
+    
+    html += '</tbody></table></div>';
+    timetableContainer.innerHTML = html;
+}
             
             // 按教師生成時間表HTML
-            function generateTimetableByTeachers(teachers) {
-                const teacherEntries = timetableData.filter(entry => teachers.includes(entry.teacher));
+ // 按教師生成時間表HTML
+function generateTimetableByTeachers(teachers) {
+    const teacherEntries = timetableData.filter(entry => teachers.includes(entry.teacher));
+    
+    let html = `<h2>${teachers.join(', ')} 教師組合時間表</h2>`;
+    html += '<div style="overflow-x: auto;"><table>';
+    html += '<thead><tr><th>節/星期</th>';
+    allWeeks.forEach(week => {
+        html += `<th>星期 ${week}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    
+    allPeriods.forEach(period => {
+        html += `<tr><td>第 ${period} 節</td>`;
+        
+        allWeeks.forEach(week => {
+            const entries = teacherEntries.filter(
+                entry => entry.week === week && entry.period === period
+            );
+            
+            // 判斷是否為星期三第十節
+            const isWedPeriod10 = (week === 3 && period === 10);
+            const cellClass = isWedPeriod10 ? 'wed-period10' : '';
+            
+            if (entries.length > 0) {
+                const subjectsInSlot = [...new Set(entries.map(entry => entry.subject))];
                 
-                let html = `<h2>${teachers.join(', ')} 教師組合時間表</h2>`;
-                html += '<div style="overflow-x: auto;"><table>';
-                html += '<thead><tr><th>節/星期</th>';
-                allWeeks.forEach(week => {
-                    html += `<th>星期 ${week}</th>`;
-                });
-                html += '</tr></thead><tbody>';
-                
-                allPeriods.forEach(period => {
-                    html += `<tr><td>第 ${period} 節</td>`;
+                let cellContent = '';
+                subjectsInSlot.forEach(subject => {
+                    const subjectEntries = entries.filter(entry => entry.subject === subject);
+                    const allClasses = subjectEntries.map(entry => entry.class);
+                    const simplifiedClasses = simplifyClassList(allClasses);
                     
-                    allWeeks.forEach(week => {
-                        const entries = teacherEntries.filter(
-                            entry => entry.week === week && entry.period === period
-                        );
-                        
-                        // 判斷是否為星期三第十節
-                        const isWedPeriod10 = (week === 3 && period === 10);
-                        const cellClass = isWedPeriod10 ? 'wed-period10' : '';
-                        
-                        if (entries.length > 0) {
-                            const subjectsInSlot = [...new Set(entries.map(entry => entry.subject))];
-                            
-                            let cellContent = '';
-                            subjectsInSlot.forEach(subject => {
-                                const subjectEntries = entries.filter(entry => entry.subject === subject);
-                                const allClasses = subjectEntries.map(entry => entry.class);
-                                const simplifiedClasses = simplifyClassList(allClasses);
-                                const teachersInSubject = [...new Set(subjectEntries.map(entry => entry.teacher))];
-                                
-                                cellContent += `<div>
-                                    <div class="class-list">${subject}: ${simplifiedClasses.join(', ')}</div>
-                                    <div class="teacher-names">${teachersInSubject.join(', ')}</div>
-                                </div>`;
-                            });
-                            
-                            html += `<td class="timetable-cell ${cellClass}">${cellContent}</td>`;
-                        } else {
-                            html += `<td class="empty-cell ${cellClass}"></td>`;
-                        }
+                    // 修改這裡：組合教師名稱和房間信息
+                    const teachersWithRooms = subjectEntries.map(entry => {
+                        return entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher;
                     });
+                    const uniqueTeachersWithRooms = [...new Set(teachersWithRooms)];
                     
-                    html += '</tr>';
-                    
-                    if (period === 2 || period === 4 || period === 7) {
-                        html += '<tr class="break-row"><td colspan="' + (allWeeks.length + 1) + '"></td></tr>';
-                    }
+                    cellContent += `<div>
+                        <div class="class-list">${subject}: ${simplifiedClasses.join(', ')}</div>
+                        <div class="teacher-names">${uniqueTeachersWithRooms.join(', ')}</div>
+                    </div>`;
                 });
                 
-                html += '</tbody></table></div>';
-                timetableContainer.innerHTML = html;
+                html += `<td class="timetable-cell ${cellClass}">${cellContent}</td>`;
+            } else {
+                html += `<td class="empty-cell ${cellClass}"></td>`;
             }
+        });
+        
+        html += '</tr>';
+        
+        if (period === 2 || period === 4 || period === 7) {
+            html += '<tr class="break-row"><td colspan="' + (allWeeks.length + 1) + '"></td></tr>';
+        }
+    });
+    
+    html += '</tbody></table></div>';
+    timetableContainer.innerHTML = html;
+}
             
             // 初始載入CSV
             loadCSV();
