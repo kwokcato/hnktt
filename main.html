@@ -235,8 +235,8 @@
         let inactivityTimer;      // 備用（前景時的UI倒數）
         let warningTimer;         // 備用（前景時的UI倒數）
         let countdownInterval;    // 警告視窗倒數
-        const WARNING_TIME = 60;          // 60 秒前顯示警告
-        const LOGOUT_TIME = 1800000;      // 30 分鐘（毫秒）
+        const WARNING_TIME = 120;          // 60 秒前顯示警告
+        const LOGOUT_TIME = 28800000;      // 8 小時（毫秒）
 
         // 取得 / 驗證 Token
         function decodeJwtResponse(token) {
