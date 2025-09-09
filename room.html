@@ -30,8 +30,6 @@
 
     if (id_token) {
         const payload = decodeJwtResponse(id_token);
-        // 檢查憑證是否存在、網域是否正確，以及憑證是否已過期
-        // if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp * 1000 > Date.now()) {
         if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp && (payload.exp * 1000) > Date.now()) {
             is_authenticated = true;
         }
@@ -39,14 +37,13 @@
 
     // 如果未通過驗證，則導向到主登入頁面
     if (!is_authenticated) {
-        // 使用 window.top 來確保是整個視窗跳轉，而不是只有 iframe 跳轉
         window.top.location.href = 'index.html';
     }
     </script>
  
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 80%; margin: auto; } /*1000px*/
+        .container { max-width: 80%; margin: auto; }
         h1, h2 { text-align: center; }
         label { display: block; margin-top: 10px; }
         select, input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; }
@@ -90,7 +87,6 @@
         .room-schedule td {
             vertical-align: top;
         }
-        /* 新增的樣式 */
         .room-name {
             cursor: pointer;
             transition: color 0.2s;
@@ -102,7 +98,6 @@
             color: red;
             font-weight: bold;
         }
-        /* 星期三第十節樣式 */
         .wed-period10 {
             position: relative;
             background-color: white !important;
@@ -128,6 +123,29 @@
             z-index: 1;
             color: #999 !important;
         }
+        /* 右上角重整按鈕（來自 hnkstyle.css 補強） */
+        .refresh-btn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform .3s ease, background-color .3s ease;
+            z-index: 1000;
+        }
+        .refresh-icon {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #555;
+            border-top-color: transparent;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -139,7 +157,6 @@
     </script>
     <script>
         document.addEventListener('keydown', (e) => {
-            // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
             if (
                 e.key === 'F12' ||
                 (e.ctrlKey && e.shiftKey && e.key === 'I') ||
@@ -154,18 +171,6 @@
         <div class="refresh-icon"></div>
     </div>
     
-    <script>
-        document.querySelector('.refresh-btn').addEventListener('click', function() {
-            // 添加簡單的動畫效果
-            this.style.transform = 'scale(1.2) rotate(360deg)';
-            this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
-            
-            // 1秒後重整頁面
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        });
-    </script>
     <div class="container">
         <h3>房間查詢系統</h3>
         
@@ -229,27 +234,73 @@
         let csvData = [];
         let allRooms = new Set();
         const weekdayNames = ['', '星期一', '星期二', '星期三', '星期四', '星期五'];
+
+        // 統一的 CSV 讀取函式，強制不使用快取
+        async function fetchCsvFresh(url, { retry = 1 } = {}) {
+            const cacheBuster = `t=${Date.now()}&r=${Math.random().toString(36).slice(2)}`;
+            const sep = url.includes('?') ? '&' : '?';
+            const finalUrl = `${url}${sep}${cacheBuster}`;
+            const request = new Request(finalUrl, {
+                method: 'GET',
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'Accept': 'text/plain, text/csv, */*'
+                }
+            });
+            try {
+                const response = await fetch(request);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.text();
+            } catch (err) {
+                if (retry > 0) {
+                    return fetchCsvFresh(url, { retry: retry - 1 });
+                }
+                throw err;
+            }
+        }
         
         // 初始化頁面
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            await reloadDataAndRender();
+            // 綁定右上角重整按鈕：改為重新抓取 CSV 再渲染，而非僅 location.reload
+            const btn = document.querySelector('.refresh-btn');
+            btn.addEventListener('click', async function() {
+                this.style.transform = 'scale(1.2) rotate(360deg)';
+                this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
+                try {
+                    await reloadDataAndRender();
+                } finally {
+                    setTimeout(() => {
+                        this.style.transform = '';
+                        this.style.backgroundColor = '';
+                    }, 500);
+                }
+            });
+        }
+
+        async function reloadDataAndRender() {
             await loadCSVData();
             populateRoomSelect();
             autoSelectWeekday();
-            findFreeRooms(); // 初始化顯示閒置房間
-        });
+            findFreeRooms();
+            // 若已選擇房間，重新顯示時間表
+            const currentRoom = document.getElementById('roomSelect').value;
+            if (currentRoom) showRoomSchedule();
+        }
 
         // 根據當前日期自動選擇星期
         function autoSelectWeekday() {
             const today = new Date();
             let weekday = today.getDay(); // 0=星期日, 1=星期一, ..., 6=星期六
-            
-            // 如果是週末(6=星期六, 0=星期日)，則顯示星期一
             if (weekday === 0 || weekday === 6) {
                 weekday = 1;
             }
-            
-            // 設置選擇框的值 (我們的選項是1=星期一, 2=星期二,...)
-            document.getElementById('weekday').value = weekday;
+            document.getElementById('weekday').value = String(weekday);
         }
         
         // 切換標籤頁
@@ -260,29 +311,22 @@
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
             document.getElementById(tabId).classList.add('active');
             document.querySelector(`.tab-button[onclick="switchTab('${tabId}')"]`).classList.add('active');
         }
         
-        // 載入CSV數據
+        // 載入CSV數據（強制無快取）
         async function loadCSVData() {
             showStatus('正在載入數據...', 'loading', 'roomStatusMessage');
-            
+            csvData = [];
+            allRooms = new Set();
+
             try {
-                //const response = await fetch('https://drive.google.com/uc?export=download&id=1f50DbgOa6iAiIu9iq0RTu5tplG_I6snV');
-                // const response = await fetch('tt.csv');
-				const response = await fetch('tt.csv?' + new Date().getTime());
-                if (!response.ok) {
-                    throw new Error('無法載入CSV文件');
-                }
-                const text = await response.text();
+                const text = await fetchCsvFresh('tt.csv', { retry: 1 });
                 const lines = text.trim().split('\n');
-                
-                // 跳過標題行（如果存在）
                 const startIndex = lines[0].startsWith('2025') ? 0 : 1;
                 csvData = lines.slice(startIndex).map(line => {
-                    const cleanLine = line.replace(/^\uFEFF/, ''); // 移除BOM字符
+                    const cleanLine = line.replace(/^\uFEFF/, '');
                     const parts = cleanLine.split(',');
                     return {
                         year: parts[0],
@@ -294,32 +338,33 @@
                         room: parts[6] ? parts[6].trim() : ''
                     };
                 });
-                
-                // 收集所有房間
                 csvData.forEach(item => {
                     if (item.room) {
                         allRooms.add(item.room);
                     }
                 });
-                
-                showStatus('數據載入完成', 'success', 'roomStatusMessage');
+                showStatus('數據載入完成（最新）', 'success', 'roomStatusMessage');
             } catch (error) {
                 console.error('載入CSV文件錯誤:', error);
-                showStatus(`錯誤: ${error.message}`, 'error', 'roomStatusMessage');
+                showStatus(`錯誤: 無法載入最新資料，請稍後再試 (${error.message})`, 'error', 'roomStatusMessage');
             }
         }
         
         // 填充房間選擇下拉框
         function populateRoomSelect() {
             const roomSelect = document.getElementById('roomSelect');
+            const prev = roomSelect.value;
+            roomSelect.innerHTML = '<option value="">-- 請選擇房間 --</option>';
             const sortedRooms = Array.from(allRooms).sort();
-            
             sortedRooms.forEach(room => {
                 const option = document.createElement('option');
                 option.value = room;
                 option.textContent = room;
                 roomSelect.appendChild(option);
             });
+            if (sortedRooms.includes(prev)) {
+                roomSelect.value = prev;
+            }
         }
         
         // 顯示房間時間表
@@ -332,19 +377,14 @@
             
             showStatus(`正在查詢房間 ${room} 的時間表...`, 'loading', 'roomStatusMessage');
             
-            // 篩選出該房間的所有課程
             const roomData = csvData.filter(item => item.room === room);
-            
-            // 組織數據結構：week -> period -> 課程資料 (現在可以有多個課程)
             const scheduleData = {};
             for (let week = 1; week <= 5; week++) {
                 scheduleData[week] = {};
                 for (let period = 1; period <= 10; period++) {
-                    scheduleData[week][period] = []; // 初始化為空陣列
+                    scheduleData[week][period] = [];
                 }
             }
-            
-            // 填充實際課程資料
             roomData.forEach(item => {
                 const week = parseInt(item.week);
                 const period = parseInt(item.period);
@@ -357,12 +397,10 @@
                 }
             });
             
-            // 更新UI
             document.getElementById('roomScheduleTitle').innerHTML = `房間 <span style="color: #ff0000;">${room}</span> 的時間表`;
             const tableBody = document.getElementById('roomScheduleTable');
             tableBody.innerHTML = '';
             
-            // 建立時間表 (每行一個節次，每列一個星期)
             for (let period = 1; period <= 10; period++) {
                 const row = tableBody.insertRow();
                 row.insertCell(0).textContent = `第 ${period} 節`;
@@ -371,13 +409,11 @@
                     const cell = row.insertCell(week);
                     const classInfos = scheduleData[week][period];
                     
-                    // 判斷是否為星期三第十節
                     const isWedPeriod10 = (week === 3 && period === 10);
                     if (isWedPeriod10) {
                         cell.className = 'wed-period10';
                         cell.innerHTML = '<div>(CPA 14:40 - 15:30)</div>';
                     } else if (classInfos.length > 0) {
-                        // 將相同科目但不同班別的課程分組
                         const groupedBySubject = {};
                         classInfos.forEach(info => {
                             if (!groupedBySubject[info.subject]) {
@@ -390,18 +426,14 @@
                             groupedBySubject[info.subject].teachers.add(info.teacher);
                         });
                         
-                        // 建立顯示內容
                         let content = '';
                         Object.entries(groupedBySubject).forEach(([subject, data]) => {
-                            if (content) content += '<br>'; // 不同科目間換行
+                            if (content) content += '<br>';
                             content += `${data.classes.join('/')} ${subject}`;
-                            
-                            // 如果所有教師都相同，只顯示一次
                             const teachers = Array.from(data.teachers);
                             if (teachers.length === 1) {
                                 content += ` (${teachers[0]})`;
                             } else {
-                                // 如果有多個教師，顯示所有教師
                                 content += ` (${teachers.join('/')})`;
                             }
                         });
@@ -412,10 +444,9 @@
                     }
                 }
                 
-                // 添加灰色底色的空行
                 if (period === 2 || period === 4 || period === 7) {
                     const emptyRow = tableBody.insertRow();
-                    emptyRow.style.backgroundColor = '#f0f0f0'; // 灰色底色
+                    emptyRow.style.backgroundColor = '#f0f0f0';
                     for (let i = 0; i <= 5; i++) {
                         emptyRow.insertCell(i);
                     }
@@ -423,7 +454,7 @@
             }
             
             document.getElementById('roomScheduleContainer').style.display = 'block';
-            showStatus(`房間 ${room} 的時間表查詢完成`, 'success', 'roomStatusMessage');
+            showStatus(`房間 ${room} 的時間表查詢完成（最新）`, 'success', 'roomStatusMessage');
         }
         
         // 查找閒置房間
@@ -432,8 +463,6 @@
             showStatus(`正在查找${weekdayNames[weekday]}的閒置房間...`, 'loading', 'freeRoomsStatusMessage');
             
             const periods = {};
-            
-            // 收集指定星期已使用的房間
             csvData.forEach(item => {
                 if (item.week === weekday) {
                     if (!periods[item.period]) periods[item.period] = new Set();
@@ -454,7 +483,7 @@
             }
             
             for (let i = 1; i <= 10; i++) {
-                if (weekday === '3' && i === 10) continue; // 星期三第10節跳過
+                if (weekday === '3' && i === 10) continue;
                 
                 const row = tableBody.insertRow();
                 const periodCell = row.insertCell(0);
@@ -462,13 +491,11 @@
                 
                 const roomsCell = row.insertCell(1);
                 
-                // 將每個房間名稱包裝在一個span中，並添加事件監聽器
                 freeRoomsByPeriod[i].forEach((room, index) => {
                     const roomSpan = document.createElement('span');
                     roomSpan.textContent = room;
                     roomSpan.className = 'room-name';
                     
-                    // 添加滑鼠事件
                     roomSpan.addEventListener('mouseover', function() {
                         highlightAllRooms(room);
                     });
@@ -479,7 +506,6 @@
                     
                     roomsCell.appendChild(roomSpan);
                     
-                    // 如果不是最後一個房間，添加逗號分隔
                     if (index < freeRoomsByPeriod[i].length - 1) {
                         roomsCell.appendChild(document.createTextNode(', '));
                     }
@@ -496,7 +522,7 @@
                 }
             }
             
-            showStatus(`成功找到 「${weekdayNames[weekday]}」  的閒置房間資訊`, 'success', 'freeRoomsStatusMessage');
+            showStatus(`成功找到 「${weekdayNames[weekday]}」  的閒置房間資訊（最新）`, 'success', 'freeRoomsStatusMessage');
         }
         
         // 高亮顯示所有相同房間名稱
