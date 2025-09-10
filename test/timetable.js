@@ -32,6 +32,31 @@ document.addEventListener('DOMContentLoaded', function() {
         { time: '14:40', period: '9', endTime: '15:15', isBreak: false },
         { time: '15:15', period: '10', endTime: '15:50', isBreak: false }
     ];
+
+    // 強制不使用快取的通用抓取函式（含重試）
+    async function fetchCsvFresh(url, { retry = 1 } = {}) {
+        const cacheBuster = `t=${Date.now()}&r=${Math.random().toString(36).slice(2)}`;
+        const sep = url.includes('?') ? '&' : '?';
+        const finalUrl = `${url}${sep}${cacheBuster}`;
+        const request = new Request(finalUrl, {
+            method: 'GET',
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'Accept': 'text/plain, text/csv, */*'
+            }
+        });
+        try {
+            const res = await fetch(request);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.text();
+        } catch (err) {
+            if (retry > 0) return fetchCsvFresh(url, { retry: retry - 1 });
+            throw err;
+        }
+    }
     
     // 初始化導出按鈕和字體大小控制
     function initExportButtons() {
@@ -39,21 +64,17 @@ document.addEventListener('DOMContentLoaded', function() {
             <button id="printBtn" class="export-btn">列印時間表</button>
             <button id="pdfBtn" class="export-btn">匯出PDF</button>
             <button id="excelBtn" class="export-btn">匯出Excel</button>
-            <!-- <div class="font-size-controls"> -->
-                <button id="decreaseFontBtn" class="export-btn">-</button> <!-- class="font-size-btn" -->
-                <button id="increaseFontBtn" class="export-btn">+</button> <!-- class="font-size-btn" -->
-            <!-- </div> -->
+            <button id="decreaseFontBtn" class="export-btn">-</button>
+            <button id="increaseFontBtn" class="export-btn">+</button>
         `;
         
         document.getElementById('printBtn').addEventListener('click', printTimetable);
         document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
         document.getElementById('excelBtn').addEventListener('click', exportToExcel);
         
-        // 添加字體大小控制事件
         document.getElementById('increaseFontBtn').addEventListener('click', increaseFontSize);
         document.getElementById('decreaseFontBtn').addEventListener('click', decreaseFontSize);
         
-        // 從Cookie讀取保存的字體大小
         const savedFontSize = getCookie('timetableFontSize');
         if (savedFontSize) {
             currentFontSize = parseInt(savedFontSize);
@@ -63,19 +84,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 增加字體大小
     function increaseFontSize() {
-        if (currentFontSize < 150) { // 限制最大150%
+        if (currentFontSize < 150) {
             currentFontSize += 10;
             applyFontSize();
-            setCookie('timetableFontSize', currentFontSize, 30); // 保存30天
+            setCookie('timetableFontSize', currentFontSize, 30);
         }
     }
     
     // 減少字體大小
     function decreaseFontSize() {
-        if (currentFontSize > 70) { // 限制最小70%
+        if (currentFontSize > 70) {
             currentFontSize -= 10;
             applyFontSize();
-            setCookie('timetableFontSize', currentFontSize, 30); // 保存30天
+            setCookie('timetableFontSize', currentFontSize, 30);
         }
     }
     
@@ -83,22 +104,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function applyFontSize() {
         const table = document.getElementById('timetable');
         if (!table) return;
-        
-        // 計算基礎字體大小 (基於原始大小的百分比)
         const baseSize = currentFontSize / 100;
-        
-        // 更新表格內所有文字元素的字體大小
         table.querySelectorAll('td, th').forEach(el => {
-            el.style.fontSize = `${baseSize * 11}px`; // 基礎大小11px
+            el.style.fontSize = `${baseSize * 11}px`;
         });
-        
-        // 更新特定類別的文字大小
         table.querySelectorAll('.subject').forEach(el => {
-            el.style.fontSize = `${baseSize * 14}px`; // 原始14px
+            el.style.fontSize = `${baseSize * 14}px`;
         });
-        
         table.querySelectorAll('.room, .teacher, .dismissal-time').forEach(el => {
-            el.style.fontSize = `${baseSize * 10}px`; // 原始10px
+            el.style.fontSize = `${baseSize * 10}px`;
         });
     }
     
@@ -175,9 +189,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // 使用html2pdf.js庫
         const element = document.createElement('div');
-        element.style.width = '100%'; //100%
+        element.style.width = '100%';
         element.innerHTML = `
             <h1 style="text-align:center;font-family:Arial;margin-bottom:10px;font-size:16px;">${currentTitle}</h1>
             <div style="font-size:10px;">
@@ -186,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         const opt = {
-            margin: [5, 5, 2, 2], // 上下左右邊距 5,5,5,5
+            margin: [5, 5, 2, 2],
             filename: `${currentTitle}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { 
@@ -202,12 +215,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 orientation: 'portrait',
                 compress: true
             },
-            pagebreak: { 
-                mode: ['avoid-all', 'css', 'legacy'] 
-            }
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
         
-        // 引入html2pdf庫
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
         script.onload = function() {
@@ -234,12 +244,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 scale: 1,
                 windowHeight: document.getElementById('timetable').scrollHeight + 500
             },
-            jsPDF: {
-                ...opt.jsPDF,
-                format: 'a4'
-            }
+            jsPDF: { ...opt.jsPDF, format: 'a4' }
         };
-        
         try {
             html2pdf().set(backupOpt).from(element).save();
         } catch (err) {
@@ -251,11 +257,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // 生成時間表HTML (用於PDF和列印)
     function generateTimetableHTML(lessons, isClassQuery) {
         let tableHTML = `
-            <table style="width:95%;border-collapse:collapse;margin-top:10px;font-size:10px;"> <!-- 100% -->
+            <table style="width:95%;border-collapse:collapse;margin-top:10px;font-size:10px;">
                 <thead>
                     <tr>
-                        <th style="width:40px;background-color:#3498db;color:white;font-size:9px;">Time</th>  <!-- 80 -->
-                        <th style="width:15px;background-color:#3498db;color:white;font-size:9px;">Period</th>  <!-- 30 -->
+                        <th style="width:40px;background-color:#3498db;color:white;font-size:9px;">Time</th>
+                        <th style="width:15px;background-color:#3498db;color:white;font-size:9px;">Period</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">Monday</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">Tuesday</th>
                         <th style="background-color:#3498db;color:white;font-size:9px;">Wednesday</th>
@@ -307,13 +313,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (dayLessons.length === 0) {
                     tableHTML += `<td style="background-color:#f9f9f9;"></td>`;
                 } else {
-                    // 處理班別查詢的多科目情況
                     if (isClassQuery) {
-                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(','); // '/'
-                        
-                        // 檢查是否有MAUP科目
+                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
-                        // 檢查是否有CHEM或ICT科目
                         const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                         const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                         const hasBM = dayLessons.some(l => l.subject.includes('BM'));
@@ -346,7 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <span style="font-size:7px">(${teachers})</span>
                                 </div>
                             </td>`;
-                        }else if (hasMaup) {
+                        } else if (hasMaup) {
                             tableHTML += `<td>
                                 <div>
                                     <span style="color:blue;font-size:9px">MAUP</span>
@@ -354,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </td>`;
                         } else {
-                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/'); // '/'
+                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
                             const rooms = [...new Set(dayLessons.map(l => l.room))].join(',');
                             tableHTML += `<td>
                                 <div>
@@ -365,7 +367,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             </td>`;
                         }
                     } else {
-                        // 教師查詢保持原樣
                         const firstLesson = dayLessons[0];
                         const isPE = firstLesson.subject === 'PE';
                         const isMaup = firstLesson.subject === 'MAUP';
@@ -377,11 +378,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                          lesson.subject === 'PE'
                             );
                             
-                            const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/'); // '/'
+                            const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
                             const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
                                 .filter(t => t !== firstLesson.teacher)
                                 .sort()
-                                .join(','); // '/'
+                                .join(',');
                             
                             tableHTML += `<td>
                                 <div>
@@ -411,10 +412,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
                                     .filter(t => t !== firstLesson.teacher)
                                     .sort()
-                                    .join(','); // '/'
+                                    .join(',');
                             }
 
-                            // 檢查是否有合併班別情況
                             const groupedLessons = allLessons.filter(
                                 lesson => lesson.day === day && 
                                          lesson.period === parseInt(slot.period) &&
@@ -446,7 +446,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tableHTML += `</tbody></table>`;
 
-        // Add subject information for Forms 4-6 in exports
         if (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) {
             tableHTML += `
                 <div style="text-align:left;margin-top:10px;font-size:9px;">
@@ -465,7 +464,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         X3: BIO3<sub>(BIO/R402/BIO)</sub> / ERS3<sub>(R412)</sub> / ICT<sub>(CR1)</sub> / MAM2<sub>(R413)</sub> / THS<sub>(R414)</sub> / VAD3<sub>(AD)</sub><br><br>
                 </div>
             `;
-
         } else if (currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) {
             tableHTML += `
                 <div style="text-align:left;margin-top:10px;font-size:9px;">
@@ -483,30 +481,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // 簡化班別名稱顯示
     function simplifyClassNames(classNames) {
         if (classNames.length <= 1) return classNames[0];
-        
         classNames.sort();
-        
         const gradeMap = {};
-        
         classNames.forEach(className => {
             const grade = className[0];
             const classLetter = className[1];
-            if (!gradeMap[grade]) {
-                gradeMap[grade] = [];
-            }
+            if (!gradeMap[grade]) gradeMap[grade] = [];
             gradeMap[grade].push(classLetter);
         });
-        
         let result = [];
         for (const grade in gradeMap) {
             const letters = gradeMap[grade];
             if (letters.length > 1) {
-                result.push(`${grade}${letters[0]}/${letters.slice(1).join('/')}`); // '/'
+                result.push(`${grade}${letters[0]}/${letters.slice(1).join('/')}`);
             } else {
                 result.push(`${grade}${letters[0]}`);
             }
         }
-        
         return result.join(' ');
     }
     
@@ -551,8 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     } else {
                         if (isClassQuery) {
-                            const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(','); // '/'
-                            
+                            const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
@@ -569,8 +559,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             } else if (hasMaup) {
                                 row.push(`MAUP (${teachers})`);
                             } else {
-                                const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/'); // '/'
-                                const rooms = [...new Set(dayLessons.map(l => l.room))].join(','); // '/'
+                                const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                                const rooms = [...new Set(dayLessons.map(l => l.room))].join(',');
                                 row.push(`${subjects} ${rooms} (${teachers})`);
                             }
                         } else {
@@ -585,11 +575,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                              lesson.subject === 'PE'
                                 );
                                 
-                                const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/'); // '/'
+                                const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
                                 const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
                                     .filter(t => t !== firstLesson.teacher)
                                     .sort()
-                                    .join(','); // '/'
+                                    .join(',');
                                 
                                 row.push(`${allClasses} PE${otherTeachers ? ` (${otherTeachers})` : ''}`);
                             } else if (isMaup) {
@@ -610,7 +600,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
                                         .filter(t => t !== firstLesson.teacher)
                                         .sort()
-                                        .join(','); // '/'
+                                        .join(',');
                                 }
 
                                 const groupedLessons = allLessons.filter(
@@ -700,14 +690,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return /^[1-6][A-D]$/i.test(query);
     }
     
-    // 載入 CSV 文件
+    // 載入 CSV 文件（強制使用最新）
     function loadCSV() {
-        fetch('tt.csv?' + new Date().getTime())
-            .then(response => {
-                if (!response.ok) throw new Error('網絡響應不正常');
-                return response.text();
-            })
-            .then(data => {
+        fetchCsvFresh('tt.csv', { retry: 1 })
+            .then(raw => {
+                const data = raw.replace(/^\uFEFF/, '').trim();
                 allLessons = parseCSV(data);
                 allTeachers = [...new Set(allLessons.map(item => item.teacher.trim()))].sort();
                 allClasses = [...new Set(allLessons
@@ -715,12 +702,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     .map(item => item.class.trim()))].sort();
                 populateDropdowns();
                 loadingDiv.style.display = 'none';
-                resultDiv.innerHTML = '<p>時間表數據已載入，請輸入教師姓名或班別</p>';
+                resultDiv.innerHTML = '<p>時間表數據已載入（最新），請輸入教師姓名或班別</p>';
                 initExportButtons();
             })
             .catch(error => {
                 console.error('載入CSV文件時出錯:', error);
                 loadingDiv.innerHTML = `<p style="color:red">錯誤: ${error.message}</p>`;
+                // 維持既有 1 秒後自動重試
                 setTimeout(loadCSV, 1000);
             });
     }
@@ -817,7 +805,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <tbody>
         `;
         
-        timeSlots.forEach((slot, index) => {
+        timeSlots.forEach((slot) => {
             if (slot.isBreak) {
                 tableHTML += `
                     <tr>
@@ -858,8 +846,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tableHTML += `<td class="empty-cell"></td>`;
                 } else {
                     if (isClassQuery) {
-                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(','); // '/'
-                        
+                        const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
                         const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                         const hasBM = dayLessons.some(l => l.subject.includes('BM'));
                         const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
@@ -901,8 +888,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </td>`;
                         } else {
-                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/'); // '/'
-                            const rooms = [...new Set(dayLessons.map(l => l.room))].join(','); // '/'
+                            const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                            const rooms = [...new Set(dayLessons.map(l => l.room))].join(',');
                             tableHTML += `<td>
                                 <div class="main-lesson">
                                     <span class="subject" style="color:blue;font-size:14px;">${subjects}<br></span>
@@ -923,11 +910,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                          lesson.subject === 'PE'
                             );
                             
-                            const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/'); // '/'
+                            const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
                             const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
                                 .filter(t => t !== firstLesson.teacher)
                                 .sort()
-                                .join(','); // '/'
+                                .join(',');
                             
                             tableHTML += `<td>
                                 <div class="main-lesson">
@@ -957,7 +944,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
                                     .filter(t => t !== firstLesson.teacher)
                                     .sort()
-                                    .join(','); // '/'
+                                    .join(',');
                             }
 
                             const groupedLessons = allLessons.filter(
@@ -991,7 +978,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tableHTML += `</tbody>`;
         
-        // Add subject information for Forms 4-6
         if (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) {
             tableHTML += `
                 <tfoot>
@@ -1033,7 +1019,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         timetableTable.innerHTML = tableHTML;
-        applyFontSize(); // 確保新渲染的表格應用當前字體大小
+        applyFontSize();
     }
     
     // 格式化課程顯示
@@ -1067,6 +1053,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return `<span class="subject" style="color:blue;font-size:14px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
     }
 
-    // 自動載入 CSV 文件
+    // 自動載入 CSV 文件（最新）
     loadCSV();
 });
