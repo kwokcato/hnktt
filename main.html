@@ -236,7 +236,7 @@
         let warningTimer;         // 備用（前景時的UI倒數）
         let countdownInterval;    // 警告視窗倒數
         const WARNING_TIME = 120;          // 60 秒前顯示警告
-        const LOGOUT_TIME = 28800000;      // 8 小時（毫秒）
+        const LOGOUT_TIME = 30 * 60 * 1000;      // 8 小時（毫秒）
 
         // 取得 / 驗證 Token
         function decodeJwtResponse(token) {
@@ -329,8 +329,8 @@
         }
 
         function logoutDueToInactivity() {
-            console.log("自動登出：30分鐘無活動");
-            alert("由於30分鐘無活動，系統已自動登出以確保安全。");
+            console.log("自動登出");
+            alert("由於8小時內無活動，系統已自動登出以確保安全。");
             logout();
         }
 
