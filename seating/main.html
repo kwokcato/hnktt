@@ -795,6 +795,10 @@
                 const classroomContainer = document.querySelector('.classroom-container');
                 const cloned = classroomContainer.cloneNode(true);
 
+// 儲存原始 transform 樣式，以便在列印後恢復
+            const originalTransform = classroomContainer.style.transform;
+            const originalTransformOrigin = classroomContainer.style.transformOrigin;
+
                 const style = `
                     <style>
                         * { box-sizing: border-box; }
@@ -811,7 +815,11 @@
                         .seat .seat-number { position:absolute; top:3px; right:5px; font-size: 0.75rem; color:#777; }
                         .seat .student-name { font-weight:bold; font-size: 0.875rem; padding:3px; text-align:center; line-height:1.2; }
                         @media print {
-                            @page { size: A4; margin: 12mm; }
+                            @page { size: A4 landscape; margin: 0.5cm; }
+							/* 確保容器在列印時沒有固定寬高限制 */
+							.classroom-container {
+								max-width: none !important; 
+							}
                         }
                     </style>
                 `;
@@ -1459,7 +1467,7 @@
                             seatNumSpan.textContent = seatMapEntry.seatNumber;
                             const studentNameSpan = document.createElement('span');
                             studentNameSpan.className = 'student-name';
-                            studentNameSpan.textContent = '空位';
+                            studentNameSpan.textContent = '---';
 
                             seatDiv.appendChild(seatNumSpan);
                             seatDiv.appendChild(studentNameSpan);
@@ -1508,13 +1516,13 @@
                         const sourceSeatStudentElement = sourceSeatDiv.querySelector('.student-name');
 
                         delete seatAssignments[studentNameToMove];
-                        if (studentInTargetSeat !== '空位' && studentInTargetSeat !== studentNameToMove) {
+                        if (studentInTargetSeat !== '---' && studentInTargetSeat !== studentNameToMove) {
                             sourceSeatStudentElement.textContent = studentInTargetSeat;
                             seatAssignments[studentInTargetSeat] = sourceSeatNumber;
                             makeStudentDraggableInSeat(sourceSeatStudentElement); 
                             sourceSeatDiv.classList.add('occupied');
                         } else { 
-                            sourceSeatStudentElement.textContent = '空位';
+                            sourceSeatStudentElement.textContent = '---';
                             sourceSeatDiv.classList.remove('occupied');
                             makeStudentDraggableInSeat(sourceSeatStudentElement); 
                         }
@@ -1531,7 +1539,7 @@
 
         function makeStudentDraggableInSeat(studentNameElement) {
             const seatDiv = studentNameElement.closest('.seat');
-            if (studentNameElement.textContent !== '空位') {
+            if (studentNameElement.textContent !== '---') {
                 studentNameElement.draggable = true;
                 studentNameElement.classList.add('student-in-seat');
                 const newElement = studentNameElement.cloneNode(true); 
@@ -1563,7 +1571,7 @@
                     studentNameSpan.textContent = studentAssignedThisSeat;
                     seatDiv.classList.add('occupied');
                 } else {
-                    studentNameSpan.textContent = '空位';
+                    studentNameSpan.textContent = '---';
                     seatDiv.classList.remove('occupied');
                 }
                 makeStudentDraggableInSeat(studentNameSpan); 
