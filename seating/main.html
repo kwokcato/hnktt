@@ -17,9 +17,9 @@
         --success-bg: #d4edda;
         --warning-bg: #fff3cd;
         --danger-color: #dc3545;
-        --font-size-base: 1rem; 
-        --font-size-small: 0.875rem; 
-        --font-size-smaller: 0.75rem; 
+        --font-size-base: 1.2rem; 
+        --font-size-small: 1.0rem;  //0.875rem
+        --font-size-smaller: 0.45rem; 
         --corridor-width: 20px;
     }
 
@@ -85,13 +85,13 @@
         display: block;
         margin-bottom: 3px;
         font-weight: 500;
-        font-size: var(--font-size-small);
+        font-size: var(--font-size-smaller);
     }
     .simple-layout-config-item input[type="number"],
     .simple-layout-config-item input[type="text"] {
         width: 100%;
         padding: 8px 10px;
-        font-size: var(--font-size-small);
+        font-size: var(--font-size-smaller);
         box-sizing: border-box;
     }
 
@@ -146,7 +146,7 @@
     #selectedStudentsDropZone p {
         margin: 0 0 10px 0;
         color: #555;
-        font-size: var(--font-size-small);
+        font-size: var(--font-size-smaller);
     }
     .student-pills-container {
         display: flex;
@@ -159,7 +159,7 @@
         color: var(--pill-text);
         padding: 6px 10px;
         border-radius: 15px;
-        font-size: var(--font-size-small);
+        font-size: var(--font-size-smaller);
         display: flex;
         align-items: center;
         box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -193,7 +193,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: var(--font-size-small);
+        font-size: var(--font-size-smaller);
         word-break: break-word;
     }
     .criteria-list li .remove-criterion {
@@ -228,6 +228,7 @@
         border-radius: 6px;
         font-size: 1.2rem;
         box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+		transform: scale(1, 1);
     }
 
     .seating-grid-container {
@@ -252,7 +253,7 @@
     }
 
     .seat {
-        width: 100px;
+        width: 120px;
         height: 55px;
         border: 1px solid var(--border-color);
         border-radius: 5px;
@@ -273,24 +274,34 @@
         border-color: #b8dfc5;
     }
     .seat .seat-number {
-        font-size: var(--font-size-smaller);
+        font-size: 0.6rem;//var(--font-size-smaller);
         color: #777;
         position: absolute;
-        top: 3px;
-        right: 5px;
+        top: 2px;
+        right: 2px;
+		/*transform: scale(-1, -1);*/
+		transform: scale(1, 1);
     }
     .seat .student-name {
         font-weight: bold;
-        font-size: var(--font-size-small);
+        font-size: var(--font-size-base);
         text-align: center;
         padding: 3px;
         word-break: break-all;
         line-height: 1.2;
         max-height: calc(100% - 6px);
         overflow: hidden;
+		/*transform: scale(-1, -1);*/
+		transform: scale(1, 1);
     }
     .seat.dragging-over-seat { background-color: #ffeeba; }
     .student-in-seat.dragging { opacity: 0.5; background-color: #add8e6; }
+	
+	.png-mirror .blackboard,
+    .png-mirror .seat-number,
+    .png-mirror .student-name {
+        transform: scale(-1, -1);// !important;
+    }
 
     .file-input-label {
         margin-bottom: 10px;
@@ -299,7 +310,7 @@
         background-color: var(--secondary-color);
         color: white;
         cursor: pointer;
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-smaller);
         display: inline-block;
         transition: background-color 0.2s ease;
         box-sizing: border-box;
@@ -332,7 +343,7 @@
         background-color: var(--secondary-color);
         color: white;
         cursor: pointer;
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-smaller);
         transition: background-color 0.2s ease;
         box-sizing: border-box;
         flex-grow: 1;
@@ -543,8 +554,8 @@
         h3 { font-size: 1.05rem; margin-bottom: 8px; }
 
         :root {
-            --font-size-base: 0.9rem;
-            --font-size-small: 0.8rem;
+            --font-size-base: 1.9rem;
+            --font-size-small: 1.5rem;
             --font-size-smaller: 0.65rem;
             --corridor-width: 10px;
         }
@@ -688,9 +699,10 @@
         <div class="main-content">
             <h2>課室座位表</h2>
             <div class="classroom-container">
-                <div class="blackboard">黑板</div>
+				<div class="blackboard">黑板</div>
                 <div id="seatingChart" class="seating-grid-container">
                     </div>
+
             </div>
             <div id="warnings"></div>
             <div class="actions" style="margin-top: 20px; text-align:center;">
@@ -850,14 +862,21 @@
                 cloneWrapper.style.left = '-99999px';
                 cloneWrapper.style.top = '0';
                 cloneWrapper.style.maxWidth = 'none';
+				cloneWrapper.style.transform = 'rotate(180deg)'; 
+                cloneWrapper.style.transformOrigin = 'center center';
                 const grid = cloneWrapper.querySelector('.seating-grid-container');
                 if (grid) grid.style.overflow = 'visible';
+				cloneWrapper.classList.add('png-mirror');
                 document.body.appendChild(cloneWrapper);
 
                 try {
                     const canvas = await window.html2canvas(cloneWrapper, {
                         backgroundColor: '#ffffff',
-                        scale: Math.min(2, window.devicePixelRatio || 1.5),
+                        // scale: Math.min(2, window.devicePixelRatio || 1.5),
+						scale: 4, // 【修改/新增】將 scale 設為 3 或更高 (例如 4)，以確保 PNG 具有足夠的解析度 (DPI) 進行 A4 列印。
+                        useCORS: true,
+                        allowTaint: true,
+                        logging: false,
                         useCORS: true
                     });
                     const dataURL = canvas.toDataURL('image/png');
@@ -1377,6 +1396,7 @@
             }
 
             let seatNumberCounter = 1;
+			// TOTAL_SEATS = seatNumberCounter;
             for (let r_logical = 0; r_logical < MAX_ROWS_IN_LAYOUT; r_logical++) {
                 let currentOverallPhysicalColIndexTracker = 0; 
                 for (let grpIdx = 0; grpIdx < classroomLayoutConfig.length; grpIdx++) {
@@ -1399,7 +1419,7 @@
                     }
                 }
             }
-            TOTAL_SEATS = seatNumberCounter - 1;
+             TOTAL_SEATS = seatNumberCounter + 1;
 
             seatingChartDiv.innerHTML = ''; 
             classroomLayoutConfig.forEach((group, groupIndex) => {
