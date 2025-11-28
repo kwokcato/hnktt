@@ -82,6 +82,19 @@
         .pdf-btn { background-color: #f44336; }
         #teacherInput { border: 1px solid #ddd; border-radius: 4px; font-size: 14px; margin-bottom: 10px; width: 95%; padding: 8px; }
         #teacherInput:focus { outline: none; border-color: #4CAF50; box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); }
+        
+        /* 教師名字顏色樣式 */
+        .teacher-name-color-0 { color: #1f77b4; } /* 第一位教師 - 藍色 */
+        .teacher-name-color-1 { color: #ff7f0e; } /* 第二位教師 - 橙色 */
+        .teacher-name-color-2 { color: #2ca02c; } /* 第三位教師 - 綠色 */
+        .teacher-name-color-3 { color: #d62728; } /* 第四位教師 - 紅色 */
+        .teacher-name-color-4 { color: #9467bd; } /* 第五位教師 - 紫色 */
+        .teacher-name-color-5 { color: #8c564b; } /* 第六位教師 - 棕色 */
+        .teacher-name-color-6 { color: #e377c2; } /* 第七位教師 - 粉色 */
+        .teacher-name-color-7 { color: #7f7f7f; } /* 第八位教師 - 灰色 */
+        .teacher-name-color-8 { color: #bcbd22; } /* 第九位教師 - 橄欖色 */
+        .teacher-name-color-9 { color: #17becf; } /* 第十位教師 - 青色 */
+        
         @media print {
             .form-group, .refresh-btn, .export-buttons { display: none; }
             body { margin: 0; padding: 10px; }
@@ -615,6 +628,15 @@
                 return simplified;
             }
             
+            // 新增函數：格式化教師名字，添加顏色樣式
+            function formatTeacherNames(teachersWithRooms) {
+                const uniqueTeachers = [...new Set(teachersWithRooms)];
+                return uniqueTeachers.map((teacher, index) => {
+                    const colorClass = `teacher-name-color-${index % 10}`; // 最多10種顏色循環
+                    return `<span class="${colorClass}">${teacher}</span>`;
+                }).join(', ');
+            }
+            
             function generateTimetableBySubject(subject) {
                 const teachers = Array.from(subjectTeachersMap[subject] || []);
                 const subjectEntries = timetableData.filter(entry => entry.subject === subject);
@@ -634,10 +656,10 @@
                             const allClasses = entries.map(entry => entry.class);
                             const simplifiedClasses = simplifyClassList(allClasses);
                             const teachersWithRooms = entries.map(entry => entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher);
-                            const uniqueTeachersWithRooms = [...new Set(teachersWithRooms)];
+                            const formattedTeachers = formatTeacherNames(teachersWithRooms);
                             html += `<td class="timetable-cell ${cellClass}">
                                 <div class="class-list">${simplifiedClasses.join(', ')}</div>
-                                <div class="teacher-names">${uniqueTeachersWithRooms.join(', ')}</div>
+                                <div class="teacher-names">${formattedTeachers}</div>
                             </td>`;
                         } else {
                             html += `<td class="empty-cell ${cellClass}"></td>`;
@@ -673,10 +695,10 @@
                                 const allClasses = subjectEntries.map(entry => entry.class);
                                 const simplifiedClasses = simplifyClassList(allClasses);
                                 const teachersWithRooms = subjectEntries.map(entry => entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher);
-                                const uniqueTeachersWithRooms = [...new Set(teachersWithRooms)];
+                                const formattedTeachers = formatTeacherNames(teachersWithRooms);
                                 cellContent += `<div>
                                     <div class="class-list">${subject}: ${simplifiedClasses.join(', ')}</div>
-                                    <div class="teacher-names">${uniqueTeachersWithRooms.join(', ')}</div>
+                                    <div class="teacher-names">${formattedTeachers}</div>
                                 </div>`;
                             });
                             html += `<td class="timetable-cell ${cellClass}">${cellContent}</td>`;
