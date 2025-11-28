@@ -178,21 +178,22 @@
             const allWeeks = [1, 2, 3, 4, 5];
             const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-            // --- 新增：根據教師名稱生成固定顏色的函式 ---
+            // ------------------------------------------------------------
+            // 新增：根據教師名稱產生固定顏色的函數
+            // 只要名稱相同，算出來的 HSL 色碼就會相同
+            // ------------------------------------------------------------
             function getTeacherColor(name) {
                 if (!name) return '#555';
                 let hash = 0;
                 for (let i = 0; i < name.length; i++) {
                     hash = name.charCodeAt(i) + ((hash << 5) - hash);
                 }
-                // 使用 HSL 顏色模式，固定飽和度與亮度，僅改變色相
-                // H: 0-360 (根據 Hash)
-                // S: 85% (鮮豔)
-                // L: 35% (較深，以利在白底閱讀)
+                // H: 0-360 (色相循環)
+                // S: 80% (飽和度高一點比較鮮豔)
+                // L: 35% (亮度低一點，深色字在白底較易讀)
                 const h = Math.abs(hash % 360);
-                return `hsl(${h}, 85%, 35%)`;
+                return `hsl(${h}, 80%, 35%)`;
             }
-            // -----------------------------------------
 
             // 強制不使用快取的通用抓取函式
             async function fetchCsvFresh(url, { retry = 1 } = {}) {
@@ -225,12 +226,12 @@
                 this.textContent = teachersCollapsible.classList.contains('show') ? '▲ 隱藏教師選擇' : '▼ 選擇教師';
             });
             
-            // 重整按鈕：改為重新抓取最新資料並渲染
+            // 重整按鈕
             document.querySelector('.refresh-btn').addEventListener('click', async function() {
                 this.style.transform = 'scale(1.2) rotate(360deg)';
                 this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
                 try {
-                    await loadCSV(); // 重新載入最新 tt.csv 與 agroup.csv
+                    await loadCSV();
                 } finally {
                     setTimeout(() => {
                         this.style.transform = '';
@@ -347,24 +348,6 @@
                     loading.style.display = 'none';
                 }
             }
-
-            // 舊的 XHR 方法保留未用（如需可移除）
-            function fetchCSV(filename) {
-                return new Promise((resolve, reject) => {
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('GET', filename, true);
-                    xhr.onreadystatechange = function() {
-                        if (xhr.readyState === 4) {
-                            if (xhr.status === 200) {
-                                resolve(xhr.responseText);
-                            } else {
-                                reject(new Error(`無法載入 ${filename} (狀態碼: ${xhr.status})`));
-                            }
-                        }
-                    };
-                    xhr.send(null);
-                });
-            }
             
             function processGroupCSV(csvText) {
                 csvText = csvText.replace(/^\uFEFF/, '');
@@ -469,7 +452,10 @@
                     const label = document.createElement('label');
                     label.htmlFor = `teacher-${teacher}`;
                     label.textContent = teacher;
-                    label.style.color = getTeacherColor(teacher); // 在選項中也顯示顏色 (可選)
+                    // 在選單中也顯示對應顏色 (可選)
+                    label.style.color = getTeacherColor(teacher); 
+                    label.style.fontWeight = "bold";
+
                     checkboxDiv.appendChild(checkbox);
                     checkboxDiv.appendChild(label);
                     teachersCheckboxContainer.appendChild(checkboxDiv);
@@ -636,11 +622,13 @@
                 const teachers = Array.from(subjectTeachersMap[subject] || []);
                 const subjectEntries = timetableData.filter(entry => entry.subject === subject);
                 
-                // 標題處的教師列表也上色
-                const coloredTeachersList = teachers.map(t => `<span style="color:${getTeacherColor(t)}; font-weight: bold;">${t}</span>`).join(', ');
+                // 標題下方的教師列表也套用顏色
+                const coloredTeacherList = teachers.map(t => 
+                    `<span style="color:${getTeacherColor(t)}; font-weight:bold;">${t}</span>`
+                ).join(', ');
 
                 let html = `<h2>${subject} 共同時間表</h2>`;
-                html += `<p>教師: ${coloredTeachersList}</p>`;
+                html += `<p>教師: ${coloredTeacherList}</p>`;
                 html += '<div style="overflow-x: auto;"><table>';
                 html += '<thead><tr><th>節/星期</th>';
                 allWeeks.forEach(week => { html += `<th>星期 ${week}</th>`; });
@@ -655,13 +643,15 @@
                             const allClasses = entries.map(entry => entry.class);
                             const simplifiedClasses = simplifyClassList(allClasses);
                             
-                            // *** 修改處：個別處理教師名稱與顏色 ***
+                            // *** 修改處：產生個別顏色的教師 HTML ***
                             const teacherHtmlList = entries.map(entry => {
-                                const displayText = entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher;
-                                const color = getTeacherColor(entry.teacher);
-                                return `<span style="color:${color}; font-weight: bold;">${displayText}</span>`;
+                                const tName = entry.teacher;
+                                const tRoom = entry.room;
+                                const color = getTeacherColor(tName);
+                                const displayText = tRoom ? `${tName} (${tRoom})` : tName;
+                                return `<span style="color:${color}; font-weight:bold;">${displayText}</span>`;
                             });
-                            // 使用 Set 去除重複的 HTML 字串 (例如多班級同一老師同一房)
+                            // 去重複
                             const uniqueTeacherHtml = [...new Set(teacherHtmlList)];
 
                             html += `<td class="timetable-cell ${cellClass}">
@@ -702,11 +692,13 @@
                                 const allClasses = subjectEntries.map(entry => entry.class);
                                 const simplifiedClasses = simplifyClassList(allClasses);
                                 
-                                // *** 修改處：個別處理教師名稱與顏色 ***
+                                // *** 修改處：產生個別顏色的教師 HTML ***
                                 const teacherHtmlList = subjectEntries.map(entry => {
-                                    const displayText = entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher;
-                                    const color = getTeacherColor(entry.teacher);
-                                    return `<span style="color:${color}; font-weight: bold;">${displayText}</span>`;
+                                    const tName = entry.teacher;
+                                    const tRoom = entry.room;
+                                    const color = getTeacherColor(tName);
+                                    const displayText = tRoom ? `${tName} (${tRoom})` : tName;
+                                    return `<span style="color:${color}; font-weight:bold;">${displayText}</span>`;
                                 });
                                 const uniqueTeacherHtml = [...new Set(teacherHtmlList)];
 
