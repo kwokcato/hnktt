@@ -178,6 +178,22 @@
             const allWeeks = [1, 2, 3, 4, 5];
             const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
+            // --- 新增：根據教師名稱生成固定顏色的函式 ---
+            function getTeacherColor(name) {
+                if (!name) return '#555';
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) {
+                    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                // 使用 HSL 顏色模式，固定飽和度與亮度，僅改變色相
+                // H: 0-360 (根據 Hash)
+                // S: 85% (鮮豔)
+                // L: 35% (較深，以利在白底閱讀)
+                const h = Math.abs(hash % 360);
+                return `hsl(${h}, 85%, 35%)`;
+            }
+            // -----------------------------------------
+
             // 強制不使用快取的通用抓取函式
             async function fetchCsvFresh(url, { retry = 1 } = {}) {
                 const cacheBuster = `t=${Date.now()}&r=${Math.random().toString(36).slice(2)}`;
@@ -453,6 +469,7 @@
                     const label = document.createElement('label');
                     label.htmlFor = `teacher-${teacher}`;
                     label.textContent = teacher;
+                    label.style.color = getTeacherColor(teacher); // 在選項中也顯示顏色 (可選)
                     checkboxDiv.appendChild(checkbox);
                     checkboxDiv.appendChild(label);
                     teachersCheckboxContainer.appendChild(checkboxDiv);
@@ -614,25 +631,16 @@
                 });
                 return simplified;
             }
-
-            // 新增函式：為教師列表上色
-            function getColoredTeacherHTML(teachers) {
-                // 定義顏色池：深灰(預設), 紅色, 藍色, 綠色, 紫色, 橙色
-                const colors = ['#333333', '#E91E63', '#1976D2', '#388E3C', '#9C27B0', '#F57C00'];
-                
-                return teachers.map((teacher, index) => {
-                    // 使用 index 循環取出顏色
-                    const color = colors[index % colors.length];
-                    // 將教師名稱包在 span 中並上色
-                    return `<span style="color: ${color}; font-weight: 500;">${teacher}</span>`;
-                }).join(', ');
-            }
             
             function generateTimetableBySubject(subject) {
                 const teachers = Array.from(subjectTeachersMap[subject] || []);
                 const subjectEntries = timetableData.filter(entry => entry.subject === subject);
+                
+                // 標題處的教師列表也上色
+                const coloredTeachersList = teachers.map(t => `<span style="color:${getTeacherColor(t)}; font-weight: bold;">${t}</span>`).join(', ');
+
                 let html = `<h2>${subject} 共同時間表</h2>`;
-                html += `<p>教師: ${teachers.join(', ')}</p>`;
+                html += `<p>教師: ${coloredTeachersList}</p>`;
                 html += '<div style="overflow-x: auto;"><table>';
                 html += '<thead><tr><th>節/星期</th>';
                 allWeeks.forEach(week => { html += `<th>星期 ${week}</th>`; });
@@ -646,13 +654,19 @@
                         if (entries.length > 0) {
                             const allClasses = entries.map(entry => entry.class);
                             const simplifiedClasses = simplifyClassList(allClasses);
-                            const teachersWithRooms = entries.map(entry => entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher);
-                            const uniqueTeachersWithRooms = [...new Set(teachersWithRooms)];
                             
-                            // 這裡修改為使用 getColoredTeacherHTML 函式
+                            // *** 修改處：個別處理教師名稱與顏色 ***
+                            const teacherHtmlList = entries.map(entry => {
+                                const displayText = entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher;
+                                const color = getTeacherColor(entry.teacher);
+                                return `<span style="color:${color}; font-weight: bold;">${displayText}</span>`;
+                            });
+                            // 使用 Set 去除重複的 HTML 字串 (例如多班級同一老師同一房)
+                            const uniqueTeacherHtml = [...new Set(teacherHtmlList)];
+
                             html += `<td class="timetable-cell ${cellClass}">
                                 <div class="class-list">${simplifiedClasses.join(', ')}</div>
-                                <div class="teacher-names">${getColoredTeacherHTML(uniqueTeachersWithRooms)}</div>
+                                <div class="teacher-names">${uniqueTeacherHtml.join(', ')}</div>
                             </td>`;
                         } else {
                             html += `<td class="empty-cell ${cellClass}"></td>`;
@@ -687,13 +701,18 @@
                                 const subjectEntries = entries.filter(entry => entry.subject === subject);
                                 const allClasses = subjectEntries.map(entry => entry.class);
                                 const simplifiedClasses = simplifyClassList(allClasses);
-                                const teachersWithRooms = subjectEntries.map(entry => entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher);
-                                const uniqueTeachersWithRooms = [...new Set(teachersWithRooms)];
                                 
-                                // 這裡修改為使用 getColoredTeacherHTML 函式
+                                // *** 修改處：個別處理教師名稱與顏色 ***
+                                const teacherHtmlList = subjectEntries.map(entry => {
+                                    const displayText = entry.room ? `${entry.teacher} (${entry.room})` : entry.teacher;
+                                    const color = getTeacherColor(entry.teacher);
+                                    return `<span style="color:${color}; font-weight: bold;">${displayText}</span>`;
+                                });
+                                const uniqueTeacherHtml = [...new Set(teacherHtmlList)];
+
                                 cellContent += `<div>
                                     <div class="class-list">${subject}: ${simplifiedClasses.join(', ')}</div>
-                                    <div class="teacher-names">${getColoredTeacherHTML(uniqueTeachersWithRooms)}</div>
+                                    <div class="teacher-names">${uniqueTeacherHtml.join(', ')}</div>
                                 </div>`;
                             });
                             html += `<td class="timetable-cell ${cellClass}">${cellContent}</td>`;
