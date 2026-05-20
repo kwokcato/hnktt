@@ -25,23 +25,23 @@
     }
 
     // ==========================================
-    // 【已暫停】 Google 登入驗證機制
+    // 【已重啟】 Google 登入驗證機制
     // ==========================================
     const id_token = window.sessionStorage.getItem('google_id_token');
-    let is_authenticated = true; // 強制設定為已驗證，暫時跳過驗證流程
-
-    /* 日後如需重啟，請取消以下註釋並刪除上面的 is_authenticated = true;
     let is_authenticated = false;
+
     if (id_token) {
         const payload = decodeJwtResponse(id_token);
+        // 檢查憑證是否存在、網域是否符合貴校，以及憑證是否過期
         if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp && (payload.exp * 1000) > Date.now()) {
             is_authenticated = true;
         }
     }
+
+    // 若未通過驗證，直接將最外層視窗導向登入頁 index.html
     if (!is_authenticated) {
         window.top.location.href = 'index.html';
     }
-    */
     // ==========================================
     </script>
  
@@ -316,7 +316,7 @@
         ];
 
         // ==========================================
-        // 【新增】Google Sheet JSONP 引擎核心
+        // Google Sheet JSONP 引擎核心
         // ==========================================
         window.handleGoogleSheetResponse = function(jsonData) {
             try {
@@ -328,7 +328,6 @@
                 allLessons = [];
                 
                 rows.forEach(row => {
-                    // 安全讀取試算表中的每個儲存格
                     const c = row.c;
                     if (c && c.length >= 7) {
                         allLessons.push({
@@ -343,7 +342,6 @@
                     }
                 });
 
-                // 以下接續原本的原生處理邏輯
                 allTeachers = [...new Set(allLessons.map(item => item.teacher))].sort();
                 allClasses = [...new Set(allLessons
                     .filter(item => /^[1-6][A-D]$/i.test(item.class))
@@ -362,11 +360,10 @@
 
         function loadGoogleSheetData() {
             const sheetId = '1S7RkDGhtRYcM9Tv304fqeOSz1RsQX2pzS3oNuQAVKRs';
-            // 使用 Google 官方 Visualization API 的 JSONP 模式，徹底避開 CORS 限制
             const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&t=`;
             
             const script = document.createElement('script');
-            script.src = url + Date.now(); // 加上時間戳防快取
+            script.src = url + Date.now(); 
             script.onerror = function() {
                 loadingDiv.innerHTML = `<p style="color:red">連線至 Google 伺服器失敗，正在嘗試重新連線...</p>`;
                 setTimeout(loadGoogleSheetData, 2000);
@@ -1292,7 +1289,6 @@
             return `<span class="subject" style="color:blue;font-size:14px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
         }
 
-        // 初始化：直接透過 JSONP 載入雲端試算表數據
         loadGoogleSheetData();
     });
     </script>
