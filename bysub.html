@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="hnkstyle.css">
     <title>共同時間表</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -34,12 +33,48 @@
         }
     }
 
-    if (!is_authenticated) {
-        window.top.location.href = 'index.html';
-    }
+    /* =====================================================================
+       項目 2：讓 Google Login 可暫停。
+       【目前已暫停驗證】若日後需要重新啟用 (RE-ENABLE)，只需將下方 3 行的註解記號「//」拔掉即可。
+       ===================================================================== */
+    // if (!is_authenticated) {
+    //     window.top.location.href = 'index.html';
+    // }
     </script>
  
     <style>
+        /* --- 嵌入自 hnkstyle.css 的內容 --- */
+        .refresh-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(200, 200, 200, 0.3);
+            border: 1px solid rgba(150, 150, 150, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .refresh-btn:hover {
+            background-color: rgba(200, 200, 200, 0.7);
+            transform: scale(1.1);
+        }
+        
+        .refresh-icon {
+            width: 16px;
+            height: 16px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23333333"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>');
+            background-size: contain;
+            opacity: 0.7;
+        }
+
+        /* --- 您原本 bysub.html 自帶的所有設計樣式（完全保留，未作變動） --- */
         body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
         h1 { color: #333; text-align: center; }
         .container { max-width: 1200px; margin: 0 auto; }
@@ -69,6 +104,7 @@
         .clear-all:hover { background-color: #da190b; }
         .break-row { height: 25px; }
         .empty-cell { min-width: 100px; background-color: #f9f0eb; }
+        /* 由於 hnkstyle.css 與原 refresh-btn 屬性重疊，此處保留原權重設定以確保與原版完全一致 */
         .refresh-btn { position: fixed; top: 20px; right: 20px; width: 40px; height: 40px; background-color: rgba(200, 200, 200, 0.7); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s; z-index: 100; }
         .refresh-icon { width: 24px; height: 24px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333333'%3E%3Cpath d='M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
         .collapsible { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
@@ -178,46 +214,14 @@
             const allWeeks = [1, 2, 3, 4, 5];
             const allPeriods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-            // ------------------------------------------------------------
-            // 新增：根據教師名稱產生固定顏色的函數
-            // 只要名稱相同，算出來的 HSL 色碼就會相同
-            // ------------------------------------------------------------
             function getTeacherColor(name) {
                 if (!name) return '#555';
                 let hash = 0;
                 for (let i = 0; i < name.length; i++) {
                     hash = name.charCodeAt(i) + ((hash << 5) - hash);
                 }
-                // H: 0-360 (色相循環)
-                // S: 80% (飽和度高一點比較鮮豔)
-                // L: 35% (亮度低一點，深色字在白底較易讀)
                 const h = Math.abs(hash % 360);
                 return `hsl(${h}, 80%, 35%)`;
-            }
-
-            // 強制不使用快取的通用抓取函式
-            async function fetchCsvFresh(url, { retry = 1 } = {}) {
-                const cacheBuster = `t=${Date.now()}&r=${Math.random().toString(36).slice(2)}`;
-                const sep = url.includes('?') ? '&' : '?';
-                const finalUrl = `${url}${sep}${cacheBuster}`;
-                const request = new Request(finalUrl, {
-                    method: 'GET',
-                    cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0',
-                        'Accept': 'text/plain, text/csv, */*'
-                    }
-                });
-                try {
-                    const res = await fetch(request);
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    return await res.text();
-                } catch (err) {
-                    if (retry > 0) return fetchCsvFresh(url, { retry: retry - 1 });
-                    throw err;
-                }
             }
 
             // 摺疊/展開教師選擇區
@@ -328,7 +332,57 @@
                 }
             });
             
-            // 重新載入最新 CSV
+            // =====================================================================
+            // 項目 3：修改提取 CSV 部份，轉為提取自 Google Sheets (JSONP 模式)
+            // =====================================================================
+            
+            // 全局 JSONP 回呼接收器：處理主課表 (1S7RkDGhtRYcM9Tv304fqeOSz1RsQX2pzS3oNuQAVKRs)
+            window.handleTTSheetResponse = function(jsonData) {
+                try {
+                    let csvText = "";
+                    if (jsonData && jsonData.table && jsonData.table.rows) {
+                        jsonData.table.rows.forEach(row => {
+                            if (row.c) {
+                                let rowCells = row.c.map(cell => {
+                                    if (!cell) return "";
+                                    return cell.v !== null && cell.v !== undefined ? String(cell.v).replace(/,/g, '') : "";
+                                });
+                                csvText += rowCells.join(",") + "\n";
+                            }
+                        });
+                    }
+                    processCSV(csvText);
+                } catch (e) {
+                    console.error('解析課表試算表錯誤:', e);
+                    errorMsg.textContent = '無法解析雲端課表數據';
+                    loading.style.display = 'none';
+                }
+            };
+
+            // 全局 JSONP 回呼接收器：處理科目群組 (1X6jzEUesdn_DOFufABmPeN_0SpwigFRqw8vBmkh1H38)
+            window.handleAgroupSheetResponse = function(jsonData) {
+                try {
+                    let csvText = "";
+                    if (jsonData && jsonData.table && jsonData.table.rows) {
+                        jsonData.table.rows.forEach(row => {
+                            if (row.c) {
+                                let rowCells = row.c.map(cell => {
+                                    if (!cell) return "";
+                                    return cell.v !== null && cell.v !== undefined ? String(cell.v).replace(/,/g, '') : "";
+                                });
+                                csvText += rowCells.join(",") + "\n";
+                            }
+                        });
+                    }
+                    processGroupCSV(csvText);
+                } catch (e) {
+                    console.error('解析群組試算表錯誤:', e);
+                    errorMsg.textContent = '無法解析雲端群組數據';
+                    loading.style.display = 'none';
+                }
+            };
+
+            // 替代原來的 fetchCsvFresh，改以動態 Script 注入獲取雲端試算表
             async function loadCSV() {
                 loading.style.display = 'block';
                 errorMsg.textContent = '';
@@ -336,19 +390,40 @@
                 exportButtons.style.display = 'none';
 
                 try {
-                    const [ttData, agroupData] = await Promise.all([
-                        fetchCsvFresh('tt.csv', { retry: 1 }),
-                        fetchCsvFresh('agroup.csv', { retry: 1 })
-                    ]);
-                    processGroupCSV(agroupData);
-                    processCSV(ttData);
+                    const ttSheetId = '1S7RkDGhtRYcM9Tv304fqeOSz1RsQX2pzS3oNuQAVKRs';
+                    const agroupSheetId = '1X6jzEUesdn_DOFufABmPeN_0SpwigFRqw8vBmkh1H38';
+                    const cacheBuster = Date.now();
+
+                    // 清除舊的 script 節點（若存在）
+                    const oldScriptTT = document.getElementById('script_tt_jsonp');
+                    if (oldScriptTT) oldScriptTT.remove();
+                    const oldScriptAg = document.getElementById('script_agroup_jsonp');
+                    if (oldScriptAg) oldScriptAg.remove();
+
+                    // 1. 先抓取並載入群組對照表，完成後會自動接續執行接收與提取
+                    const scriptAg = document.createElement('script');
+                    scriptAg.id = 'script_agroup_jsonp';
+                    scriptAg.src = `https://docs.google.com/spreadsheets/d/${agroupSheetId}/gviz/tq?tqx=responseHandler:handleAgroupSheetResponse&t=${cacheBuster}`;
+                    scriptAg.onerror = () => { throw new Error("群組表加載失敗"); };
+                    document.head.appendChild(scriptAg);
+
+                    // 2. 同步抓取並載入主課表
+                    const scriptTT = document.createElement('script');
+                    scriptTT.id = 'script_tt_jsonp';
+                    scriptTT.src = `https://docs.google.com/spreadsheets/d/${ttSheetId}/gviz/tq?tqx=responseHandler:handleTTSheetResponse&t=${cacheBuster}`;
+                    scriptTT.onerror = () => { throw new Error("主課表加載失敗"); };
+                    document.head.appendChild(scriptTT);
+
                 } catch (error) {
-                    console.error('載入數據失敗:', error);
-                    errorMsg.textContent = '無法載入數據（請稍後重試）';
+                    console.error('載入雲端試算表失敗:', error);
+                    errorMsg.textContent = '無法載入雲端數據（請稍後重試）';
                     loading.style.display = 'none';
                 }
             }
             
+            // =====================================================================
+            // 以下處理與分析邏輯完全保留原始設計與功能，絕無更改
+            // =====================================================================
             function processGroupCSV(csvText) {
                 csvText = csvText.replace(/^\uFEFF/, '');
                 const lines = csvText.split('\n');
@@ -452,7 +527,6 @@
                     const label = document.createElement('label');
                     label.htmlFor = `teacher-${teacher}`;
                     label.textContent = teacher;
-                    // 在選單中也顯示對應顏色 (可選)
                     label.style.color = getTeacherColor(teacher); 
                     label.style.fontWeight = "bold";
 
@@ -622,7 +696,6 @@
                 const teachers = Array.from(subjectTeachersMap[subject] || []);
                 const subjectEntries = timetableData.filter(entry => entry.subject === subject);
                 
-                // 標題下方的教師列表也套用顏色
                 const coloredTeacherList = teachers.map(t => 
                     `<span style="color:${getTeacherColor(t)}; font-weight:bold;">${t}</span>`
                 ).join(', ');
@@ -643,7 +716,6 @@
                             const allClasses = entries.map(entry => entry.class);
                             const simplifiedClasses = simplifyClassList(allClasses);
                             
-                            // *** 修改處：產生個別顏色的教師 HTML ***
                             const teacherHtmlList = entries.map(entry => {
                                 const tName = entry.teacher;
                                 const tRoom = entry.room;
@@ -651,7 +723,6 @@
                                 const displayText = tRoom ? `${tName} (${tRoom})` : tName;
                                 return `<span style="color:${color}; font-weight:bold;">${displayText}</span>`;
                             });
-                            // 去重複
                             const uniqueTeacherHtml = [...new Set(teacherHtmlList)];
 
                             html += `<td class="timetable-cell ${cellClass}">
@@ -692,7 +763,6 @@
                                 const allClasses = subjectEntries.map(entry => entry.class);
                                 const simplifiedClasses = simplifyClassList(allClasses);
                                 
-                                // *** 修改處：產生個別顏色的教師 HTML ***
                                 const teacherHtmlList = subjectEntries.map(entry => {
                                     const tName = entry.teacher;
                                     const tRoom = entry.room;
@@ -721,7 +791,7 @@
                 timetableContainer.innerHTML = html;
             }
             
-            // 初始載入最新 CSV
+            // 初始載入
             loadCSV();
         });
     </script>
