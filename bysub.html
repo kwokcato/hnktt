@@ -80,7 +80,7 @@
         .container { max-width: 1200px; margin: 0 auto; }
         .form-group { margin-bottom: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 5px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
-        select { width: 30%; padding: 8px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; }
+        select { width: 30%; padding: 8px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; vertical-align: middle; }
         button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-right: 10px; }
         button:hover { background-color: #45a049; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -113,9 +113,13 @@
         .wed-period10 { position: relative; background-color: white !important; }
         .wed-period10::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(45deg, transparent, transparent 3px, #dddddd 3px, #dddddd 6px); pointer-events: none; }
         .wed-period10 .class-list, .wed-period10 .teacher-names { position: relative; z-index: 1; color: #999 !important; }
-        .export-buttons { margin: 20px 0; text-align: center; }
+        
+        /* 縮小按鈕與調整欄位為行內區塊 */
+        .export-buttons { display: inline-block; margin-left: 15px; margin-bottom: 10px; vertical-align: middle; }
+        .print-btn, .pdf-btn { padding: 6px 12px; font-size: 14px; margin-right: 5px; }
         .print-btn { background-color: #2196F3; }
         .pdf-btn { background-color: #f44336; }
+        
         #teacherInput { border: 1px solid #ddd; border-radius: 4px; font-size: 14px; margin-bottom: 10px; width: 95%; padding: 8px; }
         #teacherInput:focus { outline: none; border-color: #4CAF50; box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); }
         @media print {
@@ -142,20 +146,23 @@
     </div>
 
     <div class="container">
-        <b>科目/教師/組別共同時間表查詢 V2</b>
+        <b>科目/教師/組別共同時間表查詢</b>
         
         <div class="form-group">
             <select id="subject">
                 <option value="">-- 請選擇科目 --</option>
             </select>
-            <button id="generateBySubjectBtn">按科目生成時間表</button>
             或
             <select id="group">
                 <option value="">-- 請選擇組別 --</option>
-            </select>
-            <button id="generateByGroupBtn">按組別生成時間表</button>     
+            </select>     
             
-            <div id="teacherSelection">
+            <div id="exportButtons" class="export-buttons" style="display: none;">
+                <button id="printTimetableBtn" class="print-btn">列印時間表</button>
+                <button id="exportPdfBtn" class="pdf-btn">匯出 PDF</button>
+            </div>    
+
+            <div id="teacherSelection" style="margin-top: 10px;">
                 <span id="toggleTeachersBtn" class="toggle-teachers">▼ 選擇教師</span>
                 <div id="teachersCollapsible" class="collapsible">
                     <label>選擇教師:</label>
@@ -171,10 +178,6 @@
                     </div>
                 </div>
             </div>
-            <div id="exportButtons" class="export-buttons" style="display: none;">
-                <button id="printTimetableBtn" class="print-btn">列印時間表</button>
-                <button id="exportPdfBtn" class="pdf-btn">匯出 PDF</button>
-            </div>    
         </div>
         
         <div id="errorMsg" class="error"></div>
@@ -189,9 +192,7 @@
             const subjectSelect = document.getElementById('subject');
             const groupSelect = document.getElementById('group');
             const teachersCheckboxContainer = document.getElementById('teachersCheckboxContainer');
-            const generateBySubjectBtn = document.getElementById('generateBySubjectBtn');
             const generateByTeachersBtn = document.getElementById('generateByTeachersBtn');
-            const generateByGroupBtn = document.getElementById('generateByGroupBtn');
             const selectAllBtn = document.getElementById('selectAllBtn');
             const clearAllBtn = document.getElementById('clearAllBtn');
             const timetableContainer = document.getElementById('timetableContainer');
@@ -321,7 +322,7 @@
                             setTimeout(() => {
                                 generateTimetableByTeachers(selectedTeachers);
                                 loading.style.display = 'none';
-                                exportButtons.style.display = 'block';
+                                exportButtons.style.display = 'inline-block';
                                 timetableContainer.scrollIntoView({ behavior: 'smooth' });
                             }, 100);
                         } else {
@@ -421,9 +422,6 @@
                 }
             }
             
-            // =====================================================================
-            // 以下處理與分析邏輯完全保留原始設計與功能，絕無更改
-            // =====================================================================
             function processGroupCSV(csvText) {
                 csvText = csvText.replace(/^\uFEFF/, '');
                 const lines = csvText.split('\n');
@@ -536,6 +534,7 @@
                 });
             }
             
+            // 科目變更：自動送出並生成時間表
             subjectSelect.addEventListener('change', function() {
                 const selectedSubject = this.value;
                 document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(checkbox => {
@@ -553,8 +552,26 @@
                         }
                     });
                 }
+
+                if (!selectedSubject) {
+                    errorMsg.textContent = '';
+                    timetableContainer.innerHTML = '';
+                    exportButtons.style.display = 'none';
+                    return;
+                }
+
+                errorMsg.textContent = '';
+                loading.style.display = 'block';
+                exportButtons.style.display = 'none';
+                setTimeout(() => {
+                    generateTimetableBySubject(selectedSubject);
+                    loading.style.display = 'none';
+                    exportButtons.style.display = 'inline-block';
+                    timetableContainer.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
             });
             
+            // 組別變更：自動送出並生成時間表
             groupSelect.addEventListener('change', function() {
                 const selectedGroup = this.value;
                 document.querySelectorAll('#teachersCheckboxContainer input[type="checkbox"]').forEach(checkbox => {
@@ -562,8 +579,8 @@
                     checkbox.parentElement.classList.remove('highlighted');
                 });
                 
+                const groupTeachers = [];
                 if (selectedGroup) {
-                    const groupTeachers = [];
                     for (const [initial, duties] of Object.entries(groupData)) {
                         if (duties.includes(selectedGroup)) {
                             groupTeachers.push(initial);
@@ -577,6 +594,29 @@
                         }
                     });
                 }
+
+                if (!selectedGroup) {
+                    errorMsg.textContent = '';
+                    timetableContainer.innerHTML = '';
+                    exportButtons.style.display = 'none';
+                    return;
+                }
+
+                errorMsg.textContent = '';
+                if (groupTeachers.length === 0) {
+                    errorMsg.textContent = '該組別沒有教師';
+                    timetableContainer.innerHTML = '';
+                    exportButtons.style.display = 'none';
+                    return;
+                }
+                loading.style.display = 'block';
+                exportButtons.style.display = 'none';
+                setTimeout(() => {
+                    generateTimetableByTeachers(groupTeachers);
+                    loading.style.display = 'none';
+                    exportButtons.style.display = 'inline-block';
+                    timetableContainer.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
             });
             
             selectAllBtn.addEventListener('click', function() {
@@ -591,23 +631,6 @@
                 });
             });
             
-            generateBySubjectBtn.addEventListener('click', function() {
-                const selectedSubject = subjectSelect.value;
-                if (!selectedSubject) {
-                    errorMsg.textContent = '請選擇一個科目';
-                    return;
-                }
-                errorMsg.textContent = '';
-                loading.style.display = 'block';
-                exportButtons.style.display = 'none';
-                setTimeout(() => {
-                    generateTimetableBySubject(selectedSubject);
-                    loading.style.display = 'none';
-                    exportButtons.style.display = 'block';
-                    timetableContainer.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-            });
-            
             generateByTeachersBtn.addEventListener('click', function() {
                 const selectedTeachers = getSelectedTeachers();
                 if (selectedTeachers.length === 0) {
@@ -620,35 +643,7 @@
                 setTimeout(() => {
                     generateTimetableByTeachers(selectedTeachers);
                     loading.style.display = 'none';
-                    exportButtons.style.display = 'block';
-                    timetableContainer.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-            });
-            
-            generateByGroupBtn.addEventListener('click', function() {
-                const selectedGroup = groupSelect.value;
-                if (!selectedGroup) {
-                    errorMsg.textContent = '請選擇一個組別';
-                    return;
-                }
-                errorMsg.textContent = '';
-                loading.style.display = 'block';
-                exportButtons.style.display = 'none';
-                setTimeout(() => {
-                    const groupTeachers = [];
-                    for (const [initial, duties] of Object.entries(groupData)) {
-                        if (duties.includes(selectedGroup)) {
-                            groupTeachers.push(initial);
-                        }
-                    }
-                    if (groupTeachers.length === 0) {
-                        errorMsg.textContent = '該組別沒有教師';
-                        loading.style.display = 'none';
-                        return;
-                    }
-                    generateTimetableByTeachers(groupTeachers);
-                    loading.style.display = 'none';
-                    exportButtons.style.display = 'block';
+                    exportButtons.style.display = 'inline-block';
                     timetableContainer.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
             });
@@ -658,38 +653,48 @@
                 return Array.from(checkboxes).map(checkbox => checkbox.value);
             }
             
+            // 修改：支援同級跨班合併邏輯 (例如：4A, 4B, 4C 合併為 4ABC)
             function simplifyClassList(classes) {
                 const allClasses = Array.isArray(classes) ? classes : [classes];
-                const uniqueClasses = [...new Set(allClasses)];
+                const uniqueClasses = [...new Set(allClasses)].map(c => c.trim()).filter(c => c !== '');
+                
+                // 1. 將班別分類，key 為年級數字（例如 "4"），value 為班別英文字母陣列（例如 ["A", "B", "C"]）
                 const gradeMap = {};
+                const nonStandardClasses = []; // 無法辨識為「數字+字母」的特殊班別
+                
                 uniqueClasses.forEach(cls => {
                     const match = cls.match(/^(\d+)([A-Za-z])$/);
                     if (match) {
                         const grade = match[1];
-                        if (!gradeMap[grade]) gradeMap[grade] = [];
-                        gradeMap[grade].push(cls);
-                    }
-                });
-                const simplified = [];
-                const processedGrades = new Set();
-                uniqueClasses.forEach(cls => {
-                    const match = cls.match(/^(\d+)([A-Za-z])$/);
-                    if (match) {
-                        const grade = match[1];
-                        if (!processedGrades.has(grade)) {
-                            const hasAllClasses = ['A','B','C','D'].every(letter => uniqueClasses.includes(`${grade}${letter}`));
-                            if (hasAllClasses) {
-                                simplified.push(`S${grade}`);
-                                processedGrades.add(grade);
-                            } else {
-                                simplified.push(cls);
-                            }
+                        const letter = match[2].toUpperCase();
+                        if (!gradeMap[grade]) {
+                            gradeMap[grade] = new Set();
                         }
+                        gradeMap[grade].add(letter);
                     } else {
-                        simplified.push(cls);
+                        nonStandardClasses.push(cls);
                     }
                 });
-                return simplified;
+                
+                const simplified = [];
+                
+                // 2. 依年級處理合併
+                Object.keys(gradeMap).sort((a, b) => parseInt(a) - parseInt(b)).forEach(grade => {
+                    const lettersSet = gradeMap[grade];
+                    
+                    // 如果 A, B, C, D 班全齊，依然按照原設定縮寫為 "S" + 年級
+                    const hasAllFour = ['A', 'B', 'C', 'D'].every(l => lettersSet.has(l));
+                    if (hasAllFour && lettersSet.size === 4) {
+                        simplified.push(`S${grade}`);
+                    } else {
+                        // 否則，將同級的所有英文字母排序並拼接到數字後方 (例如 4A 4B 4C -> 4ABC)
+                        const sortedLetters = Array.from(lettersSet).sort().join('');
+                        simplified.push(`${grade}${sortedLetters}`);
+                    }
+                });
+                
+                // 3. 結合特殊班別後回傳
+                return simplified.concat(nonStandardClasses);
             }
             
             function generateTimetableBySubject(subject) {
