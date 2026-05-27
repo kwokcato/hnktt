@@ -3,18 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>三年又三年調位抽籤系統</title>
+  <title>三年又三年調位抽籤系統 (雲端連動版)</title>
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
-  <!-- SheetJS (Excel 匯出) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   
-  <!-- html2pdf (PDF 匯出) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
@@ -38,12 +34,11 @@
 
   <div id="main-app-container" class="w-full h-full mx-auto bg-white rounded-xl shadow-xl flex flex-col overflow-hidden border border-slate-200 transition-all duration-300">
     
-    <!-- Header -->
     <div id="main-header" class="bg-gradient-to-r from-indigo-600 to-blue-500 p-2 md:p-3 text-white flex justify-between items-center shrink-0">
       <div class="flex items-center gap-2">
         <i data-lucide="users" class="w-5 h-5 hidden sm:block"></i>
-        <h1 class="text-lg md:text-xl font-bold leading-none">三年又三年調位抽籤系統 </h1>
-        <span id="header-subtitle" class="hidden md:inline text-xs text-indigo-100 ml-2 border-l border-indigo-400 pl-2">version 27 | 支援雙欄匯入、同科綁定、隨機分配</span>
+        <h1 class="text-lg md:text-xl font-bold leading-none">三年又三年調位抽籤系統</h1>
+        <span id="header-subtitle" class="hidden md:inline text-xs text-indigo-100 ml-2 border-l border-indigo-400 pl-2">version 29 | 支援 Google Sheet 讀取、B欄票數綑綁、D欄組別</span>
       </div>
       <div class="flex items-center gap-2">
         <button id="btn-fullscreen" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full transition-colors backdrop-blur-sm text-xs font-medium" title="切換全螢幕">
@@ -58,13 +53,10 @@
       </div>
     </div>
 
-    <!-- Main Content Container -->
     <div class="flex-1 overflow-y-auto bg-slate-50 relative flex flex-col">
       
-      <!-- === Settings Section (設定區) === -->
       <div id="section-settings" class="p-4 md:p-6 space-y-5 max-w-4xl mx-auto w-full animate-slide-up">
         
-        <!-- Mode Selection -->
         <div class="flex flex-col md:flex-row p-1 bg-white border border-slate-200 rounded-xl w-full gap-1 shadow-sm flex-wrap">
           <button data-mode="all" class="mode-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-2 text-sm font-bold transition-all bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100 min-w-[120px]">
             <i data-lucide="users" class="w-4 h-4"></i> 模式一：全部抽籤
@@ -80,20 +72,34 @@
           </button>
         </div>
 
-        <!-- File Upload -->
-        <div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <label class="block text-sm font-bold text-slate-700 flex items-center gap-1.5">
+            <i data-lucide="cloud" class="w-4 h-4 text-indigo-500"></i> 從 Google 試算表載入名單 (JSONP 連動)
+          </label>
+          <div class="flex gap-2">
+            <input type="text" id="sheet-url-input" class="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="請貼上 Google 試算表的共用網址，或直接輸入試算表 ID (留空使用預設名單)" />
+            <button id="btn-load-sheet" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition-colors shadow-sm shrink-0 flex items-center gap-1">
+              <i data-lucide="cloud-download" class="w-4 h-4"></i> 載入雲端名單
+            </button>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            💡 提示：試算表必須將共用權限設定為<strong>「知道連結的任何人都可以檢視」</strong>。<br>
+            欄位格式對應：<strong>A欄:</strong> 姓名 | <strong>B欄:</strong> 票數 (大於 1 代表連位數) | <strong>C欄:</strong> 指定樓層 (0=無, 1=下層, 2=上層) | <strong>D欄:</strong> 組別/科別 (0代表獨立人仕)
+          </p>
+        </div>
+
+        <div class="opacity-60 hover:opacity-100 transition-opacity">
           <label class="block w-full cursor-pointer group bg-white">
-            <div class="border-2 border-dashed border-slate-300 group-hover:border-indigo-400 group-hover:bg-indigo-50/30 rounded-2xl p-6 text-center transition-all">
-              <i data-lucide="upload" class="w-8 h-8 text-slate-400 group-hover:text-indigo-500 mx-auto mb-2 transition-colors"></i>
-              <span class="block text-slate-600 font-bold text-sm">點擊選擇或拖曳 TXT 檔案</span>
-              <span class="block text-slate-400 text-xs mt-1">格式：姓名,類別,指定樓層 (如：陳大文,資訊科,1)。第二欄為 0 代表獨立人仕。第三欄：0=無, 1=下層, 2=上層</span>
-              <span id="file-name-display" class="hidden mt-3 inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold"></span>
+            <div class="border-2 border-dashed border-slate-300 group-hover:border-indigo-400 group-hover:bg-indigo-50/30 rounded-2xl p-4 text-center transition-all">
+              <i data-lucide="upload" class="w-6 h-6 text-slate-400 group-hover:text-indigo-500 mx-auto mb-1 transition-colors"></i>
+              <span class="block text-slate-600 font-bold text-xs">或者：點擊選擇或拖曳 TXT 本地檔案匯入</span>
+              <span class="block text-slate-400 text-[11px] mt-0.5">格式：姓名,票數(座位數),指定樓層,組別 (如：陳大文,1,0,資訊科)</span>
+              <span id="file-name-display" class="hidden mt-2 inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold"></span>
             </div>
             <input type="file" id="file-upload" accept=".txt" class="hidden" />
           </label>
         </div>
 
-        <!-- Layer Limits Settings -->
         <div id="layer-settings" class="hidden bg-white p-4 rounded-xl border border-slate-200 flex gap-4 shadow-sm animate-zoom-in">
           <div class="flex-1">
             <label id="lbl-upper-count" class="block text-xs font-bold text-slate-600 mb-1">上層人數</label>
@@ -105,7 +111,6 @@
           </div>
         </div>
 
-        <!-- 獨立抽籤 Checkbox 選項 -->
         <div id="chk-container" class="hidden bg-white p-3 md:p-4 rounded-xl border border-slate-200 flex items-center gap-3 shadow-sm animate-zoom-in mt-2">
           <input type="checkbox" id="chk-separate-draw" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
           <label for="chk-separate-draw" class="flex flex-col cursor-pointer select-none">
@@ -114,7 +119,6 @@
           </label>
         </div>
 
-        <!-- Start Button -->
         <div class="text-center pt-2">
           <button id="btn-start" disabled class="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-base hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto w-full max-w-xs shadow-md">
             <i data-lucide="play" class="w-4 h-4" fill="currentColor"></i> <span id="start-btn-text">開始系統抽籤</span>
@@ -122,29 +126,21 @@
         </div>
       </div>
 
-      <!-- === Drawing Section (抽籤區) === -->
       <div id="section-drawing" class="hidden flex-col h-full animate-slide-right">
         
-        <!-- 控制列 (Toolbar) -->
         <div class="bg-white px-2 py-1.5 md:px-4 md:py-2 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2 shrink-0 shadow-sm z-10">
           
-          <!-- 進度區 -->
           <div id="draw-progress" class="flex items-center gap-2">
             <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md" title="此為「組別(籤數)」進度">
               <span id="draw-progress-label">籤數進度</span> <span id="draw-index-display" class="text-indigo-600 text-sm">0</span> / <span id="draw-total-display">0</span>
             </span>
-            <!-- 新增：動態餘額顯示區 -->
             <div id="layer-balances" class="hidden items-center gap-1.5"></div>
           </div>
 
-          <!-- 動態抽籤操作按鈕區 -->
           <div id="draw-action-area" class="flex items-center gap-2 flex-1 justify-center min-w-max">
-            <!-- Dynamically populated -->
-          </div>
+            </div>
 
-          <!-- 匯出區與字體調整 -->
           <div class="flex items-center gap-1.5 flex-wrap justify-end">
-            <!-- 新增：顯示指定樓層開關 -->
             <label class="flex items-center gap-1 px-2 py-1.5 bg-white border border-slate-200 rounded text-[11px] font-bold text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors shadow-sm mr-1">
               <input type="checkbox" id="chk-show-designated" class="rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 w-3 h-3" checked>
               <span class="hidden sm:inline">顯示</span>指定參數
@@ -165,14 +161,12 @@
           </div>
         </div>
 
-        <!-- Results Area -->
         <div class="flex-1 overflow-y-auto p-2 md:p-3 bg-slate-50/50" id="pdf-container">
           <div id="pdf-header" class="hidden print:block text-center mb-4 text-xl font-bold text-slate-800 border-b pb-2">
             抽籤結果報告
           </div>
           <div id="results-content" class="h-full">
-            <!-- Dynamically populated tables/grids -->
-          </div>
+            </div>
         </div>
 
       </div>
@@ -180,7 +174,6 @@
     </div>
   </div>
 
-  <!-- === Custom Modal (自訂提示視窗) === -->
   <div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity">
     <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 transform transition-all animate-zoom-in border border-slate-100 flex flex-col items-center">
       <div id="modal-icon-container" class="mb-3"></div>
@@ -216,13 +209,15 @@
       btnFontMinus: document.getElementById('btn-font-minus'),
       btnFontPlus: document.getElementById('btn-font-plus'),
       chkSeparateDraw: document.getElementById('chk-separate-draw'),
-      chkShowDesignated: document.getElementById('chk-show-designated'), // 新增 DOM 綁定
+      chkShowDesignated: document.getElementById('chk-show-designated'),
       chkContainer: document.getElementById('chk-container'),
       sectionSettings: document.getElementById('section-settings'),
       sectionDrawing: document.getElementById('section-drawing'),
       modeBtns: document.querySelectorAll('.mode-btn'),
       fileUpload: document.getElementById('file-upload'),
       fileNameDisplay: document.getElementById('file-name-display'),
+      sheetUrlInput: document.getElementById('sheet-url-input'),
+      btnLoadSheet: document.getElementById('btn-load-sheet'),
       layerSettings: document.getElementById('layer-settings'),
       lblUpperCount: document.getElementById('lbl-upper-count'),
       lblLowerCount: document.getElementById('lbl-lower-count'),
@@ -234,7 +229,7 @@
       drawProgressLabel: document.getElementById('draw-progress-label'),
       drawIndexDisplay: document.getElementById('draw-index-display'),
       drawTotalDisplay: document.getElementById('draw-total-display'),
-      layerBalances: document.getElementById('layer-balances'), // 新增 DOM 參照
+      layerBalances: document.getElementById('layer-balances'),
       drawActionArea: document.getElementById('draw-action-area'),
       resultsContent: document.getElementById('results-content'),
       pdfHeader: document.getElementById('pdf-header'),
@@ -294,9 +289,9 @@
       });
 
       els.fileUpload.addEventListener('change', handleFileUpload);
+      els.btnLoadSheet.addEventListener('click', handleLoadSheet);
       els.upperCount.addEventListener('input', handleUpperCountChange);
       
-      // 模式四專用的手動下層額度監聽
       els.lowerCount.addEventListener('input', (e) => {
           if (state.mode === 'mode4') state.lowerCount = e.target.value;
       });
@@ -309,7 +304,7 @@
       els.btnFontPlus.addEventListener('click', () => adjustFontSize(2));
       els.btnExportXlsx.addEventListener('click', exportXLSX);
       els.btnExportPdf.addEventListener('click', exportPDF);
-      els.chkShowDesignated.addEventListener('change', renderDrawingUI); // 新增 Toggle 監聽，切換即時重繪
+      els.chkShowDesignated.addEventListener('change', renderDrawingUI);
       
       document.addEventListener('keydown', handleKeyDown);
       document.addEventListener('fullscreenchange', updateFullscreenButton);
@@ -393,7 +388,6 @@
       state.mode = newMode;
       resetDraw(false);
       
-      // Mode 4 允許手動填寫兩層限額
       if (newMode === 'mode4') {
           els.lowerCount.readOnly = false;
           els.lowerCount.classList.remove('bg-slate-50', 'text-slate-500', 'cursor-not-allowed');
@@ -411,6 +405,121 @@
       renderUI();
     }
 
+    // --- 修訂 1 & 2：Google Sheet JSONP 載入與全新的欄位分配邏輯 ---
+    function handleLoadSheet() {
+      let urlOrId = els.sheetUrlInput.value.trim();
+      
+      // 修訂：如果留空，採用預設的 Google Sheet ID，且不顯示在輸入框中
+      if (!urlOrId) {
+        urlOrId = "1PY7x7IRhEdsxi8N63iBtSDPdwtdQ_WKSiA3SD1TfjSQ";
+      }
+      
+      let sheetId = urlOrId;
+      let gid = '0';
+      
+      const idMatch = urlOrId.match(/\/d\/([^/]+)/);
+      if (idMatch) sheetId = idMatch[1];
+      
+      const gidMatch = urlOrId.match(/gid=([^&]+)/);
+      if (gidMatch) gid = gidMatch[1];
+      
+      const oldScript = document.getElementById('jsonp-sheet-script');
+      if (oldScript) oldScript.remove();
+      
+      const script = document.createElement('script');
+      script.id = 'jsonp-sheet-script';
+      script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGoogleSheetJsonp&gid=${gid}`;
+      
+      script.onerror = function() {
+        CustomModal.alert("雲端讀取失敗！\n1. 請檢查網路連線。\n2. 請確認試算表 ID 沒填錯。\n3. 請務必確認試算表已開啟「知道連結的任何人都可以檢視」權限。");
+      };
+      
+      document.body.appendChild(script);
+    }
+
+    // 全域 JSONP 回呼接收器
+    window.handleGoogleSheetJsonp = function(data) {
+      if (!data || !data.table || !data.table.rows) {
+        CustomModal.alert("無法解析 Google Sheet 回傳的資料結構。");
+        return;
+      }
+      
+      const rows = data.table.rows;
+      state.rawNames = [];
+      const groupMap = {};
+      state.groups = [];
+      
+      rows.forEach((row, idx) => {
+        if (!row.c) return;
+        
+        // A欄=姓名, B欄=票數, C欄=指定樓層, D欄=組別
+        const name = row.c[0] && row.c[0].v !== null ? String(row.c[0].v).trim() : `未知-${idx}`;
+        const seats = row.c[1] && row.c[1].v !== null ? parseInt(row.c[1].v, 10) : 1;
+        const designatedLayerCode = row.c[2] && row.c[2].v !== null ? String(row.c[2].v).trim() : '0';
+        const dept = row.c[3] && row.c[3].v !== null ? String(row.c[3].v).trim() : '0';
+        
+        // 過濾 Excel 標題列
+        if (idx === 0 && (name === '姓名' || name === 'name')) return;
+        
+        let designatedLayer = null;
+        if (designatedLayerCode === '1') designatedLayer = '下層';
+        if (designatedLayerCode === '2') designatedLayer = '上層';
+        
+        state.rawNames.push({ name, dept, designatedLayerCode, seats });
+        
+        // 若票數大於 1，直接視為多連位綑綁實體
+        if (seats > 1) {
+          state.groups.push({
+            deptName: dept !== '0' ? `${dept} (佔 ${seats} 位)` : `佔 ${seats} 位`,
+            isGroup: true,
+            isMultiSeat: true,
+            count: seats,
+            members: [{ name: name, originalIdx: idx }],
+            originalIndices: [idx],
+            designatedLayer: designatedLayer
+          });
+        } else {
+          // 票數 = 1 的情況：依據組別綑綁
+          // 若組別為 '0'，使用名字當 Key 達成獨立隨機
+          let groupKey = dept === '0' ? `_name_${name}` : dept;
+          let isRealGroup = dept !== '0';
+          
+          if (!groupMap[groupKey]) {
+            groupMap[groupKey] = {
+              deptName: dept === '0' ? '0' : dept,
+              isGroup: isRealGroup,
+              isMultiSeat: false,
+              count: 0,
+              members: [],
+              originalIndices: [],
+              designatedLayer: designatedLayer
+            };
+          }
+          
+          if (!groupMap[groupKey].designatedLayer && designatedLayer) {
+            groupMap[groupKey].designatedLayer = designatedLayer;
+          }
+          
+          groupMap[groupKey].count++;
+          groupMap[groupKey].members.push({ name: name, originalIdx: idx });
+          groupMap[groupKey].originalIndices.push(idx);
+          
+          if (groupMap[groupKey].count > 1) {
+            groupMap[groupKey].isGroup = true;
+          }
+        }
+      });
+      
+      state.groups = state.groups.concat(Object.values(groupMap));
+      state.fileName = 'Google Cloud 雲端試算表名單';
+      
+      resetDraw(false);
+      calculateLowerCount();
+      renderUI();
+      CustomModal.alert(`🎉 雲端連動成功！\n共載入了 ${state.rawNames.length} 位人名資料。`);
+    };
+
+    // 備用的 TXT 讀取 (也相容相同的 4 欄欄位規範)
     function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -425,53 +534,47 @@
         const groupMap = {};
         state.groups = [];
 
-        // 核心邏輯：解析逗號分隔
         lines.forEach((line, idx) => {
             const parts = line.split(',');
             const name = parts[0] ? parts[0].trim() : `未知-${idx}`;
-            const deptOrNum = parts[1] ? parts[1].trim() : '0';
+            const seats = parts[1] ? parseInt(parts[1].trim(), 10) : 1;
             const designatedLayerCode = parts[2] ? parts[2].trim() : '0';
+            const dept = parts[3] ? parts[3].trim() : '0';
+
+            if (idx === 0 && (name === '姓名' || name === 'name')) return;
 
             let designatedLayer = null;
             if (designatedLayerCode === '1') designatedLayer = '下層';
             if (designatedLayerCode === '2') designatedLayer = '上層';
 
-            state.rawNames.push({ name, dept: deptOrNum, designatedLayerCode });
+            state.rawNames.push({ name, dept, designatedLayerCode, seats });
 
-            // 判斷第二個參數是否為純數字 (代表多連位中籤者)
-            const catAsNum = parseInt(deptOrNum, 10);
-            const isNum = !isNaN(catAsNum) && catAsNum > 0 && deptOrNum === catAsNum.toString();
-
-            if (isNum) {
-                // Number Category -> Multi-seat Individual
+            if (seats > 1) {
                 state.groups.push({
-                    deptName: `佔 ${catAsNum} 位`,
-                    isGroup: true, // 賦予 group 屬性使其獲得獨立顏色外框
+                    deptName: dept !== '0' ? `${dept} (佔 ${seats} 位)` : `佔 ${seats} 位`,
+                    isGroup: true,
                     isMultiSeat: true,
-                    count: catAsNum, // 此人佔用的連續座位數量
+                    count: seats,
                     members: [{ name: name, originalIdx: idx }],
                     originalIndices: [idx],
-                    designatedLayer: designatedLayer // 記錄強制指定的樓層
+                    designatedLayer: designatedLayer
                 });
             } else {
-                // Text Category (Group) or '0' (Independent)
-                // 若為 '0'，使用名字當 Key，達成「同名即是同科」; 若非 '0'，使用科別當 Key
-                let groupKey = deptOrNum === '0' ? `_name_${name}` : deptOrNum;
-                let isRealGroup = deptOrNum !== '0';
+                let groupKey = dept === '0' ? `_name_${name}` : dept;
+                let isRealGroup = dept !== '0';
 
                 if (!groupMap[groupKey]) {
                     groupMap[groupKey] = {
-                        deptName: deptOrNum === '0' ? '0' : deptOrNum,
+                        deptName: dept === '0' ? '0' : dept,
                         isGroup: isRealGroup,
                         isMultiSeat: false,
                         count: 0,
                         members: [],
                         originalIndices: [],
-                        designatedLayer: designatedLayer // 初始化強制指定的樓層
+                        designatedLayer: designatedLayer
                     };
                 }
                 
-                // 若群組尚未指定樓層，但同科後續成員有標示指定樓層，則賦予整個科室該樓層
                 if (!groupMap[groupKey].designatedLayer && designatedLayer) {
                     groupMap[groupKey].designatedLayer = designatedLayer;
                 }
@@ -480,7 +583,6 @@
                 groupMap[groupKey].members.push({ name: name, originalIdx: idx });
                 groupMap[groupKey].originalIndices.push(idx);
 
-                // 若因同名而聚集成多人，則視為一個群組，給予專屬顏色
                 if (groupMap[groupKey].count > 1) {
                     groupMap[groupKey].isGroup = true;
                 }
@@ -488,7 +590,6 @@
         });
         
         state.groups = state.groups.concat(Object.values(groupMap));
-        
         els.fileUpload.value = ''; 
         resetDraw(false);
         calculateLowerCount();
@@ -503,10 +604,9 @@
     }
 
     function calculateLowerCount() {
-      if (state.mode === 'mode4') return; // Mode 4 不自動計算
+      if (state.mode === 'mode4') return;
       
       if ((state.mode === 'split' || state.mode === 'mode3') && state.groups.length > 0) {
-        // 使用所需的總座位數(包含多連位)進行精確計算
         const totalNeeded = state.groups.reduce((sum, g) => sum + g.count, 0);
         const up = parseInt(state.upperCount) || 0;
         const calculatedLower = Math.max(0, totalNeeded - up);
@@ -526,7 +626,7 @@
 
     function startDraw() {
       if (state.groups.length === 0) {
-        CustomModal.alert("請先載入名單檔案！");
+        CustomModal.alert("請先讀取雲端試算表或載入檔案名單！");
         return;
       }
 
@@ -535,28 +635,22 @@
       let requiredUpper = 0;
       let requiredLower = 0;
 
-      // --- 新增：開賽前預先檢查「強制指定樓層」的數目是否超出限額 ---
       if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4') {
-        // 計算各層被「強制指定」的座位總數
         state.groups.forEach(g => {
             if (g.designatedLayer === '上層') requiredUpper += g.count;
             if (g.designatedLayer === '下層') requiredLower += g.count;
         });
 
-        // 檢查上層是否爆滿
         if (requiredUpper > upperRemaining) {
-            CustomModal.alert(`⚠️ 座位衝突錯誤！\n\n名單中強制指定派往「上層」的人數共需 ${requiredUpper} 個座位，\n但目前上層總限額僅有 ${upperRemaining} 個。\n\n請修改檔案內的指定條件，或增加上層人數限額！`);
+            CustomModal.alert(`⚠️ 座位衝突錯誤！\n\n強制指定派往「上層」的人數共需 ${requiredUpper} 個座位，\n但目前上層總限額僅有 ${upperRemaining} 個。`);
             return;
         }
-
-        // 檢查下層是否爆滿
         if (requiredLower > lowerRemaining) {
-            CustomModal.alert(`⚠️ 座位衝突錯誤！\n\n名單中強制指定派往「下層」的人數共需 ${requiredLower} 個座位，\n但目前下層總限額僅有 ${lowerRemaining} 個。\n\n請修改檔案內的指定條件，或增加下層人數限額！`);
+            CustomModal.alert(`⚠️ 座位衝突錯誤！\n\n強制指定派往「下層」的人數共需 ${requiredLower} 個座位，\n但目前下層總限額僅有 ${lowerRemaining} 個。`);
             return;
         }
       }
 
-      // 模式四: 開賽前檢查總限額是否足夠
       if (state.mode === 'mode4') {
         const totalNeeded = state.groups.reduce((sum, g) => sum + g.count, 0);
         if (upperRemaining + lowerRemaining < totalNeeded) {
@@ -565,7 +659,6 @@
         }
       }
 
-      // --- 核心更新：使用「蒙地卡羅演算法(多次洗牌)」來解決裝箱問題，徹底避免餘額負數 ---
       let freeUpperRemaining = upperRemaining - requiredUpper;
       let freeLowerRemaining = lowerRemaining - requiredLower;
       
@@ -585,7 +678,6 @@
 
               if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4') {
                   if (group.designatedLayer) {
-                      // 已經在 required 預先扣除過，此處無需再扣除 temp 餘額
                       assignedLayer = group.designatedLayer;
                   } else {
                       let canUpper = tempUpper >= group.count;
@@ -599,7 +691,6 @@
                               assignedLayer = '下層';
                               tempLower -= group.count;
                           } else {
-                              // 兩邊都塞不下！放棄此組合，觸發重新洗牌
                               isSuccess = false; break; 
                           }
                       } else if (state.mode === 'mode4') {
@@ -614,7 +705,6 @@
                               assignedLayer = '下層';
                               tempLower -= group.count;
                           } else {
-                              // 兩邊都塞不下！放棄此組合，觸發重新洗牌
                               isSuccess = false; break; 
                           }
                       }
@@ -625,12 +715,12 @@
 
           if (isSuccess) {
               successfulAllocation = true;
-              break; // 成功找到完美且無負數的分配組合，跳出迴圈
+              break;
           }
       }
 
       if (!successfulAllocation) {
-          CustomModal.alert(`⚠️ 空間分配失敗（裝箱衝突）！\n\n系統嘗試了 ${maxAttempts} 次組合，但由於「科」的人數區塊過大，始終無法完整塞入剩餘的零碎空間（若強制分配會導致餘額出現負數）。\n\n💡 建議解決方案：\n1. 略為增加上下層的「人數限額」\n2. 檢查名單，將過大的科別打散\n3. 再次點擊開始，或許會有幸運的排列組合出現`);
+          CustomModal.alert(`⚠️ 空間分配失敗（裝箱衝突）！\n\n系統嘗試了 ${maxAttempts} 次組合，但由於「科」的人數區塊過大，無法完美塞入零碎空間。\n\n💡 建議調整上下層限額或將大型科別打散。`);
           return;
       }
 
@@ -640,7 +730,6 @@
       let lowerId = 1;
       let currentGroupIdx = 0;
 
-      // 1. 正式為每個群組套用成功的分配結果與專屬顏色
       randomizedGroups.forEach((group) => {
           group.assignedLayer = group.tempAssignedLayer;
 
@@ -656,15 +745,12 @@
           group.groupStyle = groupStyleObj;
       });
 
-      // 2. 判斷是否勾選「分開中籤」
       const isSeparateDraw = els.chkSeparateDraw.checked && state.mode !== 'all';
 
       if (isSeparateDraw) {
-          // 【模式：分開中籤】
           let flatEntities = [];
           randomizedGroups.forEach((group) => {
               if (group.isMultiSeat) {
-                  // 多連位個體視為一個獨立實體
                   flatEntities.push({ isMultiSeatBlock: true, group: group, designatedLayer: group.designatedLayer });
               } else {
                   group.members.forEach((member) => {
@@ -676,7 +762,7 @@
                           originalIdx: member.originalIdx,
                           isGroup: group.isGroup,
                           groupStyle: group.groupStyle,
-                          designatedLayer: group.designatedLayer // 加入強制指定參數
+                          designatedLayer: group.designatedLayer
                       });
                   });
               }
@@ -698,7 +784,7 @@
                           originalIdx: g.originalIndices[0],
                           isGroup: true,
                           groupStyle: g.groupStyle,
-                          designatedLayer: g.designatedLayer // 加入強制指定參數
+                          designatedLayer: g.designatedLayer
                       });
                   }
               } else {
@@ -712,16 +798,14 @@
                       originalIdx: entity.originalIdx,
                       isGroup: entity.isGroup,
                       groupStyle: entity.groupStyle,
-                      designatedLayer: entity.designatedLayer // 加入強制指定參數
+                      designatedLayer: entity.designatedLayer
                   });
               }
           });
           state.drawStepTotal = shuffledEntities.length;
 
       } else {
-          // 【模式：同科綑綁 / 模式四實體分派】
           randomizedGroups.forEach((group, groupDrawOrder) => {
-              
               if (group.isMultiSeat) {
                   for (let i = 0; i < group.count; i++) {
                       finalizedIndividuals.push({
@@ -734,7 +818,7 @@
                           originalIdx: group.originalIndices[0],
                           isGroup: true,
                           groupStyle: group.groupStyle,
-                          designatedLayer: group.designatedLayer // 加入強制指定參數
+                          designatedLayer: group.designatedLayer
                       });
                   }
               } else {
@@ -749,7 +833,7 @@
                           originalIdx: member.originalIdx,
                           isGroup: group.isGroup,
                           groupStyle: group.groupStyle,
-                          designatedLayer: group.designatedLayer // 加入強制指定參數
+                          designatedLayer: group.designatedLayer
                       });
                   });
               }
@@ -758,7 +842,7 @@
       }
 
       state.drawList = finalizedIndividuals;
-      state.drawIndex = 0; // 初始皆為 0，進入畫面先隱藏結果
+      state.drawIndex = 0; 
       state.isStarted = true;
       renderUI();
     }
@@ -783,6 +867,7 @@
         state.rawNames = [];
         state.groups = [];
         state.fileName = '';
+        els.sheetUrlInput.value = '';
       }
       renderUI();
     }
@@ -821,7 +906,7 @@
         if (state.fileName) {
           const deptCount = state.groups.filter(g => g.isGroup && !g.isMultiSeat).length;
           const totalNeeded = state.groups.reduce((sum, g) => sum + g.count, 0);
-          els.fileNameDisplay.textContent = `已載入：${state.fileName} (需 ${totalNeeded} 個座位，包含 ${deptCount} 科組別)`;
+          els.fileNameDisplay.textContent = `已載入名單：${state.fileName} (共 ${totalNeeded} 個座位，內含 ${deptCount} 個組別科別)`;
           els.fileNameDisplay.classList.remove('hidden');
           els.btnStart.disabled = false;
         } else {
@@ -831,7 +916,6 @@
 
         if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4') {
           els.layerSettings.classList.remove('hidden');
-          // 最大值保護 (模式四允許自由填寫所以不設限)
           if (state.mode !== 'mode4') {
               const totalNeeded = state.groups.reduce((sum, g) => sum + g.count, 0);
               els.upperCount.max = totalNeeded;
@@ -853,6 +937,7 @@
       lucide.createIcons();
     }
 
+    // --- 修訂 3：組別及連位等文字縮小至 FONT SIZE 8 (使用 text-[8px]) ---
     function renderDrawingUI() {
       els.drawIndexDisplay.textContent = state.drawIndex;
       els.drawTotalDisplay.textContent = state.drawStepTotal; 
@@ -862,12 +947,10 @@
       els.drawProgressLabel.textContent = isSeparateDraw ? '人數進度' : '籤數進度';
       els.drawProgressLabel.parentElement.title = isSeparateDraw ? '此為「單人」進度' : '此為「組別(籤數)」進度';
 
-      // --- 動態計算並顯示上下層餘額 ---
       if (state.mode === 'split' || state.mode === 'mode4') {
         els.layerBalances.classList.remove('hidden');
         els.layerBalances.classList.add('flex');
         
-        // 只計算目前已經開出的名單
         const visibleList = state.drawList.filter(item => item.groupId < state.drawIndex);
         let upperUsed = 0;
         let lowerUsed = 0;
@@ -881,8 +964,8 @@
         const lTotal = parseInt(state.lowerCount) || 0;
         
         els.layerBalances.innerHTML = `
-            <span class="bg-amber-50 text-amber-700 px-2 py-1 rounded-md border border-amber-200 text-xs shadow-sm font-bold tracking-wide transition-all">上層餘額: <span class="text-amber-900">${uTotal - upperUsed}</span></span>
-            <span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md border border-indigo-200 text-xs shadow-sm font-bold tracking-wide transition-all">下層餘額: <span class="text-indigo-900">${lTotal - lowerUsed}</span></span>
+            <span class="bg-amber-50 text-amber-700 px-2 py-1 rounded-md border border-amber-200 text-xs shadow-sm font-bold tracking-wide">上層餘額: <span class="text-amber-900">${uTotal - upperUsed}</span></span>
+            <span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md border border-indigo-200 text-xs shadow-sm font-bold tracking-wide">下層餘額: <span class="text-indigo-900">${lTotal - lowerUsed}</span></span>
         `;
       } else {
         els.layerBalances.classList.add('hidden');
@@ -926,14 +1009,13 @@
         }
       }
 
-      // 結果區域內容生成
       if (state.mode === 'mode3' || state.drawIndex > 0) {
         const visibleList = state.mode === 'mode3' 
             ? state.drawList 
             : state.drawList.filter(item => item.groupId < state.drawIndex);
         
         let contentHTML = '';
-        const showDesignated = els.chkShowDesignated.checked; // 取得 Toggle 狀態
+        const showDesignated = els.chkShowDesignated.checked;
 
         if (state.mode === 'mode3') {
           const isRevealed = state.drawIndex > 0;
@@ -942,8 +1024,6 @@
           sortedList.forEach(item => {
             const isUp = item.layer === '上層';
             const badgeClass = isUp ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
-            
-            // 取消彩色卡片背景，統一為白底；將顏色移轉給 deptColor
             const boxClass = 'bg-white border-slate-200 border relative';
             const deptColor = item.groupStyle ? item.groupStyle.text : '#94a3b8';
 
@@ -952,7 +1032,7 @@
                 <span class="absolute top-1 left-1.5 text-slate-400 text-xs font-mono">${item.originalIdx + 1}</span>
                 <span class="font-bold text-slate-800 truncate w-full text-center px-1 mb-0.5 flex flex-col justify-center transition-all" style="line-height: 1.2;">
                   <span style="font-size: var(--name-size);">${item.name}</span>
-                  ${item.isGroup || item.dept !== '0' ? `<span class="text-[0.85em] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
+                  ${item.isGroup || item.dept !== '0' ? `<span class="text-[8px] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
                 </span>
                 ${isRevealed ? `
                 <span class="${badgeClass} border text-xs font-bold px-1.5 py-0.5 rounded-sm leading-none mt-0.5 animate-fade-in">
@@ -961,21 +1041,19 @@
                 ` : `
                 <span class="border text-xs font-bold px-1.5 py-0.5 rounded-sm leading-none mt-0.5 opacity-0">隱藏</span>
                 `}
-                ${showDesignated && item.designatedLayer ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayer}</span>` : ''}
+                ${showDesignated && item.designatedLayer ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayer === '上層' ? '2' : '1'}</span>` : ''}
               </div>
             `;
           });
           contentHTML += `</div>`;
         } 
         else if (state.mode === 'split' || state.mode === 'mode4') {
-          // Mode 2 & 4: 分為上下兩個緊湊區域
           const upperList = visibleList.filter(i => i.layer === '上層');
           const lowerList = visibleList.filter(i => i.layer === '下層');
           
           const buildTags = (list) => {
             let tags = '<div class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">';
             list.forEach(item => {
-              // 取消彩色卡片背景
               const boxClass = 'bg-white border-slate-200 border relative';
               const numClass = 'text-slate-600 bg-slate-100 font-bold';
               const deptColor = item.groupStyle ? item.groupStyle.text : '#94a3b8';
@@ -987,9 +1065,9 @@
                   </span>
                   <span class="font-bold text-slate-800 ml-2 pr-8 truncate w-full text-left flex flex-col justify-center" style="line-height: 1.2;">
                     <span style="font-size: var(--name-size);">${item.name}</span>
-                    ${item.isGroup || item.dept !== '0' ? `<span class="text-[0.85em] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
+                    ${item.isGroup || item.dept !== '0' ? `<span class="text-[8px] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
                   </span>
-                  ${showDesignated && item.designatedLayer ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayer}</span>` : ''}
+                  ${showDesignated && item.designatedLayer ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayer === '上層' ? '2' : '1'}</span>` : ''}
                 </div>
               `;
             });
@@ -1020,10 +1098,8 @@
           `;
         } 
         else {
-          // Mode 1: 標籤式全域排版
           contentHTML = `<div class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">`;
           visibleList.forEach(item => {
-            // 取消彩色卡片背景
             const boxClass = 'bg-white border-slate-200 border relative';
             const numClass = 'text-slate-600 bg-slate-100 font-bold';
             const deptColor = item.groupStyle ? item.groupStyle.text : '#94a3b8';
@@ -1035,9 +1111,9 @@
                 </span>
                 <span class="font-bold text-slate-800 ml-2 pr-8 truncate w-full text-left flex flex-col justify-center" style="line-height: 1.2;">
                   <span style="font-size: var(--name-size);">${item.name}</span>
-                  ${item.isGroup || item.dept !== '0' ? `<span class="text-[0.85em] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
+                  ${item.isGroup || item.dept !== '0' ? `<span class="text-[8px] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
                 </span>
-                ${showDesignated && item.designatedLayer ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayer}</span>` : ''}
+                ${showDesignated && item.designatedLayer ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayer === '上層' ? '2' : '1'}</span>` : ''}
               </div>
             `;
           });
