@@ -37,7 +37,7 @@
       <div class="flex items-center gap-2">
         <i data-lucide="users" class="w-5 h-5 hidden sm:block"></i>
         <h1 class="text-lg md:text-xl font-bold leading-none">三年又三年調位抽籤系統</h1>
-        <span id="header-subtitle" class="hidden md:inline text-xs text-indigo-100 ml-2 border-l border-indigo-400 pl-2">version 30 | 支援 Google Sheet 讀取、B欄同號連票綑綁連位、D欄組別</span>
+        <span id="header-subtitle" class="hidden md:inline text-xs text-indigo-100 ml-2 border-l border-indigo-400 pl-2">version 33 | 支援 Google Sheet 讀取、B欄同號連票綑綁連位、D欄組別</span>
       </div>
       <div class="flex items-center gap-2">
         <button id="btn-fullscreen" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full transition-colors backdrop-blur-sm text-xs font-medium" title="切換全螢幕">
@@ -69,6 +69,9 @@
           <button data-mode="mode4" class="mode-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-50 border border-transparent min-w-[120px]">
             <i data-lucide="dice-5" class="w-4 h-4"></i> 模式四：隨機分派
           </button>
+          <button data-mode="mode5" class="mode-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-50 border border-transparent min-w-[120px]">
+            <i data-lucide="home" class="w-4 h-4"></i> 模式五：三房分派
+          </button>
         </div>
 
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
@@ -83,7 +86,7 @@
           </div>
           <p class="text-xs text-slate-400 leading-relaxed">
             💡 提示：試算表必須將共用權限設定為<strong>「知道連結的任何人都可以檢視」</strong>。<br>
-            欄位格式對應：<strong>A欄:</strong> 姓名 | <strong>B欄:</strong> 連票號碼 (相同號碼者視為同組連票，將會一起中籤並連著顯示) | <strong>C欄:</strong> 指定樓層 (0=無, 1=下層, 2=上層) | <strong>D欄:</strong> 組別/科別 (0代表獨立人仕)
+            欄位格式對應：<strong>A欄:</strong> 姓名 | <strong>B欄:</strong> 連票號碼 (相同號碼者視為同組連票，將會一起中籤並連著顯示) | <strong>C欄:</strong> 指定樓層/房間 (0=無, 1=下層或1號房, 2=上層或2號房, 3=3號房) | <strong>D欄:</strong> 組別/科別 (0代表獨立人仕)
           </p>
         </div>
 
@@ -92,21 +95,25 @@
             <div class="border-2 border-dashed border-slate-300 group-hover:border-indigo-400 group-hover:bg-indigo-50/30 rounded-2xl p-4 text-center transition-all">
               <i data-lucide="upload" class="w-6 h-6 text-slate-400 group-hover:text-indigo-500 mx-auto mb-1 transition-colors"></i>
               <span class="block text-slate-600 font-bold text-xs">或者：點擊選擇或拖曳 TXT 本地檔案匯入</span>
-              <span class="block text-slate-400 text-[11px] mt-0.5">格式：姓名,連票號碼,指定樓層,組別 (如：陳大文,101,0,資訊科)</span>
+              <span class="block text-slate-400 text-[11px] mt-0.5">格式：姓名,連票號碼,指定樓層/房間,組別 (如：陳大文,101,0,資訊科)</span>
               <span id="file-name-display" class="hidden mt-2 inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold"></span>
             </div>
             <input type="file" id="file-upload" accept=".txt" class="hidden" />
           </label>
         </div>
 
-        <div id="layer-settings" class="hidden bg-white p-4 rounded-xl border border-slate-200 flex gap-4 shadow-sm animate-zoom-in">
-          <div class="flex-1">
+        <div id="layer-settings" class="hidden bg-white p-4 rounded-xl border border-slate-200 flex gap-4 shadow-sm animate-zoom-in flex-wrap md:flex-nowrap">
+          <div class="flex-1 min-w-[120px]">
+            <label id="lbl-lower-count" class="block text-xs font-bold text-slate-600 mb-1">下層人數 (自動)</label>
+            <input type="number" id="lower-count" readonly class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-500 outline-none cursor-not-allowed transition-all" placeholder="輸入人數" />
+          </div>
+          <div class="flex-1 min-w-[120px]">
             <label id="lbl-upper-count" class="block text-xs font-bold text-slate-600 mb-1">上層人數</label>
             <input type="number" id="upper-count" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="輸入人數" />
           </div>
-          <div class="flex-1">
-            <label id="lbl-lower-count" class="block text-xs font-bold text-slate-600 mb-1">下層人數 (自動)</label>
-            <input type="number" id="lower-count" readonly class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-500 outline-none cursor-not-allowed transition-all" placeholder="輸入人數" />
+          <div id="room3-container" class="flex-1 min-w-[120px] hidden">
+            <label id="lbl-room3-count" class="block text-xs font-bold text-slate-600 mb-1">3號房人數</label>
+            <input type="number" id="room3-count" min="0" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="輸入人數" />
           </div>
         </div>
 
@@ -131,7 +138,7 @@
           
           <div id="draw-progress" class="flex items-center gap-2">
             <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md" title="此為進度">
-              <span id="draw-progress-label">籤數進度</span> <span id="draw-index-display" class="text-indigo-600 text-sm">0</span> / <span id="draw-total-display">0</span>
+              <span id="draw-progress-label">座位數目</span> <span id="draw-index-display" class="text-indigo-600 text-sm">0</span> / <span id="draw-total-display">0</span>
             </span>
             <div id="layer-balances" class="hidden items-center gap-1.5"></div>
           </div>
@@ -140,6 +147,11 @@
             </div>
 
           <div class="flex items-center gap-1.5 flex-wrap justify-end">
+            <select id="sel-layout-mode" class="px-2 py-1.5 bg-white border border-slate-200 rounded text-[11px] font-bold text-slate-600 outline-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm mr-1">
+              <option value="horizontal" selected>直向顯示</option>
+              <option value="vertical">橫向顯示</option>
+            </select>
+
             <label class="flex items-center gap-1 px-2 py-1.5 bg-white border border-slate-200 rounded text-[11px] font-bold text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors shadow-sm mr-1">
               <input type="checkbox" id="chk-show-designated" class="rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 w-3 h-3" checked>
               <span class="hidden sm:inline">顯示</span>指定參數
@@ -195,8 +207,10 @@
       fileName: '',
       upperCount: '',
       lowerCount: '',
+      room3Count: '',
       fontSize: 16,
-      isCssMaximized: false
+      isCssMaximized: false,
+      layoutMode: 'horizontal'
     };
 
     // --- DOM Elements ---
@@ -209,6 +223,7 @@
       btnFontPlus: document.getElementById('btn-font-plus'),
       chkSeparateDraw: document.getElementById('chk-separate-draw'),
       chkShowDesignated: document.getElementById('chk-show-designated'),
+      selLayoutMode: document.getElementById('sel-layout-mode'),
       chkContainer: document.getElementById('chk-container'),
       sectionSettings: document.getElementById('section-settings'),
       sectionDrawing: document.getElementById('section-drawing'),
@@ -220,8 +235,11 @@
       layerSettings: document.getElementById('layer-settings'),
       lblUpperCount: document.getElementById('lbl-upper-count'),
       lblLowerCount: document.getElementById('lbl-lower-count'),
+      lblRoom3Count: document.getElementById('lbl-room3-count'),
       upperCount: document.getElementById('upper-count'),
       lowerCount: document.getElementById('lower-count'),
+      room3Count: document.getElementById('room3-count'),
+      room3Container: document.getElementById('room3-container'),
       btnStart: document.getElementById('btn-start'),
       startBtnText: document.getElementById('start-btn-text'),
       drawProgress: document.getElementById('draw-progress'),
@@ -292,7 +310,11 @@
       els.upperCount.addEventListener('input', handleUpperCountChange);
       
       els.lowerCount.addEventListener('input', (e) => {
-          if (state.mode === 'mode4') state.lowerCount = e.target.value;
+          if (state.mode === 'mode4' || state.mode === 'mode5') state.lowerCount = e.target.value;
+      });
+
+      els.room3Count.addEventListener('input', (e) => {
+          if (state.mode === 'mode5') state.room3Count = e.target.value;
       });
 
       els.btnStart.addEventListener('click', startDraw);
@@ -304,6 +326,10 @@
       els.btnExportXlsx.addEventListener('click', exportXLSX);
       els.btnExportPdf.addEventListener('click', exportPDF);
       els.chkShowDesignated.addEventListener('change', renderDrawingUI);
+      els.selLayoutMode.addEventListener('change', (e) => {
+        state.layoutMode = e.target.value;
+        renderDrawingUI();
+      });
       
       document.addEventListener('keydown', handleKeyDown);
       document.addEventListener('fullscreenchange', updateFullscreenButton);
@@ -387,13 +413,23 @@
       state.mode = newMode;
       resetDraw(false);
       
-      if (newMode === 'mode4') {
+      if (newMode === 'mode5') {
+          els.room3Container.classList.remove('hidden');
+          els.lowerCount.readOnly = false;
+          els.lowerCount.classList.remove('bg-slate-50', 'text-slate-500', 'cursor-not-allowed');
+          els.lowerCount.classList.add('focus:ring-2', 'focus:ring-indigo-500', 'focus:border-indigo-500');
+          els.lblLowerCount.textContent = '1號房限額';
+          els.lblUpperCount.textContent = '2號房限額';
+          els.lblRoom3Count.textContent = '3號房限額';
+      } else if (newMode === 'mode4') {
+          els.room3Container.classList.add('hidden');
           els.lowerCount.readOnly = false;
           els.lowerCount.classList.remove('bg-slate-50', 'text-slate-500', 'cursor-not-allowed');
           els.lowerCount.classList.add('focus:ring-2', 'focus:ring-indigo-500', 'focus:border-indigo-500');
           els.lblLowerCount.textContent = '下層限額';
           els.lblUpperCount.textContent = '上層限額';
       } else {
+          els.room3Container.classList.add('hidden');
           els.lowerCount.readOnly = true;
           els.lowerCount.classList.add('bg-slate-50', 'text-slate-500', 'cursor-not-allowed');
           els.lowerCount.classList.remove('focus:ring-2', 'focus:ring-indigo-500', 'focus:border-indigo-500');
@@ -412,7 +448,6 @@
         let isTicketGroup = false;
         let isDeptGroup = false;
 
-        // B欄有同號碼連票（不為0、1或空白）優先綁定為連票組
         if (item.ticket !== '0' && item.ticket !== '1' && item.ticket !== '') {
           groupKey = `_ticket_${item.ticket}`;
           isTicketGroup = true;
@@ -439,16 +474,12 @@
             count: 0,
             members: [],
             originalIndices: [],
-            designatedLayer: null
+            designatedLayerCode: null
           };
         }
 
-        let designatedLayer = null;
-        if (item.designatedLayerCode === '1') designatedLayer = '下層';
-        if (item.designatedLayerCode === '2') designatedLayer = '上層';
-
-        if (!combinedMap[groupKey].designatedLayer && designatedLayer) {
-          combinedMap[groupKey].designatedLayer = designatedLayer;
+        if (!combinedMap[groupKey].designatedLayerCode && item.designatedLayerCode && item.designatedLayerCode !== '0' && item.designatedLayerCode !== '') {
+          combinedMap[groupKey].designatedLayerCode = item.designatedLayerCode;
         }
 
         combinedMap[groupKey].count++;
@@ -569,7 +600,7 @@
     }
 
     function calculateLowerCount() {
-      if (state.mode === 'mode4') return;
+      if (state.mode === 'mode4' || state.mode === 'mode5') return;
       
       if ((state.mode === 'split' || state.mode === 'mode3') && state.groups.length > 0) {
         const totalNeeded = state.groups.reduce((sum, g) => sum + g.count, 0);
@@ -597,35 +628,51 @@
 
       let upperRemaining = parseInt(state.upperCount) || 0;
       let lowerRemaining = parseInt(state.lowerCount) || 0;
+      let room3Remaining = parseInt(state.room3Count) || 0;
       let requiredUpper = 0;
       let requiredLower = 0;
+      let requiredRoom3 = 0;
 
-      if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4') {
+      if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4' || state.mode === 'mode5') {
         state.groups.forEach(g => {
-            if (g.designatedLayer === '上層') requiredUpper += g.count;
-            if (g.designatedLayer === '下層') requiredLower += g.count;
+            g.designatedLayer = null;
+            if (g.designatedLayerCode === '1') g.designatedLayer = (state.mode === 'mode5') ? '1號房' : '下層';
+            if (g.designatedLayerCode === '2') g.designatedLayer = (state.mode === 'mode5') ? '2號房' : '上層';
+            if (g.designatedLayerCode === '3') g.designatedLayer = '3號房';
+
+            if (g.designatedLayer === '上層' || g.designatedLayer === '2號房') requiredUpper += g.count;
+            if (g.designatedLayer === '下層' || g.designatedLayer === '1號房') requiredLower += g.count;
+            if (g.designatedLayer === '3號房') requiredRoom3 += g.count;
         });
 
         if (requiredUpper > upperRemaining) {
-            CustomModal.alert(`⚠️ 座位衝突錯誤！\n\n強制指定派往「上層」的人數共需 ${requiredUpper} 個座位，\n但目前上層總限額僅有 ${upperRemaining} 個。`);
+            const name = state.mode === 'mode5' ? '2號房' : '上層';
+            CustomModal.alert(`⚠️ 座位衝突錯誤！\n\n強制指定派往「${name}」的人數共需 ${requiredUpper} 個座位，\n但目前該區總限額僅有 ${upperRemaining} 個。`);
             return;
         }
         if (requiredLower > lowerRemaining) {
-            CustomModal.alert(`⚠️ 座位衝突錯誤！\n\n強制指定派往「下層」的人數共需 ${requiredLower} 個座位，\n但目前下層總限額僅有 ${lowerRemaining} 個。`);
+            const name = state.mode === 'mode5' ? '1號房' : '下層';
+            CustomModal.alert(`⚠️ 座位衝突錯誤！\n\n強制指定派往「${name}」的人數共需 ${requiredLower} 個座位，\n但目前該區總限額僅有 ${lowerRemaining} 個。`);
+            return;
+        }
+        if (state.mode === 'mode5' && requiredRoom3 > room3Remaining) {
+            CustomModal.alert(`⚠️ 座位衝突錯誤！\n\n強制指定派往「3號房」的人數共需 ${requiredRoom3} 個座位，\n但目前該房總限額僅有 ${room3Remaining} 個。`);
             return;
         }
       }
 
-      if (state.mode === 'mode4') {
+      if (state.mode === 'mode4' || state.mode === 'mode5') {
         const totalNeeded = state.groups.reduce((sum, g) => sum + g.count, 0);
-        if (upperRemaining + lowerRemaining < totalNeeded) {
-            CustomModal.alert(`⚠️ 座位總數不足！\n\n名單共需 ${totalNeeded} 個座位，但上下層總限額僅 ${upperRemaining + lowerRemaining} 個。`);
+        const totalAvailable = upperRemaining + lowerRemaining + (state.mode === 'mode5' ? room3Remaining : 0);
+        if (totalAvailable < totalNeeded) {
+            CustomModal.alert(`⚠️ 座位總數不足！\n\n名單共需 ${totalNeeded} 個座位，但目前各房總限額僅 ${totalAvailable} 個。`);
             return;
         }
       }
 
       let freeUpperRemaining = upperRemaining - requiredUpper;
       let freeLowerRemaining = lowerRemaining - requiredLower;
+      let freeRoom3Remaining = room3Remaining - requiredRoom3;
       
       let maxAttempts = 300;
       let successfulAllocation = false;
@@ -634,6 +681,7 @@
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
           let tempUpper = freeUpperRemaining;
           let tempLower = freeLowerRemaining;
+          let tempRoom3 = freeRoom3Remaining;
           let isSuccess = true;
           
           randomizedGroups = shuffleArray(state.groups);
@@ -641,12 +689,13 @@
           for (let group of randomizedGroups) {
               let assignedLayer = null;
 
-              if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4') {
+              if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4' || state.mode === 'mode5') {
                   if (group.designatedLayer) {
                       assignedLayer = group.designatedLayer;
                   } else {
                       let canUpper = tempUpper >= group.count;
                       let canLower = tempLower >= group.count;
+                      let canRoom3 = state.mode === 'mode5' && tempRoom3 >= group.count;
 
                       if (state.mode === 'split' || state.mode === 'mode3') {
                           if (canUpper) {
@@ -672,6 +721,20 @@
                           } else {
                               isSuccess = false; break; 
                           }
+                      } else if (state.mode === 'mode5') {
+                          let validRooms = [];
+                          if (canLower) validRooms.push('1號房');
+                          if (canUpper) validRooms.push('2號房');
+                          if (canRoom3) validRooms.push('3號房');
+
+                          if (validRooms.length > 0) {
+                              assignedLayer = validRooms[Math.floor(Math.random() * validRooms.length)];
+                              if (assignedLayer === '1號房') tempLower -= group.count;
+                              else if (assignedLayer === '2號房') tempUpper -= group.count;
+                              else if (assignedLayer === '3號房') tempRoom3 -= group.count;
+                          } else {
+                              isSuccess = false; break;
+                          }
                       }
                   }
               }
@@ -685,7 +748,7 @@
       }
 
       if (!successfulAllocation) {
-          CustomModal.alert(`⚠️ 空間分配失敗（裝箱衝突）！\n\n系統嘗試了 ${maxAttempts} 次組合，但由於「科」或「連票」的人數區塊過大，無法完美塞入零碎空間。\n\n💡 建議調整上下層限額或將大型區塊打散。`);
+          CustomModal.alert(`⚠️ 空間分配失敗（裝箱衝突）！\n\n系統嘗試了 ${maxAttempts} 次組合，但由於「科」或「連票」的人數區塊過大，無法完美塞入零碎空間。\n\n💡 建議調整各區塊限額或將大型區塊打散。`);
           return;
       }
 
@@ -693,6 +756,7 @@
       let globalId = 1;
       let upperId = 1;
       let lowerId = 1;
+      let room3Id = 1;
       let currentGroupIdx = 0;
 
       randomizedGroups.forEach((group) => {
@@ -715,9 +779,13 @@
       if (isSeparateDraw) {
           let flatEntities = [];
           randomizedGroups.forEach((group) => {
-              // B欄同號碼連票組絕對不拆散，整組視為單一物件去參與洗牌 shuffle
               if (group.isTicketGroup) {
-                  flatEntities.push({ isTicketBlock: true, group: group, designatedLayer: group.designatedLayer });
+                  flatEntities.push({ 
+                    isTicketBlock: true, 
+                    group: group, 
+                    designatedLayer: group.designatedLayer,
+                    designatedLayerCode: group.designatedLayerCode
+                  });
               } else {
                   group.members.forEach((member) => {
                       flatEntities.push({
@@ -728,7 +796,8 @@
                           originalIdx: member.originalIdx,
                           isGroup: group.isGroup,
                           groupStyle: group.groupStyle,
-                          designatedLayer: group.designatedLayer
+                          designatedLayer: group.designatedLayer,
+                          designatedLayerCode: group.designatedLayerCode
                       });
                   });
               }
@@ -740,31 +809,43 @@
               if (entity.isTicketBlock) {
                   const g = entity.group;
                   g.members.forEach((member) => {
+                      let lOrder = null;
+                      if (g.assignedLayer === '上層' || g.assignedLayer === '2號房') lOrder = upperId++;
+                      else if (g.assignedLayer === '下層' || g.assignedLayer === '1號房') lOrder = lowerId++;
+                      else if (g.assignedLayer === '3號房') lOrder = room3Id++;
+
                       finalizedIndividuals.push({
                           groupId: idx,
                           id: globalId++,
                           name: member.name,
                           dept: member.dept !== '0' ? `${member.dept} (連票 ${member.ticket})` : `連票 ${member.ticket}`,
                           layer: g.assignedLayer,
-                          layerOrder: g.assignedLayer === '上層' ? upperId++ : (g.assignedLayer === '下層' ? lowerId++ : null),
+                          layerOrder: lOrder,
                           originalIdx: member.originalIdx,
                           isGroup: true,
                           groupStyle: g.groupStyle,
-                          designatedLayer: g.designatedLayer
+                          designatedLayer: g.designatedLayer,
+                          designatedLayerCode: g.designatedLayerCode
                       });
                   });
               } else {
+                  let lOrder = null;
+                  if (entity.layer === '上層' || entity.layer === '2號房') lOrder = upperId++;
+                  else if (entity.layer === '下層' || entity.layer === '1號房') lOrder = lowerId++;
+                  else if (entity.layer === '3號房') lOrder = room3Id++;
+
                   finalizedIndividuals.push({
                       groupId: idx,
                       id: globalId++,
                       name: entity.name,
                       dept: entity.dept,
                       layer: entity.layer,
-                      layerOrder: entity.layer === '上層' ? upperId++ : (entity.layer === '下層' ? lowerId++ : null),
+                      layerOrder: lOrder,
                       originalIdx: entity.originalIdx,
                       isGroup: entity.isGroup,
                       groupStyle: entity.groupStyle,
-                      designatedLayer: entity.designatedLayer
+                      designatedLayer: entity.designatedLayer,
+                      designatedLayerCode: entity.designatedLayerCode
                   });
               }
           });
@@ -777,17 +858,23 @@
                   if (group.isTicketGroup) {
                       displayDept = member.dept !== '0' ? `${member.dept} (連票 ${member.ticket})` : `連票 ${member.ticket}`;
                   }
+                  let lOrder = null;
+                  if (group.assignedLayer === '上層' || group.assignedLayer === '2號房') lOrder = upperId++;
+                  else if (group.assignedLayer === '下層' || group.assignedLayer === '1號房') lOrder = lowerId++;
+                  else if (group.assignedLayer === '3號房') lOrder = room3Id++;
+
                   finalizedIndividuals.push({
                       groupId: groupDrawOrder,
                       id: globalId++,
                       name: member.name,
                       dept: displayDept,
                       layer: group.assignedLayer,
-                      layerOrder: group.assignedLayer === '上層' ? upperId++ : (group.assignedLayer === '下層' ? lowerId++ : null),
+                      layerOrder: lOrder,
                       originalIdx: member.originalIdx,
                       isGroup: group.isGroup,
                       groupStyle: group.groupStyle,
-                      designatedLayer: group.designatedLayer
+                      designatedLayer: group.designatedLayer,
+                      designatedLayerCode: group.designatedLayerCode
                   });
               });
           });
@@ -821,6 +908,12 @@
         state.groups = [];
         state.fileName = '';
         els.sheetUrlInput.value = '';
+        els.upperCount.value = '';
+        els.lowerCount.value = '';
+        els.room3Count.value = '';
+        state.upperCount = '';
+        state.lowerCount = '';
+        state.room3Count = '';
       }
       renderUI();
     }
@@ -866,9 +959,9 @@
           els.btnStart.disabled = true;
         }
 
-        if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4') {
+        if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4' || state.mode === 'mode5') {
           els.layerSettings.classList.remove('hidden');
-          if (state.mode !== 'mode4') {
+          if (state.mode !== 'mode4' && state.mode !== 'mode5') {
               const totalNeeded = state.groups.reduce((sum, g) => sum + g.count, 0);
               els.upperCount.max = totalNeeded;
           } else {
@@ -878,7 +971,7 @@
           els.layerSettings.classList.add('hidden');
         }
 
-        if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4') {
+        if (state.mode === 'split' || state.mode === 'mode3' || state.mode === 'mode4' || state.mode === 'mode5') {
           els.chkContainer.classList.remove('hidden');
         } else {
           els.chkContainer.classList.add('hidden');
@@ -890,33 +983,47 @@
     }
 
     function renderDrawingUI() {
-      els.drawIndexDisplay.textContent = state.drawIndex;
-      els.drawTotalDisplay.textContent = state.drawStepTotal; 
+      // 在此計算實際上已被抽出的參與人數與總人數 (以座位數目為準)
+      const visibleList = state.mode === 'mode3' 
+            ? state.drawList 
+            : state.drawList.filter(item => item.groupId < state.drawIndex);
+
+      els.drawIndexDisplay.textContent = visibleList.length;
+      els.drawTotalDisplay.textContent = state.drawList.length; 
       els.pdfHeader.textContent = state.mode === 'mode3' ? '列表分配結果' : '抽籤結果報告';
 
-      const isSeparateDraw = els.chkSeparateDraw.checked && state.mode !== 'all';
-      els.drawProgressLabel.textContent = isSeparateDraw ? '抽籤次數' : '籤數進度';
+      els.drawProgressLabel.textContent = '座位數目';
 
-      if (state.mode === 'split' || state.mode === 'mode4') {
+      if (state.mode === 'split' || state.mode === 'mode4' || state.mode === 'mode5') {
         els.layerBalances.classList.remove('hidden');
         els.layerBalances.classList.add('flex');
         
-        const visibleList = state.drawList.filter(item => item.groupId < state.drawIndex);
         let upperUsed = 0;
         let lowerUsed = 0;
+        let room3Used = 0;
         
         visibleList.forEach(i => {
-            if (i.layer === '上層') upperUsed++;
-            if (i.layer === '下層') lowerUsed++;
+            if (i.layer === '上層' || i.layer === '2號房') upperUsed++;
+            if (i.layer === '下層' || i.layer === '1號房') lowerUsed++;
+            if (i.layer === '3號房') room3Used++;
         });
         
         const uTotal = parseInt(state.upperCount) || 0;
         const lTotal = parseInt(state.lowerCount) || 0;
+        const r3Total = parseInt(state.room3Count) || 0;
         
-        els.layerBalances.innerHTML = `
-            <span class="bg-amber-50 text-amber-700 px-2 py-1 rounded-md border border-amber-200 text-xs shadow-sm font-bold tracking-wide">上層餘額: <span class="text-amber-900">${uTotal - upperUsed}</span></span>
-            <span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md border border-indigo-200 text-xs shadow-sm font-bold tracking-wide">下層餘額: <span class="text-indigo-900">${lTotal - lowerUsed}</span></span>
-        `;
+        if (state.mode === 'mode5') {
+            els.layerBalances.innerHTML = `
+                <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md border border-emerald-200 text-xs shadow-sm font-bold tracking-wide">1號房餘額: <span class="text-emerald-900">${lTotal - lowerUsed}</span></span>
+                <span class="bg-amber-50 text-amber-700 px-2 py-1 rounded-md border border-amber-200 text-xs shadow-sm font-bold tracking-wide">2號房餘額: <span class="text-amber-900">${uTotal - upperUsed}</span></span>
+                <span class="bg-purple-50 text-purple-700 px-2 py-1 rounded-md border border-purple-200 text-xs shadow-sm font-bold tracking-wide">3號房餘額: <span class="text-purple-900">${r3Total - room3Used}</span></span>
+            `;
+        } else {
+            els.layerBalances.innerHTML = `
+                <span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md border border-indigo-200 text-xs shadow-sm font-bold tracking-wide">下層餘額: <span class="text-indigo-900">${lTotal - lowerUsed}</span></span>
+                <span class="bg-amber-50 text-amber-700 px-2 py-1 rounded-md border border-amber-200 text-xs shadow-sm font-bold tracking-wide">上層餘額: <span class="text-amber-900">${uTotal - upperUsed}</span></span>
+            `;
+        }
       } else {
         els.layerBalances.classList.add('hidden');
         els.layerBalances.classList.remove('flex');
@@ -960,10 +1067,6 @@
       }
 
       if (state.mode === 'mode3' || state.drawIndex > 0) {
-        const visibleList = state.mode === 'mode3' 
-            ? state.drawList 
-            : state.drawList.filter(item => item.groupId < state.drawIndex);
-        
         let contentHTML = '';
         const showDesignated = els.chkShowDesignated.checked;
 
@@ -972,7 +1075,7 @@
           const sortedList = [...visibleList].sort((a, b) => a.originalIdx - b.originalIdx);
           contentHTML = `<div class="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">`;
           sortedList.forEach(item => {
-            const isUp = item.layer === '上層';
+            const isUp = item.layer === '上層' || item.layer === '2號房';
             const badgeClass = isUp ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
             const boxClass = 'bg-white border-slate-200 border relative';
             const deptColor = item.groupStyle ? item.groupStyle.text : '#94a3b8';
@@ -980,9 +1083,9 @@
             contentHTML += `
               <div class="flex flex-col items-center justify-center rounded-lg p-2 shadow-sm min-h-[64px] animate-zoom-in ${boxClass}">
                 <span class="absolute top-1 left-1.5 text-slate-400 text-xs font-mono">${item.originalIdx + 1}</span>
-                <span class="font-bold text-slate-800 truncate w-full text-center px-1 mb-0.5 flex flex-col justify-center transition-all" style="line-height: 1.2;">
+                <span class="font-bold text-slate-800 truncate w-full text-center px-1 mb-0.5 flex flex-col justify-center" style="line-height: 1.2;">
                   <span style="font-size: var(--name-size);">${item.name}</span>
-                  ${item.isGroup || item.dept !== '0' ? `<span class="text-[8px] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
+                  ${showDesignated && (item.isGroup || item.dept !== '0') ? `<span class="text-[8px] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
                 </span>
                 ${isRevealed ? `
                 <span class="${badgeClass} border text-xs font-bold px-1.5 py-0.5 rounded-sm leading-none mt-0.5 animate-fade-in">
@@ -991,15 +1094,16 @@
                 ` : `
                 <span class="border text-xs font-bold px-1.5 py-0.5 rounded-sm leading-none mt-0.5 opacity-0">隱藏</span>
                 `}
-                ${showDesignated && item.designatedLayer ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayer === '上層' ? '2' : '1'}</span>` : ''}
+                ${showDesignated && item.designatedLayerCode ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayerCode}</span>` : ''}
               </div>
             `;
           });
           contentHTML += `</div>`;
         } 
-        else if (state.mode === 'split' || state.mode === 'mode4') {
-          const upperList = visibleList.filter(i => i.layer === '上層');
-          const lowerList = visibleList.filter(i => i.layer === '下層');
+        else if (state.mode === 'split' || state.mode === 'mode4' || state.mode === 'mode5') {
+          const upperList = visibleList.filter(i => i.layer === '上層' || i.layer === '2號房');
+          const lowerList = visibleList.filter(i => i.layer === '下層' || i.layer === '1號房');
+          const room3List = visibleList.filter(i => i.layer === '3號房');
           
           const buildTags = (list) => {
             let tags = '<div class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">';
@@ -1015,9 +1119,9 @@
                   </span>
                   <span class="font-bold text-slate-800 ml-2 pr-8 truncate w-full text-left flex flex-col justify-center" style="line-height: 1.2;">
                     <span style="font-size: var(--name-size);">${item.name}</span>
-                    ${item.isGroup || item.dept !== '0' ? `<span class="text-[8px] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
+                    ${showDesignated && (item.isGroup || item.dept !== '0') ? `<span class="text-[8px] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
                   </span>
-                  ${showDesignated && item.designatedLayer ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayer === '上層' ? '2' : '1'}</span>` : ''}
+                  ${showDesignated && item.designatedLayerCode ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayerCode}</span>` : ''}
                 </div>
               `;
             });
@@ -1025,27 +1129,64 @@
             return tags;
           };
 
-          contentHTML = `
-            <div class="flex flex-col gap-3 h-full">
-              <div class="flex-1 min-h-0 bg-white border border-slate-200 rounded-lg p-2 md:p-3 shadow-sm flex flex-col">
-                <div class="text-sm font-bold text-amber-700 mb-2 border-b border-amber-100 pb-1 flex items-center gap-1 shrink-0">
-                  <i data-lucide="layers" class="w-4 h-4"></i> 上層名單 (${upperList.length} 人)
-                </div>
-                <div class="overflow-y-auto pr-1 flex-1">
-                  ${buildTags(upperList)}
-                </div>
-              </div>
+          const layoutClass = state.layoutMode === 'horizontal' 
+            ? (state.mode === 'mode5' ? 'grid grid-cols-1 md:grid-cols-3 gap-3 h-full' : 'grid grid-cols-1 md:grid-cols-2 gap-3 h-full')
+            : 'flex flex-col gap-3 h-full';
 
-              <div class="flex-1 min-h-0 bg-white border border-slate-200 rounded-lg p-2 md:p-3 shadow-sm flex flex-col">
-                <div class="text-sm font-bold text-indigo-700 mb-2 border-b border-indigo-100 pb-1 flex items-center gap-1 shrink-0">
-                  <i data-lucide="layers" class="w-4 h-4"></i> 下層名單 (${lowerList.length} 人)
+          if (state.mode === 'mode5') {
+              contentHTML = `
+                <div class="${layoutClass}">
+                  <div class="flex-1 min-h-0 bg-white border border-slate-200 rounded-lg p-2 md:p-3 shadow-sm flex flex-col">
+                    <div class="text-sm font-bold text-emerald-700 mb-2 border-b border-emerald-100 pb-1 flex items-center gap-1 shrink-0">
+                      <i data-lucide="home" class="w-4 h-4"></i> 1號房名單 (${lowerList.length} 人)
+                    </div>
+                    <div class="overflow-y-auto pr-1 flex-1">
+                      ${buildTags(lowerList)}
+                    </div>
+                  </div>
+
+                  <div class="flex-1 min-h-0 bg-white border border-slate-200 rounded-lg p-2 md:p-3 shadow-sm flex flex-col">
+                    <div class="text-sm font-bold text-amber-700 mb-2 border-b border-amber-100 pb-1 flex items-center gap-1 shrink-0">
+                      <i data-lucide="home" class="w-4 h-4"></i> 2號房名單 (${upperList.length} 人)
+                    </div>
+                    <div class="overflow-y-auto pr-1 flex-1">
+                      ${buildTags(upperList)}
+                    </div>
+                  </div>
+
+                  <div class="flex-1 min-h-0 bg-white border border-slate-200 rounded-lg p-2 md:p-3 shadow-sm flex flex-col">
+                    <div class="text-sm font-bold text-purple-700 mb-2 border-b border-purple-100 pb-1 flex items-center gap-1 shrink-0">
+                      <i data-lucide="home" class="w-4 h-4"></i> 3號房名單 (${room3List.length} 人)
+                    </div>
+                    <div class="overflow-y-auto pr-1 flex-1">
+                      ${buildTags(room3List)}
+                    </div>
+                  </div>
                 </div>
-                <div class="overflow-y-auto pr-1 flex-1">
-                  ${buildTags(lowerList)}
+              `;
+          } else {
+              contentHTML = `
+                <div class="${layoutClass}">
+                  <div class="flex-1 min-h-0 bg-white border border-slate-200 rounded-lg p-2 md:p-3 shadow-sm flex flex-col">
+                    <div class="text-sm font-bold text-indigo-700 mb-2 border-b border-indigo-100 pb-1 flex items-center gap-1 shrink-0">
+                      <i data-lucide="layers" class="w-4 h-4"></i> 下層名單 (${lowerList.length} 人)
+                    </div>
+                    <div class="overflow-y-auto pr-1 flex-1">
+                      ${buildTags(lowerList)}
+                    </div>
+                  </div>
+
+                  <div class="flex-1 min-h-0 bg-white border border-slate-200 rounded-lg p-2 md:p-3 shadow-sm flex flex-col">
+                    <div class="text-sm font-bold text-amber-700 mb-2 border-b border-amber-100 pb-1 flex items-center gap-1 shrink-0">
+                      <i data-lucide="layers" class="w-4 h-4"></i> 上層名單 (${upperList.length} 人)
+                    </div>
+                    <div class="overflow-y-auto pr-1 flex-1">
+                      ${buildTags(upperList)}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          `;
+              `;
+          }
         } 
         else {
           contentHTML = `<div class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">`;
@@ -1061,9 +1202,9 @@
                 </span>
                 <span class="font-bold text-slate-800 ml-2 pr-8 truncate w-full text-left flex flex-col justify-center" style="line-height: 1.2;">
                   <span style="font-size: var(--name-size);">${item.name}</span>
-                  ${item.isGroup || item.dept !== '0' ? `<span class="text-[8px] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
+                  ${showDesignated && (item.isGroup || item.dept !== '0') ? `<span class="text-[8px] font-bold truncate mt-0.5" style="color: ${deptColor}">${item.dept === '0' ? '' : item.dept}</span>` : ''}
                 </span>
-                ${showDesignated && item.designatedLayer ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayer === '上層' ? '2' : '1'}</span>` : ''}
+                ${showDesignated && item.designatedLayerCode ? `<span class="absolute bottom-1 right-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-1 py-0.5 rounded border border-slate-100 shadow-sm" title="強制指定">📌${item.designatedLayerCode}</span>` : ''}
               </div>
             `;
           });
@@ -1093,26 +1234,41 @@
       let exportData = [];
       const visibleList = state.drawList.filter(item => item.groupId < state.drawIndex);
       
-      if (state.mode === 'split' || state.mode === 'mode4') {
-        const upperList = visibleList.filter(i => i.layer === '上層');
-        const lowerList = visibleList.filter(i => i.layer === '下層');
-        const maxLen = Math.max(upperList.length, lowerList.length);
+      if (state.mode === 'split' || state.mode === 'mode4' || state.mode === 'mode5') {
+        const upperList = visibleList.filter(i => i.layer === '上層' || i.layer === '2號房');
+        const lowerList = visibleList.filter(i => i.layer === '下層' || i.layer === '1號房');
+        const room3List = visibleList.filter(i => i.layer === '3號房');
+        const maxLen = Math.max(upperList.length, lowerList.length, room3List.length);
         
         for (let i = 0; i < maxLen; i++) {
-          exportData.push({
-            '上層順序': upperList[i]?.layerOrder || '',
-            '上層姓名': upperList[i]?.name || '',
-            '上層備註(科別/連位)': upperList[i]?.dept === '0' ? '無' : (upperList[i]?.dept || ''),
-            '下層順序': lowerList[i]?.layerOrder || '',
-            '下層姓名': lowerList[i]?.name || '',
-            '下層備註(科別/連位)': lowerList[i]?.dept === '0' ? '無' : (lowerList[i]?.dept || '')
-          });
+          if (state.mode === 'mode5') {
+              exportData.push({
+                '1號房順序': lowerList[i]?.layerOrder || '',
+                '1號房姓名': lowerList[i]?.name || '',
+                '1號房備註(科別/連位)': lowerList[i]?.dept === '0' ? '無' : (lowerList[i]?.dept || ''),
+                '2號房順序': upperList[i]?.layerOrder || '',
+                '2號房姓名': upperList[i]?.name || '',
+                '2號房備註(科別/連位)': upperList[i]?.dept === '0' ? '無' : (upperList[i]?.dept || ''),
+                '3號房順序': room3List[i]?.layerOrder || '',
+                '3號房姓名': room3List[i]?.name || '',
+                '3號房備註(科別/連位)': room3List[i]?.dept === '0' ? '無' : (room3List[i]?.dept || '')
+              });
+          } else {
+              exportData.push({
+                '下層順序': lowerList[i]?.layerOrder || '',
+                '下層姓名': lowerList[i]?.name || '',
+                '下層備註(科別/連位)': lowerList[i]?.dept === '0' ? '無' : (lowerList[i]?.dept || ''),
+                '上層順序': upperList[i]?.layerOrder || '',
+                '上層姓名': upperList[i]?.name || '',
+                '上層備註(科別/連位)': upperList[i]?.dept === '0' ? '無' : (upperList[i]?.dept || '')
+              });
+          }
         }
       } else {
         exportData = visibleList.map(item => {
           const row = { '全域順序': item.id };
           if (state.mode === 'mode3') {
-            row['層級'] = item.layer;
+            row['層級/房間'] = item.layer;
             row['層級順序'] = item.layerOrder;
           }
           row['姓名'] = item.name;
