@@ -18,7 +18,6 @@
       --name-size: 16px;
     }
     
-    /* 補足 Tailwind 缺少的一些自訂動畫效果 */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideInFromBottom { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes slideInFromRight { from { transform: translateX(2rem); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -38,7 +37,7 @@
       <div class="flex items-center gap-2">
         <i data-lucide="users" class="w-5 h-5 hidden sm:block"></i>
         <h1 class="text-lg md:text-xl font-bold leading-none">三年又三年調位抽籤系統</h1>
-        <span id="header-subtitle" class="hidden md:inline text-xs text-indigo-100 ml-2 border-l border-indigo-400 pl-2">version 29 | 支援 Google Sheet 讀取、B欄票數綑綁、D欄組別</span>
+        <span id="header-subtitle" class="hidden md:inline text-xs text-indigo-100 ml-2 border-l border-indigo-400 pl-2">version 30 | 支援 Google Sheet 讀取、B欄同號連票綑綁連位、D欄組別</span>
       </div>
       <div class="flex items-center gap-2">
         <button id="btn-fullscreen" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full transition-colors backdrop-blur-sm text-xs font-medium" title="切換全螢幕">
@@ -84,7 +83,7 @@
           </div>
           <p class="text-xs text-slate-400 leading-relaxed">
             💡 提示：試算表必須將共用權限設定為<strong>「知道連結的任何人都可以檢視」</strong>。<br>
-            欄位格式對應：<strong>A欄:</strong> 姓名 | <strong>B欄:</strong> 票數 (大於 1 代表連位數) | <strong>C欄:</strong> 指定樓層 (0=無, 1=下層, 2=上層) | <strong>D欄:</strong> 組別/科別 (0代表獨立人仕)
+            欄位格式對應：<strong>A欄:</strong> 姓名 | <strong>B欄:</strong> 連票號碼 (相同號碼者視為同組連票，將會一起中籤並連著顯示) | <strong>C欄:</strong> 指定樓層 (0=無, 1=下層, 2=上層) | <strong>D欄:</strong> 組別/科別 (0代表獨立人仕)
           </p>
         </div>
 
@@ -93,7 +92,7 @@
             <div class="border-2 border-dashed border-slate-300 group-hover:border-indigo-400 group-hover:bg-indigo-50/30 rounded-2xl p-4 text-center transition-all">
               <i data-lucide="upload" class="w-6 h-6 text-slate-400 group-hover:text-indigo-500 mx-auto mb-1 transition-colors"></i>
               <span class="block text-slate-600 font-bold text-xs">或者：點擊選擇或拖曳 TXT 本地檔案匯入</span>
-              <span class="block text-slate-400 text-[11px] mt-0.5">格式：姓名,票數(座位數),指定樓層,組別 (如：陳大文,1,0,資訊科)</span>
+              <span class="block text-slate-400 text-[11px] mt-0.5">格式：姓名,連票號碼,指定樓層,組別 (如：陳大文,101,0,資訊科)</span>
               <span id="file-name-display" class="hidden mt-2 inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold"></span>
             </div>
             <input type="file" id="file-upload" accept=".txt" class="hidden" />
@@ -115,7 +114,7 @@
           <input type="checkbox" id="chk-separate-draw" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
           <label for="chk-separate-draw" class="flex flex-col cursor-pointer select-none">
             <span class="text-sm font-bold text-slate-700">同科同層，分開中籤</span>
-            <span class="text-xs text-slate-500 mt-0.5">打勾後：確保同科分配在同層，但每個人的中籤先後次序將獨立隨機洗牌</span>
+            <span class="text-xs text-slate-500 mt-0.5">打勾後：確保同科分配在同層，但各科成員中籤次序獨立洗牌（注意：B欄同號連票依然會保持絕對綑綁連位顯示）</span>
           </label>
         </div>
 
@@ -131,7 +130,7 @@
         <div class="bg-white px-2 py-1.5 md:px-4 md:py-2 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2 shrink-0 shadow-sm z-10">
           
           <div id="draw-progress" class="flex items-center gap-2">
-            <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md" title="此為「組別(籤數)」進度">
+            <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md" title="此為進度">
               <span id="draw-progress-label">籤數進度</span> <span id="draw-index-display" class="text-indigo-600 text-sm">0</span> / <span id="draw-total-display">0</span>
             </span>
             <div id="layer-balances" class="hidden items-center gap-1.5"></div>
@@ -186,7 +185,7 @@
   <script>
     // --- Application State ---
     const state = {
-      mode: 'all', // all, split, mode3, mode4
+      mode: 'all', 
       rawNames: [],
       groups: [], 
       drawList: [], 
@@ -405,11 +404,74 @@
       renderUI();
     }
 
-    // --- 修訂 1 & 2：Google Sheet JSONP 載入與全新的欄位分配邏輯 ---
+    function processRawNamesToGroups() {
+      const combinedMap = {};
+      
+      state.rawNames.forEach((item, index) => {
+        let groupKey = '';
+        let isTicketGroup = false;
+        let isDeptGroup = false;
+
+        // B欄有同號碼連票（不為0、1或空白）優先綁定為連票組
+        if (item.ticket !== '0' && item.ticket !== '1' && item.ticket !== '') {
+          groupKey = `_ticket_${item.ticket}`;
+          isTicketGroup = true;
+        } else if (item.dept !== '0' && item.dept !== '') {
+          groupKey = `_dept_${item.dept}`;
+          isDeptGroup = true;
+        } else {
+          groupKey = `_indiv_${index}`;
+        }
+
+        if (!combinedMap[groupKey]) {
+          let deptName = '0';
+          if (isTicketGroup) {
+            deptName = `連票 ${item.ticket}`;
+          } else if (isDeptGroup) {
+            deptName = item.dept;
+          }
+
+          combinedMap[groupKey] = {
+            deptName: deptName,
+            isGroup: false,
+            isTicketGroup: isTicketGroup,
+            isDeptGroup: isDeptGroup,
+            count: 0,
+            members: [],
+            originalIndices: [],
+            designatedLayer: null
+          };
+        }
+
+        let designatedLayer = null;
+        if (item.designatedLayerCode === '1') designatedLayer = '下層';
+        if (item.designatedLayerCode === '2') designatedLayer = '上層';
+
+        if (!combinedMap[groupKey].designatedLayer && designatedLayer) {
+          combinedMap[groupKey].designatedLayer = designatedLayer;
+        }
+
+        combinedMap[groupKey].count++;
+        combinedMap[groupKey].members.push({ 
+          name: item.name, 
+          dept: item.dept, 
+          ticket: item.ticket, 
+          originalIdx: index 
+        });
+        combinedMap[groupKey].originalIndices.push(index);
+      });
+
+      Object.values(combinedMap).forEach(g => {
+        if (g.count > 1) {
+          g.isGroup = true;
+        }
+      });
+
+      state.groups = Object.values(combinedMap);
+    }
+
     function handleLoadSheet() {
       let urlOrId = els.sheetUrlInput.value.trim();
-      
-      // 修訂：如果留空，採用預設的 Google Sheet ID，且不顯示在輸入框中
       if (!urlOrId) {
         urlOrId = "1PY7x7IRhEdsxi8N63iBtSDPdwtdQ_WKSiA3SD1TfjSQ";
       }
@@ -437,7 +499,6 @@
       document.body.appendChild(script);
     }
 
-    // 全域 JSONP 回呼接收器
     window.handleGoogleSheetJsonp = function(data) {
       if (!data || !data.table || !data.table.rows) {
         CustomModal.alert("無法解析 Google Sheet 回傳的資料結構。");
@@ -446,71 +507,21 @@
       
       const rows = data.table.rows;
       state.rawNames = [];
-      const groupMap = {};
-      state.groups = [];
       
       rows.forEach((row, idx) => {
         if (!row.c) return;
         
-        // A欄=姓名, B欄=票數, C欄=指定樓層, D欄=組別
         const name = row.c[0] && row.c[0].v !== null ? String(row.c[0].v).trim() : `未知-${idx}`;
-        const seats = row.c[1] && row.c[1].v !== null ? parseInt(row.c[1].v, 10) : 1;
+        const seats = row.c[1] && row.c[1].v !== null ? String(row.c[1].v).trim() : '0';
         const designatedLayerCode = row.c[2] && row.c[2].v !== null ? String(row.c[2].v).trim() : '0';
         const dept = row.c[3] && row.c[3].v !== null ? String(row.c[3].v).trim() : '0';
         
-        // 過濾 Excel 標題列
         if (idx === 0 && (name === '姓名' || name === 'name')) return;
         
-        let designatedLayer = null;
-        if (designatedLayerCode === '1') designatedLayer = '下層';
-        if (designatedLayerCode === '2') designatedLayer = '上層';
-        
-        state.rawNames.push({ name, dept, designatedLayerCode, seats });
-        
-        // 若票數大於 1，直接視為多連位綑綁實體
-        if (seats > 1) {
-          state.groups.push({
-            deptName: dept !== '0' ? `${dept} (佔 ${seats} 位)` : `佔 ${seats} 位`,
-            isGroup: true,
-            isMultiSeat: true,
-            count: seats,
-            members: [{ name: name, originalIdx: idx }],
-            originalIndices: [idx],
-            designatedLayer: designatedLayer
-          });
-        } else {
-          // 票數 = 1 的情況：依據組別綑綁
-          // 若組別為 '0'，使用名字當 Key 達成獨立隨機
-          let groupKey = dept === '0' ? `_name_${name}` : dept;
-          let isRealGroup = dept !== '0';
-          
-          if (!groupMap[groupKey]) {
-            groupMap[groupKey] = {
-              deptName: dept === '0' ? '0' : dept,
-              isGroup: isRealGroup,
-              isMultiSeat: false,
-              count: 0,
-              members: [],
-              originalIndices: [],
-              designatedLayer: designatedLayer
-            };
-          }
-          
-          if (!groupMap[groupKey].designatedLayer && designatedLayer) {
-            groupMap[groupKey].designatedLayer = designatedLayer;
-          }
-          
-          groupMap[groupKey].count++;
-          groupMap[groupKey].members.push({ name: name, originalIdx: idx });
-          groupMap[groupKey].originalIndices.push(idx);
-          
-          if (groupMap[groupKey].count > 1) {
-            groupMap[groupKey].isGroup = true;
-          }
-        }
+        state.rawNames.push({ name, ticket: seats, dept, designatedLayerCode });
       });
       
-      state.groups = state.groups.concat(Object.values(groupMap));
+      processRawNamesToGroups();
       state.fileName = 'Google Cloud 雲端試算表名單';
       
       resetDraw(false);
@@ -519,7 +530,6 @@
       CustomModal.alert(`🎉 雲端連動成功！\n共載入了 ${state.rawNames.length} 位人名資料。`);
     };
 
-    // 備用的 TXT 讀取 (也相容相同的 4 欄欄位規範)
     function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -531,65 +541,20 @@
         const lines = text.split(/\r?\n/).map(n => n.trim()).filter(n => n.length > 0);
         
         state.rawNames = [];
-        const groupMap = {};
-        state.groups = [];
 
         lines.forEach((line, idx) => {
             const parts = line.split(',');
             const name = parts[0] ? parts[0].trim() : `未知-${idx}`;
-            const seats = parts[1] ? parseInt(parts[1].trim(), 10) : 1;
+            const seats = parts[1] ? parts[1].trim() : '0';
             const designatedLayerCode = parts[2] ? parts[2].trim() : '0';
             const dept = parts[3] ? parts[3].trim() : '0';
 
             if (idx === 0 && (name === '姓名' || name === 'name')) return;
 
-            let designatedLayer = null;
-            if (designatedLayerCode === '1') designatedLayer = '下層';
-            if (designatedLayerCode === '2') designatedLayer = '上層';
-
-            state.rawNames.push({ name, dept, designatedLayerCode, seats });
-
-            if (seats > 1) {
-                state.groups.push({
-                    deptName: dept !== '0' ? `${dept} (佔 ${seats} 位)` : `佔 ${seats} 位`,
-                    isGroup: true,
-                    isMultiSeat: true,
-                    count: seats,
-                    members: [{ name: name, originalIdx: idx }],
-                    originalIndices: [idx],
-                    designatedLayer: designatedLayer
-                });
-            } else {
-                let groupKey = dept === '0' ? `_name_${name}` : dept;
-                let isRealGroup = dept !== '0';
-
-                if (!groupMap[groupKey]) {
-                    groupMap[groupKey] = {
-                        deptName: dept === '0' ? '0' : dept,
-                        isGroup: isRealGroup,
-                        isMultiSeat: false,
-                        count: 0,
-                        members: [],
-                        originalIndices: [],
-                        designatedLayer: designatedLayer
-                    };
-                }
-                
-                if (!groupMap[groupKey].designatedLayer && designatedLayer) {
-                    groupMap[groupKey].designatedLayer = designatedLayer;
-                }
-
-                groupMap[groupKey].count++;
-                groupMap[groupKey].members.push({ name: name, originalIdx: idx });
-                groupMap[groupKey].originalIndices.push(idx);
-
-                if (groupMap[groupKey].count > 1) {
-                    groupMap[groupKey].isGroup = true;
-                }
-            }
+            state.rawNames.push({ name, ticket: seats, dept, designatedLayerCode });
         });
         
-        state.groups = state.groups.concat(Object.values(groupMap));
+        processRawNamesToGroups();
         els.fileUpload.value = ''; 
         resetDraw(false);
         calculateLowerCount();
@@ -720,7 +685,7 @@
       }
 
       if (!successfulAllocation) {
-          CustomModal.alert(`⚠️ 空間分配失敗（裝箱衝突）！\n\n系統嘗試了 ${maxAttempts} 次組合，但由於「科」的人數區塊過大，無法完美塞入零碎空間。\n\n💡 建議調整上下層限額或將大型科別打散。`);
+          CustomModal.alert(`⚠️ 空間分配失敗（裝箱衝突）！\n\n系統嘗試了 ${maxAttempts} 次組合，但由於「科」或「連票」的人數區塊過大，無法完美塞入零碎空間。\n\n💡 建議調整上下層限額或將大型區塊打散。`);
           return;
       }
 
@@ -750,14 +715,15 @@
       if (isSeparateDraw) {
           let flatEntities = [];
           randomizedGroups.forEach((group) => {
-              if (group.isMultiSeat) {
-                  flatEntities.push({ isMultiSeatBlock: true, group: group, designatedLayer: group.designatedLayer });
+              // B欄同號碼連票組絕對不拆散，整組視為單一物件去參與洗牌 shuffle
+              if (group.isTicketGroup) {
+                  flatEntities.push({ isTicketBlock: true, group: group, designatedLayer: group.designatedLayer });
               } else {
                   group.members.forEach((member) => {
                       flatEntities.push({
-                          isMultiSeatBlock: false,
+                          isTicketBlock: false,
                           name: member.name,
-                          dept: group.deptName,
+                          dept: member.dept,
                           layer: group.assignedLayer,
                           originalIdx: member.originalIdx,
                           isGroup: group.isGroup,
@@ -771,22 +737,22 @@
           let shuffledEntities = shuffleArray(flatEntities);
 
           shuffledEntities.forEach((entity, idx) => {
-              if (entity.isMultiSeatBlock) {
+              if (entity.isTicketBlock) {
                   const g = entity.group;
-                  for (let i = 0; i < g.count; i++) {
+                  g.members.forEach((member) => {
                       finalizedIndividuals.push({
                           groupId: idx,
                           id: globalId++,
-                          name: g.members[0].name,
-                          dept: `連位 (${i+1}/${g.count})`,
+                          name: member.name,
+                          dept: member.dept !== '0' ? `${member.dept} (連票 ${member.ticket})` : `連票 ${member.ticket}`,
                           layer: g.assignedLayer,
                           layerOrder: g.assignedLayer === '上層' ? upperId++ : (g.assignedLayer === '下層' ? lowerId++ : null),
-                          originalIdx: g.originalIndices[0],
+                          originalIdx: member.originalIdx,
                           isGroup: true,
                           groupStyle: g.groupStyle,
                           designatedLayer: g.designatedLayer
                       });
-                  }
+                  });
               } else {
                   finalizedIndividuals.push({
                       groupId: idx,
@@ -806,37 +772,24 @@
 
       } else {
           randomizedGroups.forEach((group, groupDrawOrder) => {
-              if (group.isMultiSeat) {
-                  for (let i = 0; i < group.count; i++) {
-                      finalizedIndividuals.push({
-                          groupId: groupDrawOrder,
-                          id: globalId++,
-                          name: group.members[0].name,
-                          dept: `連位 (${i+1}/${group.count})`,
-                          layer: group.assignedLayer,
-                          layerOrder: group.assignedLayer === '上層' ? upperId++ : (group.assignedLayer === '下層' ? lowerId++ : null),
-                          originalIdx: group.originalIndices[0],
-                          isGroup: true,
-                          groupStyle: group.groupStyle,
-                          designatedLayer: group.designatedLayer
-                      });
+              group.members.forEach((member) => {
+                  let displayDept = member.dept;
+                  if (group.isTicketGroup) {
+                      displayDept = member.dept !== '0' ? `${member.dept} (連票 ${member.ticket})` : `連票 ${member.ticket}`;
                   }
-              } else {
-                  group.members.forEach((member) => {
-                      finalizedIndividuals.push({
-                          groupId: groupDrawOrder,
-                          id: globalId++,
-                          name: member.name,
-                          dept: group.deptName,
-                          layer: group.assignedLayer,
-                          layerOrder: group.assignedLayer === '上層' ? upperId++ : (group.assignedLayer === '下層' ? lowerId++ : null),
-                          originalIdx: member.originalIdx,
-                          isGroup: group.isGroup,
-                          groupStyle: group.groupStyle,
-                          designatedLayer: group.designatedLayer
-                      });
+                  finalizedIndividuals.push({
+                      groupId: groupDrawOrder,
+                      id: globalId++,
+                      name: member.name,
+                      dept: displayDept,
+                      layer: group.assignedLayer,
+                      layerOrder: group.assignedLayer === '上層' ? upperId++ : (group.assignedLayer === '下層' ? lowerId++ : null),
+                      originalIdx: member.originalIdx,
+                      isGroup: group.isGroup,
+                      groupStyle: group.groupStyle,
+                      designatedLayer: group.designatedLayer
                   });
-              }
+              });
           });
           state.drawStepTotal = randomizedGroups.length;
       }
@@ -872,8 +825,6 @@
       renderUI();
     }
 
-    // --- Rendering Functions ---
-
     function renderUI() {
       els.modeBtns.forEach(btn => {
         if (btn.dataset.mode === state.mode) {
@@ -904,9 +855,10 @@
         els.headerSubtitle.classList.remove('hidden');
 
         if (state.fileName) {
-          const deptCount = state.groups.filter(g => g.isGroup && !g.isMultiSeat).length;
+          const deptCount = state.groups.filter(g => g.isDeptGroup && g.isGroup).length;
+          const ticketCount = state.groups.filter(g => g.isTicketGroup).length;
           const totalNeeded = state.groups.reduce((sum, g) => sum + g.count, 0);
-          els.fileNameDisplay.textContent = `已載入名單：${state.fileName} (共 ${totalNeeded} 個座位，內含 ${deptCount} 個組別科別)`;
+          els.fileNameDisplay.textContent = `已載入名單：${state.fileName} (共 ${totalNeeded} 人，內含 ${deptCount} 個科別，${ticketCount} 組連票綑綁)`;
           els.fileNameDisplay.classList.remove('hidden');
           els.btnStart.disabled = false;
         } else {
@@ -937,15 +889,13 @@
       lucide.createIcons();
     }
 
-    // --- 修訂 3：組別及連位等文字縮小至 FONT SIZE 8 (使用 text-[8px]) ---
     function renderDrawingUI() {
       els.drawIndexDisplay.textContent = state.drawIndex;
       els.drawTotalDisplay.textContent = state.drawStepTotal; 
       els.pdfHeader.textContent = state.mode === 'mode3' ? '列表分配結果' : '抽籤結果報告';
 
       const isSeparateDraw = els.chkSeparateDraw.checked && state.mode !== 'all';
-      els.drawProgressLabel.textContent = isSeparateDraw ? '人數進度' : '籤數進度';
-      els.drawProgressLabel.parentElement.title = isSeparateDraw ? '此為「單人」進度' : '此為「組別(籤數)」進度';
+      els.drawProgressLabel.textContent = isSeparateDraw ? '抽籤次數' : '籤數進度';
 
       if (state.mode === 'split' || state.mode === 'mode4') {
         els.layerBalances.classList.remove('hidden');
