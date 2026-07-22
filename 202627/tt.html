@@ -938,7 +938,7 @@
             if (isClassQuery) {
                 let subject = lesson.subject;
                 //if (subject.includes('PHY') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
-                if (subject.includes('PHY') subject = 'X1';
+                if (subject.includes('PHY')) subject = 'X1';
                 if (subject.includes('CHEM')) subject = 'X2';
                 if (subject.includes('ICT')) subject = 'X3';
                 return `<span style="color:blue;font-size:12px">${subject}<br></span> <span style="font-size:8px">(${lesson.teacher})</span>`;
@@ -1276,7 +1276,7 @@
             if (isClassQuery) {
                 let subject = lesson.subject;
                 // if (subject.includes('PHY') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
-                if (subject.includes('PHY') subject = 'X1';
+                if (subject.includes('PHY')) subject = 'X1';
                 if (subject.includes('CHEM')) subject = 'X2';
                 if (subject.includes('ICT')) subject = 'X3';
                 return `<span class="subject" style="color:blue;font-size:12px;">${subject}</span> <span class="teacher" style="font-size:10px;">(${lesson.teacher})</span>`;
