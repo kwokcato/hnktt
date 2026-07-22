@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <title>房間查詢系統</title>
+    <script>
+    // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
+    const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 假設的網域名稱，請務必修改
+
+    // 解碼 JWT
+    function decodeJwtResponse(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // 檢查 sessionStorage 中是否有有效的登入憑證
+    const id_token = window.sessionStorage.getItem('google_id_token');
+    let is_authenticated = false;
+
+    if (id_token) {
+        const payload = decodeJwtResponse(id_token);
+        if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp && (payload.exp * 1000) > Date.now()) {
+            is_authenticated = true;
+        }
+    }
+
+    // 項目 2：暫停 Google Login 驗證
+    // if (!is_authenticated) {
+    //     window.top.location.href = 'index.html';
+    // }
+    </script>
+    
+    <style>
+        /* =====================================================================
+           項目 4：完整嵌入您提供的 hnkstyle.css 內容
+           ===================================================================== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* 畫面根據瀏覽器大小調整，固定用盡 90% */
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: none;
+            box-sizing: border-box;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            color: #555;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        #roomSelect {
+            width: 30%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+        }
+
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #34495e;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .rooms-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+
+        .room-name {
+            background-color: #ecf0f1;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .room-name:hover {
+            background-color: #bdc3c7;
+        }
+
+        .room-name.highlight-room {
+            background-color: #e74c3c;
+            color: #fff;
+            font-weight: bold;
+            transform: scale(1.05);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .separator-row td {
+            height: 15px;
+            padding: 0;
+            background-color: #bdc3c7;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(200, 200, 200, 0.3);
+            border: 1px solid rgba(150, 150, 150, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .refresh-btn:hover {
+            background-color: rgba(200, 200, 200, 0.7);
+            transform: scale(1.1);
+        }
+        
+        .refresh-icon {
+            width: 16px;
+            height: 16px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23333333"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>');
+            background-size: contain;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+    <script>
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+    </script>
+    <script>
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'u') || (e.ctrlKey && e.shiftKey && e.key === 'J')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+
+    <div class="refresh-btn" title="重整頁面" id="pageRefreshBtn">
+        <div class="refresh-icon"></div>
+    </div>
+
+    <div class="container">
+        <h1>房間查詢系統</h1>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('roomTab')">按房間查詢</button>
+            <button class="tab-button" onclick="switchTab('freeRoomsTab')">查詢閒置房間</button>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div id="roomTab" class="tab-content active">
+            <div class="form-group">
+                <label for="roomSelect">選擇房間：</label>
+                <select id="roomSelect">
+                    <option value="">-- 請選擇房間 --</option>
+                </select>
+            </div>
+            <table id="timetableTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>節數</th>
+                        <th>星期一</th>
+                        <th>星期二</th>
+                        <th>星期三</th>
+                        <th>星期四</th>
+                        <th>星期五</th>
+                    </tr>
+                </thead>
+                <tbody id="timetableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="freeRoomsTab" class="tab-content">
+            <div class="form-group" style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <label for="weekdaySelect">選擇星期：</label>
+                    <select id="weekdaySelect">
+                        <option value="">-- 請選擇星期 --</option>
+                        <option value="1">星期一</option>
+                        <option value="2">星期二</option>
+                        <option value="3">星期三</option>
+                        <option value="4">星期四</option>
+                        <option value="5">星期五</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="freeRoomsStatusMessage" class="status-message"></div>
+
+            <table id="freeRoomsTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">節數</th>
+                        <th>閒置房間（滑鼠移入可自動高亮相同房間）</th>
+                    </tr>
+                </thead>
+                <tbody id="freeRoomsBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 全局變數
+        let timetableData = []; // 儲存所有的課表資料
+        let uniqueRooms = [];   // 儲存所有不重複的房間名稱
+        const weekdayNames = { 1: '星期一', 2: '星期二', 3: '星期三', 4: '星期四', 5: '星期五' };
+
+        // 頁面載入完成後執行
+        document.addEventListener('DOMContentLoaded', () => {
+            initDefaultWeekday(); // 根據今天日期，自動設定閒置房間分頁的預設星期
+            loadCSV(); // 載入資料
+
+            // 綁定事件
+            document.getElementById('roomSelect').addEventListener('change', onRoomChange);
+            document.getElementById('weekdaySelect').addEventListener('change', onWeekdayChange);
+            
+            // 綁定重整按鈕事件
+            document.getElementById('pageRefreshBtn').addEventListener('click', function() {
+                this.style.transform = 'scale(1.2) rotate(360deg)';
+                this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
+                
+                // 重新載入資料
+                loadCSV();
+                
+                setTimeout(() => {
+                    this.style.transform = '';
+                    this.style.backgroundColor = '';
+                }, 500);
+            });
+        });
+
+        // 根據今天的日期自動選取下拉式選單的星期幾
+        function initDefaultWeekday() {
+            let currentDay = new Date().getDay(); // 0 是星期日，1-5 是一到五，6 是星期六
+            // 若為週末（週六或週日），則預設選取星期一 (1)
+            if (currentDay === 0 || currentDay === 6) {
+                currentDay = 1;
+            }
+            document.getElementById('weekdaySelect').value = currentDay;
+        }
+
+        // 項目 3：修改提取 CSV 部份，轉為提取自 Google Sheets (JSONP 模式)
+        window.handleTTSheetResponse = function(jsonData) {
+            try {
+                let csvText = "";
+                if (jsonData && jsonData.table && jsonData.table.rows) {
+                    jsonData.table.rows.forEach(row => {
+                        if (row.c) {
+                            let rowCells = row.c.map(cell => {
+                                if (!cell) return "";
+                                return cell.v !== null && cell.v !== undefined ? String(cell.v).replace(/,/g, '') : "";
+                            });
+                            csvText += rowCells.join(",") + "\n";
+                        }
+                    });
+                }
+                processCSVData(csvText);
+            } catch (e) {
+                console.error('解析課表試算表錯誤:', e);
+                showStatus('無法解析雲端課表數據', 'error');
+            }
+        };
+
+        function loadCSV() {
+            showStatus('正在載入最新雲端數據...', 'info');
+            
+            document.getElementById('timetableTable').style.display = 'none';
+            document.getElementById('freeRoomsTable').style.display = 'none';
+            document.getElementById('roomSelect').selectedIndex = 0;
+            document.getElementById('freeRoomsStatusMessage').style.display = 'none';
+
+            // 重整時保留當前選定或自動設定的星期，不盲目清空
+            if (!document.getElementById('weekdaySelect').value) {
+                initDefaultWeekday();
+            }
+
+            try {
+                const ttSheetId = '1S7RkDGhtRYcM9Tv304fqeOSz1RsQX2pzS3oNuQAVKRs';
+                const cacheBuster = Date.now();
+
+                const oldScriptTT = document.getElementById('script_tt_jsonp');
+                if (oldScriptTT) oldScriptTT.remove();
+
+                const scriptTT = document.createElement('script');
+                scriptTT.id = 'script_tt_jsonp';
+                scriptTT.src = `https://docs.google.com/spreadsheets/d/${ttSheetId}/gviz/tq?tqx=responseHandler:handleTTSheetResponse&t=${cacheBuster}`;
+                scriptTT.onerror = () => { throw new Error("主課表加載失敗"); };
+                document.head.appendChild(scriptTT);
+
+            } catch (error) {
+                console.error('載入雲端試算表失敗:', error);
+                showStatus('無法載入雲端數據，請確認網路連線。', 'error');
+            }
+        }
+
+        // 處理 CSV 文字資料
+        function processCSVData(csvText) {
+            if (csvText.startsWith('\uFEFF')) {
+                csvText = csvText.substring(1);
+            }
+
+            const lines = csvText.split('\n');
+            timetableData = [];
+            const roomsSet = new Set();
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const columns = line.split(',');
+                if (columns.length >= 7) {
+                    const week = parseInt(columns[1].trim());
+                    const period = parseInt(columns[2].trim());
+                    const teacher = columns[3].trim();
+                    const className = columns[4].trim();
+                    const subject = columns[5].trim();
+                    const room = columns[6].trim();
+
+                    if (!isNaN(week) && !isNaN(period) && room) {
+                        timetableData.push({ week, period, teacher, className, subject, room });
+                        roomsSet.add(room);
+                    }
+                }
+            }
+
+            uniqueRooms = Array.from(roomsSet).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+            populateRoomSelect();
+            
+            // 資料成功載入後，自動根據當前選取的星期載入閒置房間
+            onWeekdayChange();
+            
+            showStatus('成功載入最新雲端數據！請選擇上方功能進行查詢。', 'success');
+        }
+
+        function populateRoomSelect() {
+            const select = document.getElementById('roomSelect');
+            select.innerHTML = '<option value="">-- 請選擇房間 --</option>';
+
+            uniqueRooms.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room;
+                option.textContent = room;
+                select.appendChild(option);
+            });
+        }
+
+        function switchTab(tabId) {
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+
+        // 當選擇的房間改變時
+        function onRoomChange() {
+            const selectedRoom = document.getElementById('roomSelect').value;
+            const table = document.getElementById('timetableTable');
+            const tbody = document.getElementById('timetableBody');
+            
+            tbody.innerHTML = '';
+
+            if (!selectedRoom) {
+                table.style.display = 'none';
+                return;
+            }
+
+            table.style.display = 'table';
+
+            for (let i = 1; i <= 10; i++) {
+                const row = tbody.insertRow();
+                const periodCell = row.insertCell(0);
+                periodCell.textContent = `第 ${i} 節`;
+                periodCell.style.fontWeight = 'bold';
+                periodCell.style.backgroundColor = '#f4f7f6';
+
+                for (let j = 1; j <= 5; j++) {
+                    const cell = row.insertCell(j);
+                    
+                    if (j === 3 && i === 10) {
+                        cell.textContent = '-';
+                        cell.style.backgroundColor = '#eaeedf';
+                        continue;
+                    }
+
+                    const lessons = timetableData.filter(d => d.room === selectedRoom && d.week === j && d.period === i);
+
+                    if (lessons.length > 0) {
+                        // 根據科目(subject)進行分組，達成同科目跨班合併顯示的需求
+                        const subjectGroups = {};
+                        lessons.forEach(l => {
+                            if (!subjectGroups[l.subject]) {
+                                subjectGroups[l.subject] = {
+                                    subject: l.subject,
+                                    classes: [],
+                                    teachers: []
+                                };
+                            }
+                            let classLetter = l.className;
+                            const match = l.className.match(/^\d+([A-Za-z]+)$/);
+                            if (match) {
+                                classLetter = match[1];
+                            }
+                            
+                            subjectGroups[l.subject].classes.push({ letter: classLetter, full: l.className });
+                            subjectGroups[l.subject].teachers.push(l.teacher);
+                        });
+
+                        const detailsArray = Object.values(subjectGroups).map(group => {
+                            const uniqueFullClasses = Array.from(new Set(group.classes.map(c => c.full)));
+                            const matchFirst = group.classes[0].full.match(/^(\d+)[A-Za-z]+$/);
+                            
+                            let mergedClassName = uniqueFullClasses.join('/');
+                            if (matchFirst) {
+                                const grade = matchFirst[1];
+                                const allSameGrade = group.classes.every(c => c.full.startsWith(grade));
+                                if (allSameGrade) {
+                                    const letters = Array.from(new Set(group.classes.map(c => c.letter))).sort().join('');
+                                    mergedClassName = grade + letters;
+                                }
+                            }
+                            
+                            return `${mergedClassName} ${group.subject}`;
+                        });
+
+                        cell.innerHTML = detailsArray.join('<br>');
+                    } else {
+                        // 沒有課的節數完全留白
+                        cell.textContent = '';
+                    }
+                }
+
+                if (i === 2 || i === 4 || i === 7) {
+                    const separatorRow = tbody.insertRow();
+                    separatorRow.className = 'separator-row';
+                    for (let k = 0; k <= 5; k++) {
+                        const cell = separatorRow.insertCell(k);
+                        if (k === 0) {
+                            if (i === 2) cell.textContent = '第一小息';
+                            else if (i === 4) cell.textContent = '第二小息';
+                            else if (i === 7) cell.textContent = '午膳時間';
+                            cell.style.fontSize = '12px';
+                            cell.style.color = '#7f8c8d';
+                            cell.style.fontWeight = 'bold';
+                        }
+                    }
+                }
+            }
+            
+            showStatus(`成功找到 「${selectedRoom}」 的房間時間表（最新）`, 'success');
+        }
+
+        // 當選擇的星期改變時（查詢閒置房間）
+        function onWeekdayChange() {
+            const weekday = parseInt(document.getElementById('weekdaySelect').value);
+            const table = document.getElementById('freeRoomsTable');
+            const tableBody = document.getElementById('freeRoomsBody');
+            
+            tableBody.innerHTML = '';
+
+            if (isNaN(weekday)) {
+                table.style.display = 'none';
+                document.getElementById('freeRoomsStatusMessage').style.display = 'none';
+                return;
+            }
+
+            table.style.display = 'table';
+
+            for (let i = 1; i <= 10; i++) {
+                const row = tableBody.insertRow();
+                
+                const periodCell = row.insertCell(0);
+                periodCell.textContent = `第 ${i} 節`;
+                periodCell.style.fontWeight = 'bold';
+                periodCell.style.backgroundColor = '#f4f7f6';
+
+                const roomsCell = row.insertCell(1);
+                roomsCell.style.textAlign = 'left';
+
+                if (weekday === 3 && i === 10) {
+                    roomsCell.textContent = '（全校不排課時間）';
+                    roomsCell.style.color = '#7f8c8d';
+                    roomsCell.style.fontStyle = 'italic';
+                    continue;
+                }
+
+                const occupiedRooms = new Set(
+                    timetableData.filter(d => d.week === weekday && d.period === i).map(d => d.room)
+                );
+
+                const freeRooms = uniqueRooms.filter(room => !occupiedRooms.has(room));
+
+                if (freeRooms.length > 0) {
+                    const gridDiv = document.createElement('div');
+                    gridDiv.className = 'rooms-grid';
+
+                    freeRooms.forEach(room => {
+                        const roomSpan = document.createElement('span');
+                        roomSpan.className = 'room-name';
+                        roomSpan.textContent = room;
+                        
+                        // 滑鼠移入自動高亮，滑鼠移出自動移除高亮
+                        roomSpan.addEventListener('mouseover', () => {
+                            highlightAllRooms(room);
+                        });
+                        
+                        roomSpan.addEventListener('mouseout', () => {
+                            removeAllHighlights();
+                        });
+
+                        gridDiv.appendChild(roomSpan);
+                    });
+                    roomsCell.appendChild(gridDiv);
+                } else {
+                    roomsCell.textContent = '無閒置房間';
+                }
+                
+                if (i === 2 || i === 4 || i === 7) {
+                    const separatorRow = tableBody.insertRow();
+                    separatorRow.insertCell(0).colSpan = 2;
+                    separatorRow.insertCell(0).style.border = 'none';
+                }
+            }
+            
+            showStatus(`成功找到 「${weekdayNames[weekday]}」 的閒置房間資訊（最新）`, 'success', 'freeRoomsStatusMessage');
+        }
+        
+        function highlightAllRooms(roomName) {
+            const roomSpans = document.querySelectorAll('#freeRoomsTable .room-name');
+            roomSpans.forEach(span => {
+                if (span.textContent === roomName) {
+                    span.classList.add('highlight-room');
+                }
+            });
+        }
+        
+        function removeAllHighlights() {
+            const highlightedSpans = document.querySelectorAll('#freeRoomsTable .highlight-room');
+            highlightedSpans.forEach(span => {
+                span.classList.remove('highlight-room');
+            });
+        }
+        
+        function showStatus(message, type, elementId = 'statusMessage') {
+            const statusElement = document.getElementById(elementId);
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type}`;
+            statusElement.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

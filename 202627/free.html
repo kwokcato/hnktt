@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>教師空堂查詢及列表系统</title>
+    
+    <script>
+    // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
+    const SCHOOL_DOMAIN = "bhnkc.edu.hk"; 
+
+    function decodeJwtResponse(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    const id_token = window.sessionStorage.getItem('google_id_token');
+    let is_authenticated = true;
+
+    if (id_token) {
+        const payload = decodeJwtResponse(id_token);
+        if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp && (payload.exp * 1000) > Date.now()) {
+            is_authenticated = true;
+        }
+    }
+
+    if (!is_authenticated) {
+        window.top.location.href = 'index.html';
+    }
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            width: 90%;
+            margin: 0 auto;
+            padding: 15px;
+            background-color: #fafafa;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(200, 200, 200, 0.3);
+            border: 1px solid rgba(150, 150, 150, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .refresh-btn:hover {
+            background-color: rgba(200, 200, 200, 0.7);
+            transform: scale(1.1);
+        }
+        .refresh-icon {
+            width: 16px;
+            height: 16px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23333333"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>');
+            background-size: contain;
+            opacity: 0.7;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .tab-btn {
+            padding: 8px 16px;
+            border: 1px solid #cbd5e1;
+            background: #f1f5f9;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #64748b;
+        }
+        .tab-btn.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #eef0f2;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-weight: bold;
+            color: #34495e;
+            font-size: 14px;
+        }
+
+        select {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            background-color: white;
+            font-size: 14px;
+        }
+
+        .search-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-input-group input {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+        }
+        .long-input {
+            width: 380px; 
+            max-width: 100%;
+        }
+        .normal-input {
+            width: 200px;
+        }
+
+        .clear-btn {
+            background: #e2e8f0;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #475569;
+        }
+        .clear-btn:hover {
+            background: #cbd5e1;
+        }
+
+        .shortcut-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #334155;
+            font-weight: 500;
+        }
+        .shortcut-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .checkbox-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* 精簡版中六已完結提示盒 */
+        .f6-ended-box {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #ea580c;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .f6-ended-box input {
+            cursor: pointer;
+            width: 15px;
+            height: 15px;
+            accent-color: #ea580c;
+        }
+
+        .action-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .action-btn:hover {
+            background-color: #2980b9;
+        }
+        .action-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .search-results {
+            margin-top: 15px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .results-table th, .results-table td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        .results-table th {
+            background-color: #3498db;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        .results-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        .free-block {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .f6-free-block {
+            color: #ea580c;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .busy-block {
+            color: #e74c3c;
+            font-size: 12px;
+            opacity: 0.4;
+        }
+        .status-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        /* 縮小版中六橙色字體樣式 */
+        .f6-mini-tag {
+            color: #ea580c;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        #loading {
+            color: #7f8c8d;
+            font-style: italic;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <script>
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'u') || (e.ctrlKey && e.shiftKey && e.key === 'J')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+
+    <div class="refresh-btn" title="重整頁面">
+        <div class="refresh-icon"></div>
+    </div>
+    
+    <script>
+        document.querySelector('.refresh-btn').addEventListener('click', function() {
+            this.style.transform = 'scale(1.2) rotate(360deg)';
+            this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
+            setTimeout(() => { location.reload(); }, 1000);
+        });
+    </script>
+
+    <div class="container">
+        <h2>教師空堂查詢系統</h2>
+        <div id="loading">正在連線至雲端資料庫，請稍候...</div>
+        
+        <div class="tab-container">
+            <button id="tabQuery" class="tab-btn active">特定時段篩選</button>
+            <button id="tabListAll" class="tab-btn">全校每日空堂總表</button>
+        </div>
+        
+        <div id="panelQuery" class="filter-section">
+            <div class="filter-row">
+                <label for="daySelect">選擇星期：</label>
+                <select id="daySelect">
+                    <option value="1">星期一 (Monday)</option>
+                    <option value="2">星期二 (Tuesday)</option>
+                    <option value="3">星期三 (Wednesday)</option>
+                    <option value="4">星期四 (Thursday)</option>
+                    <option value="5">星期五 (Friday)</option>
+                </select>
+
+                <label class="f6-ended-box" for="f6EndedCheckbox">
+                    <input type="checkbox" id="f6EndedCheckbox">
+                    🎓 中六已完結
+                </label>
+
+                <div class="search-input-group">
+                    <label for="multiTeacherInput">教師姓名：</label>
+                    <input type="text" id="multiTeacherInput" class="long-input" placeholder="例如: KAA CCA 或 KAA, CCA">
+                    <button id="clearMultiBtn" class="clear-btn">清除</button>
+                </div>
+            </div>
+
+            <div class="filter-row" style="align-items: flex-start; gap: 12px;">
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <label>選擇節數：</label>
+                    <div style="display: flex; gap: 4px;">
+                        <button type="button" id="selectAllPeriodsBtn" class="shortcut-btn">全選</button>
+                        <button type="button" id="clearAllPeriodsBtn" class="shortcut-btn">清除</button>
+                    </div>
+                </div>
+
+                <div style="flex-grow: 1;">
+                    <div class="checkbox-container" id="periodCheckboxGroup">
+                        <script>
+                            for(let i=1; i<=10; i++) {
+                                document.write(`<div class="checkbox-item" id="p${i}Wrapper"><input type="checkbox" class="period-chk" id="p${i}" value="${i}"><label for="p${i}">第${i}節</label></div>`);
+                            }
+                        </script>
+                    </div>
+                    
+                    <div class="checkbox-container" style="margin-top: 6px; border: none; padding: 0; gap: 15px;">
+                        <div class="checkbox-item">
+                            <input type="radio" id="operatorOr" name="period-operator" value="or" checked>
+                            <label for="operatorOr"><strong>或 (OR)</strong> - 任一節為空堂</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" id="operatorAnd" name="period-operator" value="and">
+                            <label for="operatorAnd"><strong>和 (AND)</strong> - 所有節皆為空堂</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panelListAll" class="filter-section hidden">
+            <div class="filter-row" style="justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button id="listAllButton" class="action-btn" style="background-color: #2ec4b6;" disabled>生成全校每日空堂總表</button>
+                    <label class="f6-ended-box" for="f6EndedCheckboxList">
+                        <input type="checkbox" id="f6EndedCheckboxList">
+                        🎓 中六已完結
+                    </label>
+                </div>
+                
+                <div id="filterWrapper" class="search-input-group hidden">
+                    <label for="teacherLikeInput">教師姓名：</label>
+                    <input type="text" id="teacherLikeInput" class="normal-input" placeholder="輸入英文縮寫...">
+                    <button id="clearLikeBtn" class="clear-btn">清除</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="searchResults" class="search-results"></div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loadingDiv = document.getElementById('loading');
+        const listAllButton = document.getElementById('listAllButton');
+        const searchResultsDiv = document.getElementById('searchResults');
+        
+        const tabQuery = document.getElementById('tabQuery');
+        const tabListAll = document.getElementById('tabListAll');
+        const panelQuery = document.getElementById('panelQuery');
+        const panelListAll = document.getElementById('panelListAll');
+
+        // 中六雙向同步核取方塊
+        const f6EndedCheckbox = document.getElementById('f6EndedCheckbox');
+        const f6EndedCheckboxList = document.getElementById('f6EndedCheckboxList');
+
+        // 模式一 DOM
+        const daySelect = document.getElementById('daySelect');
+        const multiTeacherInput = document.getElementById('multiTeacherInput');
+        const clearMultiBtn = document.getElementById('clearMultiBtn');
+        const periodCheckboxGroup = document.getElementById('periodCheckboxGroup');
+        const selectAllPeriodsBtn = document.getElementById('selectAllPeriodsBtn');
+        const clearAllPeriodsBtn = document.getElementById('clearAllPeriodsBtn');
+        
+        // 模式二 DOM
+        const filterWrapper = document.getElementById('filterWrapper');
+        const teacherLikeInput = document.getElementById('teacherLikeInput');
+        const clearLikeBtn = document.getElementById('clearLikeBtn');
+        
+        let allLessons = [];    
+        let allTeachers = [];   
+        let currentActiveTab = "query"; 
+        const dayNames = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
+
+        // 自動同步兩個中六核取方塊的狀態
+        function syncF6State(sourceChecked) {
+            f6EndedCheckbox.checked = sourceChecked;
+            f6EndedCheckboxList.checked = sourceChecked;
+            if (currentActiveTab === "query") {
+                executePeriodQuery();
+            } else if (currentActiveTab === "listAll" && !filterWrapper.classList.contains('hidden')) {
+                renderListAllTable(teacherLikeInput.value);
+            }
+        }
+        f6EndedCheckbox.addEventListener('change', function() { syncF6State(this.checked); });
+        f6EndedCheckboxList.addEventListener('change', function() { syncF6State(this.checked); });
+
+        // 自動偵測今日星期
+        function initDefaultDayToCurrent() {
+            const currentDay = new Date().getDay(); 
+            if (currentDay >= 1 && currentDay <= 5) {
+                daySelect.value = String(currentDay);
+            } else {
+                daySelect.value = "1";
+            }
+        }
+        initDefaultDayToCurrent();
+
+        // 頁籤切換
+        tabQuery.addEventListener('click', () => {
+            currentActiveTab = "query";
+            tabQuery.classList.add('active');
+            tabListAll.classList.remove('active');
+            panelQuery.classList.remove('hidden');
+            panelListAll.classList.add('hidden');
+            searchResultsDiv.innerHTML = '';
+            filterWrapper.classList.add('hidden');
+            teacherLikeInput.value = '';
+            handleWednesdayPeriodVisibility(); 
+            executePeriodQuery();
+        });
+
+        tabListAll.addEventListener('click', () => {
+            currentActiveTab = "listAll";
+            tabListAll.classList.add('active');
+            tabQuery.classList.remove('active');
+            panelListAll.classList.remove('hidden');
+            panelQuery.classList.add('hidden');
+            searchResultsDiv.innerHTML = '';
+        });
+
+        // Google Sheet 引擎
+        window.handleGoogleSheetResponse = function(jsonData) {
+            try {
+                if (!jsonData || !jsonData.table || !jsonData.table.rows) {
+                    throw new Error("試算表格式不正確！");
+                }
+                
+                const rows = jsonData.table.rows;
+                allLessons = [];
+                
+                rows.forEach(row => {
+                    const c = row.c;
+                    if (c && c.length >= 7) {
+                        const teacherName = c[3] ? String(c[3].v).trim() : '';
+                        const className = c[4] ? String(c[4].v).trim() : ''; 
+                        if (teacherName) {
+                            allLessons.push({
+                                day:     c[1] ? parseInt(c[1].v) : 0,
+                                period:  c[2] ? parseInt(c[2].v) : 0,
+                                teacher: teacherName,
+                                class:   className 
+                            });
+                        }
+                    }
+                });
+
+                allTeachers = [...new Set(allLessons.map(item => item.teacher))].sort();
+                loadingDiv.innerHTML = '<span style="color:green; font-weight:bold;">✓ 成功從雲端同步最新課表數據庫</span>';
+                listAllButton.disabled = false;
+                
+                for(let i=1; i<=10; i++) {
+                    document.getElementById(`p${i}`).checked = true;
+                }
+                
+                handleWednesdayPeriodVisibility(); 
+                executePeriodQuery();
+                
+            } catch (error) {
+                console.error('資料解析錯誤:', error);
+                loadingDiv.innerHTML = `<span style="color:red; font-weight:bold;">✗ 數據同步失敗: ${error.message}</span>`;
+            }
+        };
+
+        function loadGoogleSheetData() {
+            const sheetId = '1S7RkDGhtRYcM9Tv304fqeOSz1RsQX2pzS3oNuQAVKRs';
+            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&t=`;
+            
+            const script = document.createElement('script');
+            script.src = url + Date.now(); 
+            script.onerror = function() {
+                loadingDiv.innerHTML = `<span style="orange;">⚠️ 連線失敗，正在重試...</span>`;
+                setTimeout(loadGoogleSheetData, 2000);
+            };
+            document.head.appendChild(script);
+        }
+
+        // 星期三第10節隱藏
+        function handleWednesdayPeriodVisibility() {
+            const targetDay = parseInt(daySelect.value);
+            const p10Wrapper = document.getElementById('p10Wrapper');
+            const p10Checkbox = document.getElementById('p10');
+
+            if (targetDay === 3) {
+                if (p10Wrapper) p10Wrapper.classList.add('hidden');
+                if (p10Checkbox) p10Checkbox.checked = false;
+            } else {
+                if (p10Wrapper) p10Wrapper.classList.remove('hidden');
+            }
+        }
+
+        // 功能一：特定時段篩選計算
+        function executePeriodQuery() {
+            if (currentActiveTab !== "query") return;
+
+            const targetDay = parseInt(daySelect.value);
+            const isF6Ended = f6EndedCheckbox.checked; 
+            
+            const maxPeriod = (targetDay === 3) ? 9 : 10;
+            const selectedPeriods = [];
+            for (let i = 1; i <= maxPeriod; i++) {
+                if (document.getElementById(`p${i}`).checked) selectedPeriods.push(i);
+            }
+
+            if (selectedPeriods.length === 0) {
+                searchResultsDiv.innerHTML = `<div style="padding:10px; background:#e2e8f0; color:#475569; border-radius:4px; font-size:14px;">請勾選上方需要查詢的節數。</div>`;
+                return;
+            }
+
+            const operator = document.querySelector('input[name="period-operator"]:checked').value;
+            const rawInput = multiTeacherInput.value;
+            const teacherKeywords = rawInput
+                .replace(/，/g, ',') 
+                .split(/[\s,]+/)    
+                .map(k => k.trim().toUpperCase())
+                .filter(k => k.length > 0);
+
+            const freeTeachersResult = [];
+
+            allTeachers.forEach(teacher => {
+                const teacherUpper = teacher.toUpperCase();
+                if (teacherKeywords.length > 0) {
+                    const matchesAnyKeyword = teacherKeywords.some(keyword => teacherUpper.startsWith(keyword));
+                    if (!matchesAnyKeyword) return; 
+                }
+
+                const statusMap = {};        
+                const isF6ReleasedMap = {};  
+
+                selectedPeriods.forEach(p => {
+                    const matchingLessons = allLessons.filter(l => l.teacher === teacher && l.day === targetDay && l.period === p);
+                    
+                    if (matchingLessons.length === 0) {
+                        statusMap[p] = true;
+                        isF6ReleasedMap[p] = false;
+                    } else {
+                        const allLessonsAreF6 = matchingLessons.every(l => l.class && l.class.includes('6'));
+                        if (isF6Ended && allLessonsAreF6) {
+                            statusMap[p] = true;
+                            isF6ReleasedMap[p] = true;
+                        } else {
+                            statusMap[p] = false;
+                            isF6ReleasedMap[p] = false;
+                        }
+                    }
+                });
+
+                const totalSelected = selectedPeriods.length;
+                const freeCount = selectedPeriods.filter(p => statusMap[p] === true).length;
+                let isMatch = (operator === 'or') ? (freeCount > 0) : (freeCount === totalSelected);
+
+                if (isMatch) {
+                    // 精簡優化項目：文字縮短為純橙色「中六」，字體縮小
+                    const periodDisplayStrings = selectedPeriods
+                        .filter(p => statusMap[p] === true)
+                        .map(p => {
+                            if (isF6ReleasedMap[p]) {
+                                return `第 ${p} 節<span class="f6-mini-tag">中六</span>`;
+                            }
+                            return `第 ${p} 節`;
+                        });
+
+                    freeTeachersResult.push({
+                        name: teacher,
+                        displayPeriods: periodDisplayStrings
+                    });
+                }
+            });
+
+            if (freeTeachersResult.length === 0) {
+                searchResultsDiv.innerHTML = `<div style="padding:12px; background:#fff3cd; color:#856404; border-radius:4px; font-size:14px;">找不到符合條件的教師。</div>`;
+                return;
+            }
+
+            let html = `
+                <div style="margin-bottom:8px; font-weight:bold; color:#2c3e50; font-size:14px;">🔍 符合條件的空堂教師 (共 ${freeTeachersResult.length} 位)：</div>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">教師姓名</th>
+                            <th style="width: 15%;">狀態</th>
+                            <th>具體空堂時段</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            freeTeachersResult.forEach(item => {
+                html += `
+                    <tr>
+                        <td><strong>${item.name}</strong></td>
+                        <td><span class="status-tag">FREE 空堂</span></td>
+                        <td><span style="color: #2980b9; font-weight: 500; display:flex; gap:10px; flex-wrap:wrap;">${item.displayPeriods.join(', ')}</span></td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table>`;
+            searchResultsDiv.innerHTML = html;
+        }
+
+        // 按鈕事件
+        selectAllPeriodsBtn.addEventListener('click', function() {
+            const targetDay = parseInt(daySelect.value);
+            const maxPeriod = (targetDay === 3) ? 9 : 10;
+            for (let i = 1; i <= 10; i++) {
+                document.getElementById(`p${i}`).checked = (i <= maxPeriod);
+            }
+            executePeriodQuery(); 
+        });
+
+        clearAllPeriodsBtn.addEventListener('click', function() {
+            for (let i = 1; i <= 10; i++) {
+                document.getElementById(`p${i}`).checked = false;
+            }
+            executePeriodQuery(); 
+        });
+
+        daySelect.addEventListener('change', function() {
+            handleWednesdayPeriodVisibility();
+            executePeriodQuery();
+        });
+
+        multiTeacherInput.addEventListener('input', executePeriodQuery);
+        periodCheckboxGroup.addEventListener('change', executePeriodQuery);
+        document.querySelectorAll('input[name="period-operator"]').forEach(radio => {
+            radio.addEventListener('change', executePeriodQuery);
+        });
+
+        clearMultiBtn.addEventListener('click', function() {
+            multiTeacherInput.value = '';
+            executePeriodQuery();
+            multiTeacherInput.focus();
+        });
+
+        // 功能二：總表核心
+        listAllButton.addEventListener('click', function() {
+            teacherLikeInput.value = ''; 
+            filterWrapper.classList.remove('hidden'); 
+            renderListAllTable(""); 
+        });
+
+        function renderListAllTable(keyword) {
+            const cleanKeyword = keyword.trim().toUpperCase();
+            const isF6Ended = f6EndedCheckbox.checked; 
+
+            const filteredTeachers = allTeachers.filter(teacher => 
+                teacher.toUpperCase().startsWith(cleanKeyword)
+            );
+
+            if (filteredTeachers.length === 0) {
+                searchResultsDiv.innerHTML = `<div style="padding:10px; background:#fff3cd; color:#856404; border-radius:4px; margin-top:10px; font-size:14px;">找不到教師。</div>`;
+                return;
+            }
+
+            let html = `
+                <div style="margin-bottom:8px; font-weight:bold; color:#2c3e50; margin-top: 10px; font-size:14px;">
+                    📊 全校教師每日空堂對照總表 (共 ${filteredTeachers.length} 位)
+                </div>
+                <div style="overflow-x: auto;">
+                <table class="results-table" style="font-size: 13px; text-align: center;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; min-width: 90px;">教師姓名</th>
+                            <th>星期</th>
+                            <th>第1節</th><th>第2節</th><th>第3節</th><th>第4節</th><th>第5節</th>
+                            <th>第6節</th><th>第7節</th><th>第8節</th><th>第9節</th><th>第10節</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            filteredTeachers.forEach(teacher => {
+                for (let day = 1; day <= 5; day++) {
+                    if (day === 1) {
+                        html += `<tr><td rowspan="5" style="text-align: left; vertical-align: middle; background: #ffffff; border-right: 2px solid #cbd5e1;"><strong>${teacher}</strong></td>`;
+                    } else {
+                        html += `<tr>`;
+                    }
+                    
+                    html += `<td style="background: #f1f5f9; font-weight: bold;">${dayNames[day].replace("星期", "周")}</td>`;
+                    
+                    for (let p = 1; p <= 10; p++) {
+                        if (day === 3 && p === 10) {
+                            html += `<td><span class="busy-block">-</span></td>`;
+                            continue;
+                        }
+
+                        const matchingLessons = allLessons.filter(l => l.teacher === teacher && l.day === day && l.period === p);
+                        
+                        if (matchingLessons.length === 0) {
+                            html += `<td><span class="free-block">O</span></td>`; 
+                        } else {
+                            const allLessonsAreF6 = matchingLessons.every(l => l.class && l.class.includes('6'));
+                            if (isF6Ended && allLessonsAreF6) {
+                                html += `<td><span class="f6-free-block">6</span></td>`;
+                            } else {
+                                html += `<td><span class="busy-block">-</span></td>`; 
+                            }
+                        }
+                    }
+                    html += `</tr>`;
+                }
+            });
+
+            html += `</tbody></table></div>`;
+            searchResultsDiv.innerHTML = html;
+        }
+
+        teacherLikeInput.addEventListener('input', function() {
+            renderListAllTable(this.value);
+        });
+
+        clearLikeBtn.addEventListener('click', function() {
+            teacherLikeInput.value = '';
+            renderListAllTable("");
+            teacherLikeInput.focus();
+        });
+
+        loadGoogleSheetData();
+    });
+    </script>
+</body>
+</html>
