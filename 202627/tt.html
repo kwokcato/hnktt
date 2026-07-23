@@ -621,7 +621,7 @@
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                             const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
-
+                    // Printinh layout
                     if (hasChem && hasIct) {
                                 tableHTML += `<td>
                                     <div>
@@ -655,7 +655,7 @@
                                     tableHTML += `<td>
                                         <div>
                                             <span class="subject" style="color:blue;font-size:14px;">Make-up Classes<br></span>
-                                            <span class="subject" style="color:blue;font-size:10px;">${subjects}<br></span>
+                                            <span class="teacher" style="color:blue;font-size:8px;">${subjects}<br></span>
                                         </div>
                                     </td>`;
                             } else if (hasMaup) {
@@ -1096,7 +1096,7 @@
                         }
                         continue;
                     }
-                    
+                    // Screen output
                     if (dayLessons.length === 0) {
                         tableHTML += `<td class="empty-cell"></td>`;
                     } else {
@@ -1149,12 +1149,11 @@
                                     </div>
                                 </td>`;
                            }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
-                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / ');
+                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' ');
                                     tableHTML += `<td>
                                         <div>
                                             <span class="subject" style="color:blue;font-size:14px;">Make-up Classes<br></span>
-                                            <span class="teacher" style="color:blue;font-size:10px;">${subjects}<br></span>
-                                            <span class="room" style="color:blue;font-size:10px;">${subjects}<br></span>
+                                            <span class="teacher" style="color:blue;font-size:9px;">${subjects}<br></span>
                                         </div>
                                     </td>`;
                             } else {
