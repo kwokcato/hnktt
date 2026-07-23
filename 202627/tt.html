@@ -621,8 +621,16 @@
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                             const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
-                            
-                            if (hasChem && hasIct) {
+
+                            if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') { //中六補課 第十節
+                                tableHTML += `<td>
+                                    <div>
+                                        <span style="color:blue;font-size:9px">Make-up Classes<br></span>
+                                        <span style="color:blue;font-size:8px">${subjects}<br></span>
+                                        <span style="font-size:7px">(${teachers})</span>
+                                    </div>
+                                </td>`;                                
+                            } else if (hasChem && hasIct) {
                                 tableHTML += `<td>
                                     <div>
                                         <span style="color:blue;font-size:12px">X2/X3<br></span>
@@ -1103,8 +1111,15 @@
                             
                             // 獲取該時段所有選修科目的去重房間列表
                             const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
-                            
-                            if (hasChem && hasIct) {
+                            if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') { //中六補課 第十節
+                                tableHTML += `<td>
+                                    <div>
+                                        <span style="color:blue;font-size:9px">Make-up Classes<br></span>
+                                        <span style="color:blue;font-size:8px">${subjects}<br></span>
+                                        <span style="font-size:7px">(${teachers})</span>
+                                    </div>
+                                </td>`;                                
+                            } else if (hasChem && hasIct) {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span class="subject" style="color:blue;font-size:14px;">X2/X3<bR></span>
