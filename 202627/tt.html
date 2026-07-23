@@ -655,6 +655,16 @@
                                         <span style="font-size:7px">(${teachers})</span>
                                     </div>
                                 </td>`;
+                                }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
+                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                                    tableHTML += `<td>
+                                        <div>
+                                            <span style="color:blue;font-size:9px">Make-up Classes<br></span>
+                                            <span style="color:blue;font-size:9px">${subjects}<br></span>
+                                            //<span style="color:#555;font-size:7px"> ${rooms}<br></span>
+                                            //<span style="font-size:7px">(${teachers})</span>
+                                        </div>
+                                    </td>`;
                             } else if (hasMaup) {
                                 tableHTML += `<td>
                                     <div>
@@ -864,7 +874,18 @@
                                     row.push(`X1 (${teachers})`);
                                 } else if (hasMaup) {
                                     row.push(`MAUP (${teachers})`);
-                                } else {
+                                }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
+                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                                    tableHTML += `<td>
+                                        <div>
+                                            <span style="color:blue;font-size:9px">Make-up Classes<br></span>
+                                            <span style="color:blue;font-size:9px">${subjects}<br></span>
+                                            //<span style="color:#555;font-size:7px"> ${rooms}<br></span>
+                                            //<span style="font-size:7px">(${teachers})</span>
+                                        </div>
+                                    </td>`;
+                                }    
+                                else {
                                     const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
                                     const rooms = [...new Set(dayLessons.map(l => l.room))].join(',');
                                     row.push(`${subjects} ${rooms} (${teachers})`);
@@ -1143,6 +1164,16 @@
                                         <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                     </div>
                                 </td>`;
+                            }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
+                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                                    tableHTML += `<td>
+                                        <div>
+                                            <span style="color:blue;font-size:9px">Make-up Classes<br></span>
+                                            <span style="color:blue;font-size:9px">${subjects}<br></span>
+                                            //<span style="color:#555;font-size:7px"> ${rooms}<br></span>
+                                            //<span style="font-size:7px">(${teachers})</span>
+                                        </div>
+                                    </td>`;
                             } else {
                                 const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
                                 const roomsList = [...new Set(dayLessons.map(l => l.room))].join(',');
