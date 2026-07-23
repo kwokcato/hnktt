@@ -875,15 +875,7 @@
                                 } else if (hasMaup) {
                                     row.push(`MAUP (${teachers})`);
                                 }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
-                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / ');
-                                    tableHTML += `<td>
-                                        <div>
-                                            <span style="color:blue;font-size:12px"><b>Make-up Classes</B><br></span>
-                                            <span style="font-size:10px">${subjects}</span>
-                                            <!-- <span style="color:#555;font-size:7px"> ${rooms}<br></span>
-                                            <span style="font-size:7px">(${teachers})</span> -->
-                                        </div>
-                                    </td>`;
+                                    row.push(`Make-up Classes (${subjects})`);
                                 }    
                                 else {
                                     const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
