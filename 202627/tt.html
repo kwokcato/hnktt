@@ -651,7 +651,7 @@
                                     </div>
                                 </td>`;
                             }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
-                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / ');
+                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / '); 
                                     tableHTML += `<td>
                                         <div>
                                             <span class="subject" style="color:blue;font-size:14px;">Make-up Classes<br></span>
