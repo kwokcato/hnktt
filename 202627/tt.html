@@ -32,13 +32,11 @@
 
     if (id_token) {
         const payload = decodeJwtResponse(id_token);
-        // 檢查憑證是否存在、網域是否符合貴校，以及憑證是否過期
         if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp && (payload.exp * 1000) > Date.now()) {
             is_authenticated = true;
         }
     }
 
-    // 若未通過驗證，直接將最外層視窗導向登入頁 index.html
     if (!is_authenticated) {
         window.top.location.href = 'index.html';
     }
@@ -46,7 +44,6 @@
     </script>
  
     <style>
-        /* 來自 hnkstyle.css 的樣式 */
         .refresh-btn {
             position: fixed;
             top: 10px;
@@ -77,7 +74,6 @@
             opacity: 0.7;
         }
 
-        /* tt.html 原有樣式 */
         #result h3 {
             margin: 5px 0;
             padding: 0;
@@ -223,7 +219,6 @@
 <body oncontextmenu="return false;">
     
     <script>
-        // 停用語音/右鍵選單與開發者工具快捷鍵
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
         });
@@ -315,9 +310,6 @@
             { time: '15:15', period: '10', endTime: '15:50', isBreak: false }
         ];
 
-        // ==========================================
-        // Google Sheet JSONP 引擎核心
-        // ==========================================
         window.handleGoogleSheetResponse = function(jsonData) {
             try {
                 if (!jsonData || !jsonData.table || !jsonData.table.rows) {
@@ -331,13 +323,14 @@
                     const c = row.c;
                     if (c && c.length >= 7) {
                         allLessons.push({
-                            year:    c[0] ? String(c[0].v).trim() : '',
-                            day:     c[1] ? parseInt(c[1].v) : 0,
-                            period:  c[2] ? parseInt(c[2].v) : 0,
-                            teacher: c[3] ? String(c[3].v).trim() : '',
-                            class:   c[4] ? String(c[4].v).trim() : '',
-                            subject: c[5] ? String(c[5].v).trim() : '',
-                            room:    c[6] ? String(c[6].v).trim() : ''
+                            year:           c[0] ? String(c[0].v).trim() : '',
+                            day:            c[1] ? parseInt(c[1].v) : 0,
+                            period:         c[2] ? parseInt(c[2].v) : 0,
+                            teacher:        c[3] ? String(c[3].v).trim() : '',
+                            class:          c[4] ? String(c[4].v).trim() : '',
+                            subject:        c[5] ? String(c[5].v).trim() : '',
+                            teacherChinese: c[6] ? String(c[6].v).trim() : '', // 第7欄中文名稱
+                            room:           c[7] ? String(c[7].v).trim() : (c[6] ? String(c[6].v).trim() : '')
                         });
                     }
                 });
@@ -370,8 +363,7 @@
             };
             document.head.appendChild(script);
         }
-        // ==========================================
-        
+
         function initExportButtons() {
             exportBtnGroup.innerHTML = `
                 <button id="printBtn" class="export-btn">列印時間表</button>
@@ -621,7 +613,6 @@
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                             const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
-                    // Printinh layout
                     if (hasChem && hasIct) {
                                 tableHTML += `<td>
                                     <div>
@@ -755,7 +746,6 @@
             });
             
             tableHTML += `</tbody></table>`;
-            // 2026-27
             if (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) {
                 tableHTML += `
                     <div style="text-align:left;margin-top:10px;font-size:9px;">
@@ -856,7 +846,6 @@
                                 const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                                 const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                                 const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
-                                // EXCEL
                                 if (hasChem && hasIct) {
                                     row.push(`X2/X3 (${teachers})`);
                                 } else if (hasChem && slot.period != '10') {
@@ -1038,13 +1027,22 @@
                 return;
             }
             
-            // 獲取 CPA 課堂的教師作為班主任
-            const cpaTeachers = [...new Set(
-                currentLessons
-                    .filter(item => item.subject && item.subject.toUpperCase() === 'CPA')
-                    .map(item => item.teacher)
-            )].filter(Boolean).join(', ');
+            // 獲取 CPA 課堂的教師作為班主任（英文簡稱 + 中文姓名）
+            const cpaLessons = currentLessons.filter(
+                item => item.subject && item.subject.toUpperCase() === 'CPA'
+            );
 
+            const teacherMap = new Map();
+            cpaLessons.forEach(item => {
+                if (item.teacher && !teacherMap.has(item.teacher)) {
+                    const displayName = item.teacherChinese 
+                        ? `${item.teacher} ${item.teacherChinese}` 
+                        : item.teacher;
+                    teacherMap.set(item.teacher, displayName);
+                }
+            });
+
+            const cpaTeachers = [...teacherMap.values()].join(', ');
             const headTeacherText = cpaTeachers ? ` (班主任: ${cpaTeachers})` : '';
             
             currentTitle = `班別 ${className} 的時間表${headTeacherText}`;
@@ -1104,7 +1102,7 @@
                         }
                         continue;
                     }
-                    // Screen output
+
                     if (dayLessons.length === 0) {
                         tableHTML += `<td class="empty-cell"></td>`;
                     } else {
@@ -1115,7 +1113,6 @@
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                             
-                            // 獲取該時段所有選修科目的去重房間列表
                             const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
                     if (hasChem && hasIct) {
                                 tableHTML += `<td>
@@ -1253,7 +1250,6 @@
             });
             
             tableHTML += `</tbody>`;
-            //2026-27
             if (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) {
                 tableHTML += `
                     <tfoot>
