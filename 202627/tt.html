@@ -650,14 +650,14 @@
                                         <span style="font-size:7px">(${teachers})</span>
                                     </div>
                                 </td>`;
- /*                           } else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
+                            }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
                                     const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / ');
                                     tableHTML += `<td>
                                         <div>
-                                            <span style="color:blue;font-size:9px">${subjects}<br></span>
-                                            <!-- <span style="font-size:7px">${subjects}</span> -->
+                                            <span class="subject" style="color:blue;font-size:14px;">Make-up Classes<br></span>
+                                            <span class="subject" style="color:blue;font-size:10px;">${subjects}<br></span>
                                         </div>
-                                    </td>`;*/
+                                    </td>`;
                             } else if (hasMaup) {
                                 tableHTML += `<td>
                                     <div>
@@ -856,7 +856,7 @@
                                 const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                                 const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                                 const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
-                                
+                                // EXCEL
                                 if (hasChem && hasIct) {
                                     row.push(`X2/X3 (${teachers})`);
                                 } else if (hasChem && slot.period != '10') {
@@ -1148,13 +1148,14 @@
                                         <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                     </div>
                                 </td>`;
-/*                         }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
+                           }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
                                     const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / ');
                                     tableHTML += `<td>
                                         <div>
-                                            <span style="color:blue;font-size:9px">${subjects}<br></span>
+                                            <span class="subject" style="color:blue;font-size:14px;">Make-up Classes<br></span>
+                                            <span class="subject" style="color:blue;font-size:10px;">${subjects}<br></span>
                                         </div>
-                                    </td>`;*/
+                                    </td>`;
                             } else {
                                 const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
                                 const roomsList = [...new Set(dayLessons.map(l => l.room))].join(',');
