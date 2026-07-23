@@ -242,6 +242,22 @@
             background-size: contain;
             opacity: 0.7;
         }
+
+        .status-pill {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 14px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .status-pill.free {
+            background-color: #28a745; /* 綠 */
+        }
+        .status-pill.busy {
+            background-color: #e74c3c; /* 紅 */
+        }
+
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -266,6 +282,7 @@
         <div class="tabs">
             <button class="tab-button active" onclick="switchTab('roomTab')">按房間查詢</button>
             <button class="tab-button" onclick="switchTab('freeRoomsTab')">查詢閒置房間</button>
+            <button class="tab-button" onclick="switchTab('teacherTab')">按教師查詢</button>
         </div>
 
         <div id="statusMessage" class="status-message"></div>
@@ -307,6 +324,27 @@
                     </select>
                 </div>
             </div>
+
+            <div id="teacherTab" class="tab-content">
+                <div class="form-group">
+                    <label for="teacherSelect">選擇教師：</label>
+                    <select id="teacherSelect">
+                        <option value="">-- 請選擇教師 --</option>
+                    </select>
+                </div>
+            
+                <table id="teacherResultTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>教師姓名</th>
+                            <th>狀態</th>
+                            <th>具體空堂時段</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacherResultBody">
+                    </tbody>
+                </table>
+            </div>                        
             
             <div id="freeRoomsStatusMessage" class="status-message"></div>
 
@@ -652,6 +690,164 @@
             
             showStatus(`成功找到 「${weekdayNames[weekday]}」 的閒置房間資訊（最新）`, 'success', 'freeRoomsStatusMessage');
         }
+
+// 全局變數（在現有全域變數區加入）
+let uniqueTeachers = []; // 儲存不重複教師名
+
+// 在 DOMContentLoaded 內：加入教職員下拉綁定與在載入 CSV 後填充呼叫
+// （你的 DOMContentLoaded 位置已經有幾個綁定，請在那段內新增下列兩行）
+document.getElementById('teacherSelect').addEventListener('change', onTeacherChange);
+
+// 在 processCSVData 成功解析並填充 uniqueRooms 之後，呼叫 populateTeacherSelect();
+// （在 processCSVData 最後 uniqueRooms = ... 之後加一行）
+populateTeacherSelect();
+
+// 新增：從 timetableData 建立 uniqueTeachers 並填充下拉
+function populateTeacherSelect() {
+    const teachersSet = new Set();
+    timetableData.forEach(r => {
+        if (r.teacher && r.teacher.trim()) teachersSet.add(r.teacher.trim());
+    });
+    uniqueTeachers = Array.from(teachersSet).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+
+    const select = document.getElementById('teacherSelect');
+    // 若元素尚未存在（舊頁面），就先 return
+    if (!select) return;
+
+    select.innerHTML = '<option value="">-- 請選擇教師 --</option>';
+    uniqueTeachers.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        select.appendChild(opt);
+    });
+}
+
+// 當選擇教師改變時
+function onTeacherChange() {
+    const selectedTeacher = document.getElementById('teacherSelect').value;
+    const table = document.getElementById('teacherResultTable');
+    const tbody = document.getElementById('teacherResultBody');
+    tbody.innerHTML = '';
+
+    if (!selectedTeacher) {
+        table.style.display = 'none';
+        return;
+    }
+
+    table.style.display = 'table';
+
+    // 取得現在的星期與節次（若無法判定，會回傳 null 的 period）
+    const nowInfo = getCurrentWeekdayAndPeriod();
+    const weekdayNow = nowInfo.weekday;
+    const periodNow = nowInfo.period; // 1..10 或 null
+
+    // 判斷該教師在目前（weekdayNow, periodNow）是否有課
+    let isFreeNow = true;
+    if (weekdayNow !== null && periodNow !== null) {
+        const hasLessonNow = timetableData.some(d => d.teacher === selectedTeacher && d.week === weekdayNow && d.period === periodNow);
+        isFreeNow = !hasLessonNow;
+    } else {
+        // 若無法根據時間判定（例如週末或時段未對應），則視為未知，這裡我們以 false 處理表示「無法判定」
+        isFreeNow = null;
+    }
+
+    // 計算該教師在同一星期（使用今天的星期作為預設）所有空堂節次
+    // 如果你希望用 UI 選擇星期，可再新增一個下拉；此處用今天的 weekdayNow（若為 null，預設為 1）
+    const queryWeekday = (weekdayNow === null) ? 1 : weekdayNow;
+    const freePeriods = [];
+    for (let p = 1; p <= 10; p++) {
+        if (queryWeekday === 3 && p === 10) continue; // 星期三第10節全校不排課（按你的邏輯）
+        const occupied = timetableData.some(d => d.teacher === selectedTeacher && d.week === queryWeekday && d.period === p);
+        if (!occupied) freePeriods.push(`第 ${p} 節`);
+    }
+
+    // 建立一列結果
+    const row = tbody.insertRow();
+    const nameCell = row.insertCell(0);
+    const statusCell = row.insertCell(1);
+    const freeCell = row.insertCell(2);
+
+    nameCell.textContent = selectedTeacher;
+    freeCell.textContent = freePeriods.length > 0 ? freePeriods.join(', ') : '無空堂或未找到資料';
+
+    // 狀態顯示
+    if (isFreeNow === true) {
+        const span = document.createElement('span');
+        span.className = 'status-pill free';
+        span.textContent = 'FREE 空堂';
+        statusCell.appendChild(span);
+    } else if (isFreeNow === false) {
+        const span = document.createElement('span');
+        span.className = 'status-pill busy';
+        span.textContent = 'BUSY 有課';
+        statusCell.appendChild(span);
+    } else {
+        // null / 未知
+        statusCell.textContent = '無法判定（請檢查時段設定）';
+    }
+
+    // 顯示簡短說明（例如若你想顯示是「以今天為基準」等）
+    showStatus(`查詢教師：「${selectedTeacher}」 （以今日作為參考）`, 'info', 'statusMessage');
+}
+
+/*
+  取得目前的 weekday 與 period 的輔助函式
+  回傳物件 { weekday: 1..5|null, period: 1..10|null }
+
+  重要：以下 period 時間為範例，請依學校實際上課時間調整。
+  範例（HH:MM，24 小時制）：
+    第1節 08:20-09:05
+    第2節 09:05-09:50
+    第3節 10:10-10:55
+    第4節 10:55-11:40
+    第5節 11:40-12:25
+    第6節 13:20-14:05
+    第7節 14:05-14:50
+    第8節 14:50-15:35
+    第9節 15:35-16:20
+    第10節16:20-17:05
+*/
+function getCurrentWeekdayAndPeriod() {
+    const now = new Date();
+    let wd = now.getDay(); // 0(日) - 6(六)
+    if (wd === 0 || wd === 6) {
+        // 週末：視需要改為 null 或對應到週一預設
+        // 這裡我們回傳 weekday = null 表示無法判定
+        return { weekday: null, period: null };
+    }
+    // 將 JS 的 getDay 值轉為 1..5（星期一為 1）
+    const weekday = wd; // 當前程式中 1..5 分別是 Mon..Fri
+
+    // 節次的時間區間（請依學校排課時間微調）
+    const periods = [
+        { p:1, start: '08:20', end: '09:05' },
+        { p:2, start: '09:05', end: '09:50' },
+        { p:3, start: '10:10', end: '10:55' },
+        { p:4, start: '10:55', end: '11:40' },
+        { p:5, start: '11:40', end: '12:25' },
+        { p:6, start: '13:20', end: '14:05' },
+        { p:7, start: '14:05', end: '14:50' },
+        { p:8, start: '14:50', end: '15:35' },
+        { p:9, start: '15:35', end: '16:20' },
+        { p:10, start: '16:20', end: '17:05' },
+    ];
+
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    for (const item of periods) {
+        const [sh, sm] = item.start.split(':').map(Number);
+        const [eh, em] = item.end.split(':').map(Number);
+        const startMin = sh * 60 + sm;
+        const endMin = eh * 60 + em;
+        if (nowMinutes >= startMin && nowMinutes < endMin) {
+            return { weekday: weekday, period: item.p };
+        }
+    }
+
+    // 若時間不在任何節次範圍（例：休息/午膳），回傳 period=null，但 weekday 可回傳
+    return { weekday: weekday, period: null };
+}
         
         function highlightAllRooms(roomName) {
             const roomSpans = document.querySelectorAll('#freeRoomsTable .room-name');
