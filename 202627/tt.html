@@ -636,7 +636,7 @@
                                         <span style="font-size:8px">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
+                            } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
                                 
                                 tableHTML += `<td>
                                     <div>
@@ -857,7 +857,7 @@
                                     row.push(`X2/X3 (${teachers})`);
                                 } else if (hasChem && slot.period != '10') {
                                     row.push(`X2 (${teachers})`);
-                                } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
+                                } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
                                     row.push(`X3 (${teachers})`);
                                 //} else if (hasPHY && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
                                 } else if (hasPHY && slot.period != '10') {
