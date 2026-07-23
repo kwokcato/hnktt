@@ -1119,7 +1119,7 @@
                                         <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
+                            } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span class="subject" style="color:blue;font-size:14px;">X3<br></span>
