@@ -349,12 +349,12 @@
                 
                 populateDropdowns();
                 loadingDiv.style.display = 'none';
-                resultDiv.innerHTML = '<p style="color:green;">時間表數據已同步（最新狀態）</p>';  //時間表數據已從雲端 Google Sheet 同步（最新狀態）
+                resultDiv.innerHTML = '<p style="color:green;">時間表數據已同步（最新狀態）</p>';  
                 initExportButtons();
                 
             } catch (error) {
                 console.error('解析雲端資料時出錯:', error);
-                loadingDiv.innerHTML = `<p style="color:red">數據解析失敗: ${error.message}<br>請通知系統管理員。</p>`; //請確認該 Google Sheet 是否已「發佈到網路」
+                loadingDiv.innerHTML = `<p style="color:red">數據解析失敗: ${error.message}<br>請通知系統管理員。</p>`; 
             }
         };
 
@@ -365,7 +365,7 @@
             const script = document.createElement('script');
             script.src = url + Date.now(); 
             script.onerror = function() {
-                loadingDiv.innerHTML = `<p style="color:red">未能連上數據庫。<br>請通知系統管理員。</p>`; //連線至 Google 伺服器失敗，正在嘗試重新連線...
+                loadingDiv.innerHTML = `<p style="color:red">未能連上數據庫。<br>請通知系統管理員。</p>`; 
                 setTimeout(loadGoogleSheetData, 2000);
             };
             document.head.appendChild(script);
@@ -947,7 +947,6 @@
         function formatLessonForExport(lesson, isClassQuery) {
             if (isClassQuery) {
                 let subject = lesson.subject;
-                //if (subject.includes('PHY') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
                 if (subject.includes('PHY')) subject = 'X1';
                 if (subject.includes('CHEM')) subject = 'X2';
                 if (subject.includes('ICT')) subject = 'X3';
@@ -1039,7 +1038,16 @@
                 return;
             }
             
-            currentTitle = `班別 ${className} 的時間表`;
+            // 獲取 CPA 課堂的教師作為班主任
+            const cpaTeachers = [...new Set(
+                currentLessons
+                    .filter(item => item.subject && item.subject.toUpperCase() === 'CPA')
+                    .map(item => item.teacher)
+            )].filter(Boolean).join(', ');
+
+            const headTeacherText = cpaTeachers ? ` (班主任: ${cpaTeachers})` : '';
+            
+            currentTitle = `班別 ${className} 的時間表${headTeacherText}`;
             resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
             renderTimetable(currentLessons, true);
         }
@@ -1291,7 +1299,6 @@
         function formatLesson(lesson, isClassQuery) {
             if (isClassQuery) {
                 let subject = lesson.subject;
-                // if (subject.includes('PHY') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
                 if (subject.includes('PHY')) subject = 'X1';
                 if (subject.includes('CHEM')) subject = 'X2';
                 if (subject.includes('ICT')) subject = 'X3';
