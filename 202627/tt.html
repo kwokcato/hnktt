@@ -349,12 +349,12 @@
                 
                 populateDropdowns();
                 loadingDiv.style.display = 'none';
-                resultDiv.innerHTML = '<p style="color:green;">時間表數據已從雲端 Google Sheet 同步（最新狀態）</p>';
+                resultDiv.innerHTML = '<p style="color:green;">時間表數據已同步（最新狀態）</p>';  //時間表數據已從雲端 Google Sheet 同步（最新狀態）
                 initExportButtons();
                 
             } catch (error) {
                 console.error('解析雲端資料時出錯:', error);
-                loadingDiv.innerHTML = `<p style="color:red">數據解析失敗: ${error.message}<br>請確認該 Google Sheet 是否已「發佈到網路」。</p>`;
+                loadingDiv.innerHTML = `<p style="color:red">數據解析失敗: ${error.message}<br>請通知系統管理員。</p>`; //請確認該 Google Sheet 是否已「發佈到網路」
             }
         };
 
@@ -365,7 +365,7 @@
             const script = document.createElement('script');
             script.src = url + Date.now(); 
             script.onerror = function() {
-                loadingDiv.innerHTML = `<p style="color:red">連線至 Google 伺服器失敗，正在嘗試重新連線...</p>`;
+                loadingDiv.innerHTML = `<p style="color:red">未能連上數據庫。<br>請通知系統管理員。</p>`; //連線至 Google 伺服器失敗，正在嘗試重新連線...
                 setTimeout(loadGoogleSheetData, 2000);
             };
             document.head.appendChild(script);
@@ -1153,7 +1153,8 @@
                                     tableHTML += `<td>
                                         <div>
                                             <span class="subject" style="color:blue;font-size:14px;">Make-up Classes<br></span>
-                                            <span class="subject" style="color:blue;font-size:10px;">${subjects}<br></span>
+                                            <span class="teacher" style="color:blue;font-size:10px;">${subjects}<br></span>
+                                            <span class="room" style="color:blue;font-size:10px;">${subjects}<br></span>
                                         </div>
                                     </td>`;
                             } else {
