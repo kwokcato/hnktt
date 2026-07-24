@@ -698,9 +698,9 @@
                         .filter(p => statusMap[p] === true)
                         .map(p => {
                             if (isF6ReleasedMap[p]) {
-                                return `第 ${p} 節<span class="f6-mini-tag">中六</span>`;
+                                return ` ${p} <span class="f6-mini-tag">中六</span>`;
                             }
-                            return `第 ${p} 節`;
+                            return ` ${p} `;
                         });
 
                     freeTeachersResult.push({
