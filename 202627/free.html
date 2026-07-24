@@ -388,18 +388,18 @@
                     <div class="checkbox-container" id="periodCheckboxGroup">
                         <script>
                             for(let i=1; i<=10; i++) {
-                                document.write(`<div class="checkbox-item" id="p${i}Wrapper"><input type="checkbox" class="period-chk" id="p${i}" value="${i}"><label for="p${i}">第${i}節</label></div>`);
+                                document.write(`<div class="checkbox-item" id="p${i}Wrapper"><input type="checkbox" class="period-chk" id="p${i}" value="${i}"><label for="p${i}">  ${i}</label></div>`);
                             }
                         </script>
                     </div>
                     
                     <div class="checkbox-container" style="margin-top: 6px; border: none; padding: 0; gap: 15px;">
                         <div class="checkbox-item">
-                            <input type="radio" id="operatorOr" name="period-operator" value="or" checked>
+                            <input type="radio" id="operatorOr" name="period-operator" value="or">
                             <label for="operatorOr"><strong>或 (OR)</strong> - 任一節為空堂</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" id="operatorAnd" name="period-operator" value="and">
+                            <input type="radio" id="operatorAnd" name="period-operator" value="and" checked>
                             <label for="operatorAnd"><strong>和 (AND)</strong> - 所有節皆為空堂</label>
                         </div>
                     </div>
