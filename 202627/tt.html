@@ -1032,6 +1032,7 @@
                 item => item.subject && item.subject.toUpperCase() === 'CPA'
             );
 
+            
             const teacherMap = new Map();
             cpaLessons.forEach(item => {
                 if (item.teacher && !teacherMap.has(item.teacher)) {
@@ -1040,13 +1041,13 @@
                         : item.teacher;
                     teacherMap.set(item.teacher, displayName);
                 }
-            //teacherMap.set(item.room, displayName);
+            
             });
 
             const cpaTeachers = [...teacherMap.values()].join(', ');
             const headTeacherText = cpaTeachers ? ` (班主任: ${cpaTeachers})` : '';
             
-            currentTitle = `班別 ${className} 的時間表 (${item.room}) ${headTeacherText}`;
+            currentTitle = `班別 ${className} 的時間表 ${headTeacherText}`;
             resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
             renderTimetable(currentLessons, true);
         }
