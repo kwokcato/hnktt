@@ -1027,12 +1027,12 @@
                 return;
             }
             
-            // 獲取 CPA 課堂的教師作為班主任（英文簡稱 + 中文姓名）
+            // 獲取 CPA 課堂以提取班主任及主班房資訊
             const cpaLessons = currentLessons.filter(
                 item => item.subject && item.subject.toUpperCase() === 'CPA'
             );
 
-            
+            // 1. 提取班主任（英文簡稱 + 中文姓名）
             const teacherMap = new Map();
             cpaLessons.forEach(item => {
                 if (item.teacher && !teacherMap.has(item.teacher)) {
@@ -1041,13 +1041,28 @@
                         : item.teacher;
                     teacherMap.set(item.teacher, displayName);
                 }
-            
             });
-
             const cpaTeachers = [...teacherMap.values()].join(', ');
-            const headTeacherText = cpaTeachers ? ` (班主任: ${cpaTeachers})` : '';
+
+            // 2. 提取主班房 (從 CPA 課堂的 room 欄位)
+            const cpaRooms = [...new Set(
+                cpaLessons
+                    .map(item => item.room)
+                    .filter(room => room && room.trim() !== '')
+            )].join(', ');
+
+            // 3. 組合標題附加資訊
+            let infoParts = [];
+            if (cpaRooms) {
+                infoParts.push(`主班房: ${cpaRooms}`);
+            }
+            if (cpaTeachers) {
+                infoParts.push(`班主任: ${cpaTeachers}`);
+            }
+
+            const extraInfoText = infoParts.length > 0 ? ` (${infoParts.join(' | ')})` : '';
             
-            currentTitle = `班別 ${className} 的時間表 ${headTeacherText}`;
+            currentTitle = `班別 ${className} 的時間表${extraInfoText}`;
             resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
             renderTimetable(currentLessons, true);
         }
