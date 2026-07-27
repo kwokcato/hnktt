@@ -456,9 +456,9 @@
                             .period-col { width: 30px; background-color: #3498db; color: white; font-size: 9px; }
                             .break-cell { background-color: #f2f2f2; font-style: italic; }
                             .empty-cell { background-color: #f9f9f9; }
-                            .subject { color: blue; font-size: 9px; }
+                            .subject { color: blue; font-size: 9px; word-wrap: break-word;}
                             .room { color: #555; font-size: 8px; }
-                            .teacher { font-size: 8px; }
+                            .teacher { font-size: 8px; word-wrap: break-word; }
                             .dismissal-time { font-size: 8px; color: #666; font-style: italic; }
                             @page { size: A4 portrait; margin: 5mm; }
                         </style>
@@ -646,7 +646,7 @@
                                     tableHTML += `<td>
                                         <div>
                                             <span class="subject" style="color:blue;font-size:12px;">Make-up Classes<br></span>
-                                            <span style="color:blue; font-size:8px; word-wrap:break-word;">${subjects}<br></span>
+                                            <span class="teacher" style="color:blue; font-size:8px;">${subjects}<br></span>
                                         </div>
                                     </td>`;
                             } else if (hasMaup) {
