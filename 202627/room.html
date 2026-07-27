@@ -627,16 +627,13 @@
 
                 for (let j = 1; j <= 5; j++) {
                     const cell = row.insertCell(j);
-                    
-                    if (j === 3 && i === 10) {
-                        cell.textContent = '-';
-                        cell.style.backgroundColor = '#eaeedf';
-                        continue;
-                    }
 
                     const detailsArray = getCellContentForRoom(selectedRoom, j, i);
                     if (detailsArray && detailsArray.length > 0) {
                         cell.innerHTML = detailsArray.join('<br>');
+                        if (j === 3 && i === 10) {
+                            cell.style.backgroundColor = '#eaeedf';
+                        }
                     } else {
                         cell.textContent = '';
                     }
@@ -753,8 +750,13 @@
             statusElement.style.display = 'block';
         }
 
-        // 獲取指定房間、星期與節數的內容陣列（已移除儲存格內的房間名稱）
+        // 獲取指定房間、星期與節數的內容陣列
         function getCellContentForRoom(room, day, period) {
+            // 星期三第十節加入 「CPA 放學時間 15:30」
+            if (day === 3 && period === 10) {
+                return ['(CPA 14:40 - 15:30)'];
+            }
+
             const lessons = timetableData.filter(d => d.room === room && d.week === day && d.period === period);
 
             if (lessons.length === 0) return [];
@@ -801,7 +803,6 @@
                 if (teacherStr) {
                     itemStr += ` ${teacherStr}`;
                 }
-                // 時間表內部儲存格不再顯示房間名稱
                 return itemStr;
             });
         }
