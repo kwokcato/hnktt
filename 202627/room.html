@@ -753,7 +753,7 @@
             statusElement.style.display = 'block';
         }
 
-        // 獲取指定房間、星期與節數的內容陣列
+        // 獲取指定房間、星期與節數的內容陣列（已移除儲存格內的房間名稱）
         function getCellContentForRoom(room, day, period) {
             const lessons = timetableData.filter(d => d.room === room && d.week === day && d.period === period);
 
@@ -801,7 +801,7 @@
                 if (teacherStr) {
                     itemStr += ` ${teacherStr}`;
                 }
-                itemStr += ` ${room}`;
+                // 時間表內部儲存格不再顯示房間名稱
                 return itemStr;
             });
         }
@@ -856,7 +856,7 @@
         }
 
         // =====================================================================
-        // 修訂後的匯出 EXCEL 功能（產生原生 .xlsx 檔，跟足列印版格式與換行）
+        // 匯出 EXCEL 功能
         // =====================================================================
         function exportToExcel() {
             const selectedRoom = document.getElementById('roomSelect').value;
@@ -872,7 +872,6 @@
 
             const wb = XLSX.utils.book_new();
 
-            // 定義黑粗全框線與對齊樣式
             const borderBlack = {
                 top: { style: "medium", color: { rgb: "000000" } },
                 bottom: { style: "medium", color: { rgb: "000000" } },
@@ -913,7 +912,7 @@
             const ws = {};
             const merges = [];
 
-            // Row 0: 標題 ("時間表: R303")
+            // Row 0: 標題 ("時間表: [房間名稱]")
             ws["A1"] = { v: `時間表: ${selectedRoom}`, s: titleStyle };
             merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
 
@@ -924,16 +923,14 @@
                 ws[cellRef] = { v: h, s: headerStyle };
             });
 
-            let currentR = 2; // 從第 3 行開始填充時段數據
+            let currentR = 2;
 
             scheduleStructure.forEach(rowInfo => {
-                // 時間欄（在 '-' 前進行換行，跟足列印版格式）
                 const formattedTime = rowInfo.time.replace(' - ', '\n- ');
                 const timeCellRef = XLSX.utils.encode_cell({ r: currentR, c: 0 });
                 ws[timeCellRef] = { v: formattedTime, s: timeColStyle };
 
                 if (rowInfo.type === 'special') {
-                    // 特殊時段：跨欄合併 (Col 1 ~ Col 5)
                     const specialCellRef = XLSX.utils.encode_cell({ r: currentR, c: 1 });
                     ws[specialCellRef] = { v: rowInfo.label, s: specialRowStyle };
 
@@ -943,13 +940,11 @@
                     }
                     merges.push({ s: { r: currentR, c: 1 }, e: { r: currentR, c: 5 } });
                 } else {
-                    // 一般課節 1 ~ 10 節
                     const p = rowInfo.period;
                     for (let day = 1; day <= 5; day++) {
                         const cellRef = XLSX.utils.encode_cell({ r: currentR, c: day });
                         const detailsArray = getCellContentForRoom(selectedRoom, day, p);
                         
-                        // 混合分組/多科使用 \n 換行，搭配 wrapText: true 於 Excel 內精準換行
                         const cellText = (detailsArray && detailsArray.length > 0) ? detailsArray.join('\n') : '';
                         ws[cellRef] = { v: cellText, s: cellStyle };
                     }
@@ -957,10 +952,9 @@
                 currentR++;
             });
 
-            // 設定範圍與欄寬/列高
             ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: currentR - 1, c: 5 } });
             ws['!merges'] = merges;
-            ws['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
+            ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
 
             const rowHeights = [{ hpt: 28 }, { hpt: 24 }];
             scheduleStructure.forEach(rowInfo => {
@@ -970,7 +964,6 @@
 
             XLSX.utils.book_append_sheet(wb, ws, selectedRoom);
 
-            // 下載原生 `.xlsx` 檔案，徹底告別警示視窗
             XLSX.writeFile(wb, `房間時間表_${selectedRoom}.xlsx`);
         }
     </script>
