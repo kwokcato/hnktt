@@ -330,7 +330,7 @@
                             class:          c[4] ? String(c[4].v).trim() : '',
                             subject:        c[5] ? String(c[5].v).trim() : '',
                             room:           c[6] ? String(c[6].v).trim() : '', 
-                            teacherChinese: c[7] ? String(c[7].v).trim() : (c[6] ? String(c[6].v).trim() : '')// 第7欄中文名稱
+                            teacherChinese: c[7] ? String(c[7].v).trim() : (c[6] ? String(c[6].v).trim() : '')
                         });
                     }
                 });
@@ -609,14 +609,17 @@
                     } else {
                         if (isClassQuery) {
                             const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
+                            const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                             const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
-                    if (hasChem && hasIct) {
+
+                            if (hasChem && hasIct) {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span style="color:blue;font-size:12px">X2/X3<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
                                         <span style="font-size:8px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
@@ -624,6 +627,7 @@
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span style="color:blue;font-size:12px">X2<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
                                         <span style="font-size:8px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
@@ -631,6 +635,7 @@
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span style="color:blue;font-size:12px">X3<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
                                         <span style="word-wrap:break-word;font-size:7px;">(${teachers})</span>
                                     </div>
                                 </td>`;
@@ -638,31 +643,31 @@
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span style="color:blue;font-size:12px">X1<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
                                         <span style="font-size:7px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
+                            } else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
                                     const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / '); 
                                     tableHTML += `<td>
                                         <div class="main-lesson">
                                             <span class="subject" style="color:blue;font-size:12px;">Make-up Classes<br></span>
-                                            <span class="teacher" style="color:blue; font-size:8px;">${subjects}<br></span>
+                                            <span class="room" style="color:blue; font-size:8px;">${subjects}<br></span>
                                         </div>
                                     </td>`;
                             } else if (hasMaup) {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
-                                        <span style="color:blue;font-size:9px">MAUP</span>
+                                        <span style="color:blue;font-size:9px">MAUP<br></span>
                                         <span style="font-size:7px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
                             } else {
                                 const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
-                                const rooms = [...new Set(dayLessons.map(l => l.room))].join(',');
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span style="color:blue;font-size:9px">${subjects}<br></span>
-                                        <span style="color:#555;font-size:7px"> ${rooms}<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
                                         <span style="font-size:7px">(${teachers})</span>
                                     </div>
                                 </td>`;
@@ -832,37 +837,39 @@
                             lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                         );
                         
+                        let cellContent = '';
                         if (dayLessons.length === 0) {
                             if (day === 3 && slot.period === '10') {
-                                row.push('(CPA 14:40 - 15:30)');
+                                cellContent = '(CPA 14:40 - 15:30)';
                             } else {
-                                row.push('');
+                                cellContent = '';
                             }
                         } else {
                             if (isClassQuery) {
                                 const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
                                 const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
+                                const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
                                 const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                                 const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                                 const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                                 const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
+                                
+                                const roomStr = rooms ? ` ${rooms}` : '';
+
                                 if (hasChem && hasIct) {
-                                    row.push(`X2/X3 (${teachers})`);
+                                    cellContent = `X2/X3${roomStr} (${teachers})`;
                                 } else if (hasChem && slot.period != '10') {
-                                    row.push(`X2 (${teachers})`);
+                                    cellContent = `X2${roomStr} (${teachers})`;
                                 } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
-                                    row.push(`X3 (${teachers})`);
+                                    cellContent = `X3${roomStr} (${teachers})`;
                                 } else if (hasPHY && slot.period != '10') {
-                                    row.push(`X1 (${teachers})`);
+                                    cellContent = `X1${roomStr} (${teachers})`;
                                 } else if (hasMaup) {
-                                    row.push(`MAUP (${teachers})`);
-                                }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
-                                    row.push(`Make-up Classes (${subjects})`);
-                                }    
-                                else {
-                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
-                                    const rooms = [...new Set(dayLessons.map(l => l.room))].join(',');
-                                    row.push(`${subjects} ${rooms} (${teachers})`);
+                                    cellContent = `MAUP (${teachers})`;
+                                } else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
+                                    cellContent = `Make-up Classes (${subjects})`;
+                                } else {
+                                    cellContent = `${subjects}${roomStr} (${teachers})`;
                                 }
                             } else {
                                 const firstLesson = dayLessons[0];
@@ -882,9 +889,9 @@
                                         .sort()
                                         .join(',');
                                     
-                                    row.push(`${allClasses} PE${otherTeachers ? ` (${otherTeachers})` : ''}`);
+                                    cellContent = `${allClasses} PE${otherTeachers ? ` (${otherTeachers})` : ''}`;
                                 } else if (isMaup) {
-                                    row.push(`${firstLesson.class} MAUP`);
+                                    cellContent = `${firstLesson.class} MAUP`;
                                 } else {
                                     const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
                                     const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
@@ -918,10 +925,14 @@
                                         classDisplay = simplifiedClasses;
                                     }
                                     
-                                    row.push(`${classDisplay} ${firstLesson.subject} ${firstLesson.room}${coTeachers ? ` (${coTeachers})` : ''}`);
+                                    cellContent = `${classDisplay} ${firstLesson.subject} ${firstLesson.room}${coTeachers ? ` (${coTeachers})` : ''}`;
                                 }
                             }
+                            if (day === 3 && slot.period === '10') {
+                                cellContent += ' (CPA 14:40 - 15:30)';
+                            }
                         }
+                        row.push(cellContent);
                     }
                 }
                 
@@ -939,12 +950,25 @@
                 if (subject.includes('PHY')) subject = 'X1';
                 if (subject.includes('CHEM')) subject = 'X2';
                 if (subject.includes('ICT')) subject = 'X3';
-                return `<span style="color:blue;font-size:12px">${subject}<br></span> <span style="font-size:8px">(${lesson.teacher})</span>`;
+                return `<span style="color:blue;font-size:12px">${subject}<br></span>${lesson.room ? `<span style="color:#555;font-size:8px">${lesson.room}<br></span>` : ''}<span style="font-size:8px">(${lesson.teacher})</span>`;
             }
             if (lesson.subject === 'MAUP') {
                 return `<span style="color:blue;font-size:9px">${lesson.class} MAUP</span>`;
             }
-            return `<span style="color:blue;font-size:12px">${lesson.class} ${lesson.subject}<br></span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
+
+            const groupedLessons = allLessons.filter(
+                l => l.day === lesson.day && 
+                     l.period === lesson.period && 
+                     l.subject === lesson.subject && 
+                     l.teacher === lesson.teacher
+            );
+
+            let classDisplay = lesson.class;
+            if (groupedLessons.length > 1) {
+                const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+                classDisplay = simplifyClassNames(allClasses);
+            }
+            return `<span style="color:blue;font-size:12px">${classDisplay} ${lesson.subject}<br></span><span style="color:#555;font-size:8px">${lesson.room}</span>`;
         }
 
         teacherNameInput.addEventListener('keydown', function(e) {
