@@ -617,43 +617,43 @@
                                 tableHTML += `<td>
                                     <div>
                                         <span style="color:blue;font-size:12px">X2/X3<br></span>
-                                        <span style="font-size:8px">(${teachers})</span>
+                                        <span style="font-size:8px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
                             } else if (hasChem && slot.period != '10') {
                                 tableHTML += `<td>
                                     <div>
                                         <span style="color:blue;font-size:12px">X2<br></span>
-                                        <span style="font-size:8px">(${teachers})</span>
+                                        <span style="font-size:8px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
                             } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {                                
                                 tableHTML += `<td>
-                                    <div>
+                                    <div class="main-lesson">
                                         <span style="color:blue;font-size:12px">X3<br></span>
-                                        <span style="font-size:7px">(${teachers})</span>
+                                        <span style="font-size:7px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
                             } else if (hasPHY && slot.period != '10') {
                                 tableHTML += `<td>
                                     <div>
                                         <span style="color:blue;font-size:12px">X1<br></span>
-                                        <span style="font-size:7px">(${teachers})</span>
+                                        <span style="font-size:7px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
                             }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
                                     const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / '); 
                                     tableHTML += `<td>
-                                        <div class="main-lesson">
-                                            <span class="subject" style="color:blue;font-size:14px;">Make-up Classes<br></span>
-                                            <span class="teacher" style="color:blue;font-size:8px;">${subjects}<br></span>
+                                        <div>
+                                            <span class="subject" style="color:blue;font-size:12px;">Make-up Classes<br></span>
+                                            <span class="teacher" style="color:blue;font-size:8px; word-wrap: break-word">${subjects}<br></span>
                                         </div>
                                     </td>`;
                             } else if (hasMaup) {
                                 tableHTML += `<td>
                                     <div>
                                         <span style="color:blue;font-size:9px">MAUP</span>
-                                        <span style="font-size:7px">(${teachers})</span>
+                                        <span style="font-size:7px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
                             } else {
