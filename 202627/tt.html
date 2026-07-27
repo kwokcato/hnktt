@@ -437,7 +437,7 @@
         }
 
         // =====================================================================
-        // 匯出 EXCEL 功能（參照 room.html 之樣式與結構修訂）
+        // 匯出 EXCEL 功能（已修訂教師查詢樣式：第一行科目/第二行教師/第三行房間）
         // =====================================================================
         function exportToExcel() {
             if (!currentTitle || currentLessons.length === 0) {
@@ -592,6 +592,7 @@
                         if (teachers) lines.push(`(${teachers})`);
                     }
                 } else {
+                    // 教師查詢樣式修正：獨立三行（第一行科目，第二行教師，第三行房間）
                     const firstLesson = dayLessons[0];
                     const isPE = firstLesson.subject === 'PE';
                     const isMaup = firstLesson.subject === 'MAUP';
@@ -606,14 +607,21 @@
                             .sort()
                             .join(',');
 
+                        // 第一行：科目 (班別 + PE)
                         lines.push(`${allClasses} PE`);
-                        if (otherTeachers) lines.push(otherTeachers);
-                        const teacherRoom = `${firstLesson.teacher}${firstLesson.room ? ' ' + firstLesson.room : ''}`;
-                        lines.push(teacherRoom);
+                        // 第二行：教師
+                        lines.push(otherTeachers ? `${firstLesson.teacher} (${otherTeachers})` : firstLesson.teacher);
+                        // 第三行：房間
+                        if (firstLesson.room) lines.push(firstLesson.room);
+
                     } else if (isMaup) {
+                        // 第一行：科目 (班別 + MAUP)
                         lines.push(`${firstLesson.class} MAUP`);
-                        const teacherRoom = `${firstLesson.teacher}${firstLesson.room ? ' ' + firstLesson.room : ''}`;
-                        lines.push(teacherRoom);
+                        // 第二行：教師
+                        lines.push(firstLesson.teacher);
+                        // 第三行：房間
+                        if (firstLesson.room) lines.push(firstLesson.room);
+
                     } else {
                         const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
                         const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
@@ -645,12 +653,12 @@
                             classDisplay = simplifyClassNames(allClasses);
                         }
 
+                        // 第一行：科目 (班別 + 科目)
                         lines.push(`${classDisplay} ${firstLesson.subject}`);
-                        if (coTeachers) {
-                            lines.push(`${coTeachers},`);
-                        }
-                        const teacherRoom = `${firstLesson.teacher}${firstLesson.room ? ' ' + firstLesson.room : ''}`;
-                        lines.push(teacherRoom);
+                        // 第二行：教師
+                        lines.push(coTeachers ? `${firstLesson.teacher} (${coTeachers})` : firstLesson.teacher);
+                        // 第三行：房間
+                        if (firstLesson.room) lines.push(firstLesson.room);
                     }
                 }
 
