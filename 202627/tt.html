@@ -25,7 +25,7 @@
     }
 
     // ==========================================
-    // 【已重啟】 Google 登入驗證機制
+    // Google 登入驗證機制
     // ==========================================
     const id_token = window.sessionStorage.getItem('google_id_token');
     let is_authenticated = true;
@@ -434,6 +434,221 @@
             }
             return null;
         }
+
+        // ==========================================
+        // 精確對齊附圖格式之 Excel 匯出函式
+        // ==========================================
+        function exportToExcel() {
+            if (!currentTitle || currentLessons.length === 0) {
+                alert('請先查詢時間表');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const rows = [];
+            const merges = [];
+
+            // Row 1: 空列
+            rows.push([]);
+
+            // Row 2: 標題（例如：時間表: 黃溢進）
+            let titleName = currentTitle;
+            if (currentTitle.includes(' 的時間表')) {
+                titleName = currentTitle.split(' 的時間表')[0].replace('班別 ', '');
+            }
+            rows.push([`時間表: ${titleName}`]);
+
+            // Row 3: 表頭
+            rows.push(['', '星期一', '星期二', '星期三', '星期四', '星期五']);
+
+            const isClassQuery = currentTitle.includes('班別');
+
+            // 轉換 24 小時制為中文 12 小時制 (如 14:00 -> 下午 2:00)
+            function toChinese12Hr(timeStr) {
+                if (!timeStr) return '';
+                const parts = timeStr.split(':');
+                let h = parseInt(parts[0], 10);
+                const m = parts[1] ? parts[1].padStart(2, '0') : '00';
+                let period = '上午';
+                if (h >= 12) {
+                    period = '下午';
+                    if (h > 12) h -= 12;
+                }
+                return `${period} ${h}:${m}`;
+            }
+
+            // 非課堂時段中文名稱映射
+            function getChineseBreakLabel(slot) {
+                if (slot.time === '8:05') return '課前集會';
+                if (slot.time === '9:30') return '小息';
+                if (slot.time === '10:55') return '小息';
+                if (slot.time === '12:55') return '午膳';
+                if (slot.time === '14:00') return '午間宣佈';
+                return slot.label || '';
+            }
+
+            // 課堂單元格內容格式化（附帶 \n 換行）
+            function formatLessonCellForExcel(dayLessons, day, slotPeriod) {
+                if (!dayLessons || dayLessons.length === 0) {
+                    if (day === 3 && slotPeriod === '10') {
+                        return '下午 2:40 - 下午 3:30\n(CPA)';
+                    }
+                    return '';
+                }
+
+                const lines = [];
+
+                // 週三第 10 節特殊時間提示
+                if (day === 3 && slotPeriod === '10') {
+                    lines.push('下午 2:40 - 下午 3:30');
+                }
+
+                if (isClassQuery) {
+                    const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
+                    const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
+                    const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
+                    const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
+                    const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
+                    const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
+
+                    if (hasChem && hasIct) {
+                        lines.push('X2/X3');
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    } else if (hasChem && slotPeriod !== '10') {
+                        lines.push('X2');
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    } else if (hasIct && slotPeriod !== '10') {
+                        lines.push('X3');
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    } else if (hasPHY && slotPeriod !== '10') {
+                        lines.push('X1');
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    } else if (hasMaup) {
+                        lines.push('MAUP');
+                        if (teachers) lines.push(`(${teachers})`);
+                    } else if (slotPeriod === '10' && currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) {
+                        const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / ');
+                        lines.push('Make-up Classes');
+                        lines.push(subjects);
+                    } else {
+                        const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                        lines.push(subjects);
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    }
+                } else {
+                    const firstLesson = dayLessons[0];
+                    const isPE = firstLesson.subject === 'PE';
+                    const isMaup = firstLesson.subject === 'MAUP';
+
+                    if (isPE) {
+                        const allPELessons = allLessons.filter(
+                            l => l.day === day && l.period === parseInt(slotPeriod) && l.subject === 'PE'
+                        );
+                        const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
+                        const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
+                            .filter(t => t !== firstLesson.teacher)
+                            .sort()
+                            .join(',');
+
+                        lines.push(`${allClasses} PE`);
+                        if (otherTeachers) lines.push(otherTeachers);
+                        const teacherRoom = `${firstLesson.teacher}${firstLesson.room ? ' ' + firstLesson.room : ''}`;
+                        lines.push(teacherRoom);
+                    } else if (isMaup) {
+                        lines.push(`${firstLesson.class} MAUP`);
+                        const teacherRoom = `${firstLesson.teacher}${firstLesson.room ? ' ' + firstLesson.room : ''}`;
+                        lines.push(teacherRoom);
+                    } else {
+                        const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
+                        const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
+                        let coTeachers = '';
+
+                        if (shouldShowCoTeachers) {
+                            const sameLessons = allLessons.filter(
+                                l => l.day === day &&
+                                     l.period === parseInt(slotPeriod) &&
+                                     l.class === firstLesson.class &&
+                                     l.subject === firstLesson.subject
+                            );
+                            coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
+                                .filter(t => t !== firstLesson.teacher)
+                                .sort()
+                                .join(',');
+                        }
+
+                        const groupedLessons = allLessons.filter(
+                            l => l.day === day &&
+                                 l.period === parseInt(slotPeriod) &&
+                                 l.subject === firstLesson.subject &&
+                                 l.teacher === firstLesson.teacher
+                        );
+
+                        let classDisplay = firstLesson.class;
+                        if (groupedLessons.length > 1) {
+                            const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+                            classDisplay = simplifyClassNames(allClasses);
+                        }
+
+                        lines.push(`${classDisplay} ${firstLesson.subject}`);
+                        if (coTeachers) {
+                            lines.push(`${coTeachers},`);
+                        }
+                        const teacherRoom = `${firstLesson.teacher}${firstLesson.room ? ' ' + firstLesson.room : ''}`;
+                        lines.push(teacherRoom);
+                    }
+                }
+
+                return lines.join('\n');
+            }
+
+            // 逐一建構每一列數據
+            timeSlots.forEach(slot => {
+                const rowIndex = rows.length;
+                const row = [];
+
+                // Column A: 上/下午時間（加換行及前綴）
+                const start12 = toChinese12Hr(slot.time);
+                const end12 = toChinese12Hr(slot.endTime);
+                row.push(`${start12}\n-${end12}`);
+
+                if (slot.isBreak) {
+                    const label = getChineseBreakLabel(slot);
+                    row.push(label, label, label, label, label);
+                    merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: 5 } });
+                } else {
+                    for (let day = 1; day <= 5; day++) {
+                        const dayLessons = currentLessons.filter(
+                            lesson => lesson.day === day && lesson.period === parseInt(slot.period)
+                        );
+                        row.push(formatLessonCellForExcel(dayLessons, day, slot.period));
+                    }
+                }
+                rows.push(row);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+
+            // 設置跨欄合併與欄寬
+            ws['!merges'] = merges;
+            ws['!cols'] = [
+                { wch: 16 }, // Col A
+                { wch: 18 }, // Col B
+                { wch: 18 }, // Col C
+                { wch: 18 }, // Col D
+                { wch: 18 }, // Col E
+                { wch: 18 }  // Col F
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, '時間表');
+
+            const cleanTitle = currentTitle.split(' (')[0];
+            XLSX.writeFile(wb, `${cleanTitle}.xlsx`);
+        }
         
         function printTimetable() {
             if (!currentTitle || currentLessons.length === 0) {
@@ -804,146 +1019,7 @@
             }
             return result.join(' ');
         }
-        
-        function exportToExcel() {
-            if (!currentTitle || currentLessons.length === 0) {
-                alert('請先查詢時間表');
-                return;
-            }
 
-            const wb = XLSX.utils.book_new();
-            const rows = [];
-            
-            rows.push([currentTitle]);
-            rows.push([]);
-            
-            const headerRow = ['Time', 'Period', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-            rows.push(headerRow);
-            
-            const isClassQuery = currentTitle.includes('班別');
-            
-            timeSlots.forEach(slot => {
-                const row = [];
-                row.push(`${slot.time}-${slot.endTime}`);
-                row.push(slot.period || '');
-                
-                if (slot.isBreak) {
-                    for (let day = 1; day <= 5; day++) {
-                        row.push(slot.label);
-                    }
-                } else {
-                    for (let day = 1; day <= 5; day++) {
-                        const dayLessons = currentLessons.filter(
-                            lesson => lesson.day === day && lesson.period === parseInt(slot.period)
-                        );
-                        
-                        let cellContent = '';
-                        if (dayLessons.length === 0) {
-                            if (day === 3 && slot.period === '10') {
-                                cellContent = '(CPA 14:40 - 15:30)';
-                            } else {
-                                cellContent = '';
-                            }
-                        } else {
-                            if (isClassQuery) {
-                                const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
-                                const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
-                                const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
-                                const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
-                                const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
-                                const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
-                                const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
-                                
-                                const roomStr = rooms ? ` ${rooms}` : '';
-
-                                if (hasChem && hasIct) {
-                                    cellContent = `X2/X3${roomStr} (${teachers})`;
-                                } else if (hasChem && slot.period != '10') {
-                                    cellContent = `X2${roomStr} (${teachers})`;
-                                } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
-                                    cellContent = `X3${roomStr} (${teachers})`;
-                                } else if (hasPHY && slot.period != '10') {
-                                    cellContent = `X1${roomStr} (${teachers})`;
-                                } else if (hasMaup) {
-                                    cellContent = `MAUP (${teachers})`;
-                                } else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
-                                    cellContent = `Make-up Classes (${subjects})`;
-                                } else {
-                                    cellContent = `${subjects}${roomStr} (${teachers})`;
-                                }
-                            } else {
-                                const firstLesson = dayLessons[0];
-                                const isPE = firstLesson.subject === 'PE';
-                                const isMaup = firstLesson.subject === 'MAUP';
-                                
-                                if (isPE) {
-                                    const allPELessons = allLessons.filter(
-                                        lesson => lesson.day === day && 
-                                                 lesson.period === parseInt(slot.period) &&
-                                                 lesson.subject === 'PE'
-                                    );
-                                    
-                                    const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
-                                    const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
-                                        .filter(t => t !== firstLesson.teacher)
-                                        .sort()
-                                        .join(',');
-                                    
-                                    cellContent = `${allClasses} PE${otherTeachers ? ` (${otherTeachers})` : ''}`;
-                                } else if (isMaup) {
-                                    cellContent = `${firstLesson.class} MAUP`;
-                                } else {
-                                    const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
-                                    const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
-                                    let coTeachers = '';
-                                    
-                                    if (shouldShowCoTeachers) {
-                                        const sameLessons = allLessons.filter(
-                                            lesson => lesson.day === day && 
-                                                     lesson.period === parseInt(slot.period) &&
-                                                     lesson.class === firstLesson.class &&
-                                                     lesson.subject === firstLesson.subject
-                                        );
-                                        
-                                        coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
-                                            .filter(t => t !== firstLesson.teacher)
-                                            .sort()
-                                            .join(',');
-                                    }
-
-                                    const groupedLessons = allLessons.filter(
-                                        lesson => lesson.day === day && 
-                                                 lesson.period === parseInt(slot.period) &&
-                                                 lesson.subject === firstLesson.subject &&
-                                                 lesson.teacher === firstLesson.teacher
-                                    );
-
-                                    let classDisplay = firstLesson.class;
-                                    if (groupedLessons.length > 1) {
-                                        const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
-                                        const simplifiedClasses = simplifyClassNames(allClasses);
-                                        classDisplay = simplifiedClasses;
-                                    }
-                                    
-                                    cellContent = `${classDisplay} ${firstLesson.subject} ${firstLesson.room}${coTeachers ? ` (${coTeachers})` : ''}`;
-                                }
-                            }
-                            if (day === 3 && slot.period === '10') {
-                                cellContent += ' (CPA 14:40 - 15:30)';
-                            }
-                        }
-                        row.push(cellContent);
-                    }
-                }
-                
-                rows.push(row);
-            });
-            
-            const ws = XLSX.utils.aoa_to_sheet(rows);
-            XLSX.utils.book_append_sheet(wb, ws, '時間表');
-            XLSX.writeFile(wb, `${currentTitle}.xlsx`);
-        }
-        
         function formatLessonForExport(lesson, isClassQuery) {
             if (isClassQuery) {
                 let subject = lesson.subject;
@@ -1051,12 +1127,10 @@
                 return;
             }
             
-            // 獲取 CPA 課堂以提取班主任及主班房資訊
             const cpaLessons = currentLessons.filter(
                 item => item.subject && item.subject.toUpperCase() === 'CPA'
             );
 
-            // 1. 提取班主任（英文簡稱 + 中文姓名）
             const teacherMap = new Map();
             cpaLessons.forEach(item => {
                 if (item.teacher && !teacherMap.has(item.teacher)) {
@@ -1068,14 +1142,12 @@
             });
             const cpaTeachers = [...teacherMap.values()].join(', ');
 
-            // 2. 提取主班房 (從 CPA 課堂的 room 欄位)
             const cpaRooms = [...new Set(
                 cpaLessons
                     .map(item => item.room)
                     .filter(room => room && room.trim() !== '')
             )].join(', ');
 
-            // 3. 組合標題附加資訊
             let infoParts = [];
             if (cpaRooms) {
                 infoParts.push(`主班房: ${cpaRooms}`);
@@ -1155,7 +1227,7 @@
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                             
                             const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
-                    if (hasChem && hasIct) {
+                            if (hasChem && hasIct) {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span class="subject" style="color:blue;font-size:14px;">X2/X3<bR></span>
