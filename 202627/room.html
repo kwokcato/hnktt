@@ -587,7 +587,7 @@
             document.getElementById('statusMessage').style.display = 'none';
         }
 
-        // 當選擇的房間改變時
+        // 當選擇的房間改變時（螢幕查詢畫面）
         function onRoomChange() {
             const selectedRoom = document.getElementById('roomSelect').value;
             const table = document.getElementById('timetableTable');
@@ -638,7 +638,9 @@
                             }
                             
                             subjectGroups[l.subject].classes.push({ letter: classLetter, full: l.className });
-                            subjectGroups[l.subject].teachers.push(l.teacher);
+                            if (l.teacher) {
+                                subjectGroups[l.subject].teachers.push(l.teacher);
+                            }
                         });
 
                         const detailsArray = Object.values(subjectGroups).map(group => {
@@ -784,7 +786,7 @@
         }
 
         // =====================================================================
-        // 列印功能函數（依據附圖格式繪製）
+        // 修訂後的列印功能函數（正確處理混合分組與附圖排版）
         // =====================================================================
         function printRoomTimetable() {
             const selectedRoom = document.getElementById('roomSelect').value;
@@ -795,7 +797,7 @@
 
             const printArea = document.getElementById('printArea');
 
-            // 構建與附圖完全一致的時間表對應表
+            // 構建與附圖完全一致的時間表時段劃分
             const schedule = [
                 { type: 'special', time: '上午 8:05<br>-上午 8:20', label: '課前集會' },
                 { type: 'period', period: 1, time: '上午 8:20<br>-上午 8:55' },
@@ -838,15 +840,56 @@
                     const p = rowInfo.period;
                     for (let day = 1; day <= 5; day++) {
                         const lessons = timetableData.filter(d => d.room === selectedRoom && d.week === day && d.period === p);
-                        
+
                         if (lessons.length > 0) {
-                            const cellText = lessons.map(l => {
-                                let txt = `${l.className} ${l.subject}`;
-                                if (l.teacher) txt += ` ${l.teacher}`;
-                                txt += ` ${l.room}`;
-                                return txt;
-                            }).join('<br>');
-                            html += `<td>${cellText}</td>`;
+                            // 同樣按科目(subject)進行分組，實現跨班混合合併邏輯（例如 5A, 5B, 5D 合併為 5ABD）
+                            const subjectGroups = {};
+                            lessons.forEach(l => {
+                                if (!subjectGroups[l.subject]) {
+                                    subjectGroups[l.subject] = {
+                                        subject: l.subject,
+                                        classes: [],
+                                        teachers: []
+                                    };
+                                }
+                                let classLetter = l.className;
+                                const match = l.className.match(/^\d+([A-Za-z]+)$/);
+                                if (match) {
+                                    classLetter = match[1];
+                                }
+                                
+                                subjectGroups[l.subject].classes.push({ letter: classLetter, full: l.className });
+                                if (l.teacher) {
+                                    subjectGroups[l.subject].teachers.push(l.teacher);
+                                }
+                            });
+
+                            const detailsArray = Object.values(subjectGroups).map(group => {
+                                const uniqueFullClasses = Array.from(new Set(group.classes.map(c => c.full)));
+                                const matchFirst = group.classes[0].full.match(/^(\d+)[A-Za-z]+$/);
+                                
+                                let mergedClassName = uniqueFullClasses.join('/');
+                                if (matchFirst) {
+                                    const grade = matchFirst[1];
+                                    const allSameGrade = group.classes.every(c => c.full.startsWith(grade));
+                                    if (allSameGrade) {
+                                        const letters = Array.from(new Set(group.classes.map(c => c.letter))).sort().join('');
+                                        mergedClassName = grade + letters;
+                                    }
+                                }
+                                
+                                const uniqueTeachers = Array.from(new Set(group.teachers.filter(t => t)));
+                                const teacherStr = uniqueTeachers.join(',');
+
+                                let itemStr = `${mergedClassName} ${group.subject}`;
+                                if (teacherStr) {
+                                    itemStr += ` ${teacherStr}`;
+                                }
+                                itemStr += ` ${selectedRoom}`;
+                                return itemStr;
+                            });
+
+                            html += `<td>${detailsArray.join('<br>')}</td>`;
                         } else {
                             html += `<td></td>`;
                         }
