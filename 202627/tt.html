@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教師/班別時間表查詢</title>
     
+    <!-- 引入原生 Excel (.xlsx) 產生套件（支援邊框與換行樣式） -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
     <script>
     // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
     const SCHOOL_DOMAIN = "bhnkc.edu.hk"; 
@@ -273,8 +276,6 @@
         </table>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const teacherNameInput = document.getElementById('teacherName');
@@ -435,35 +436,86 @@
             return null;
         }
 
-        // ==========================================
-        // 精確對齊附圖格式之 Excel 匯出函式
-        // ==========================================
+        // =====================================================================
+        // 匯出 EXCEL 功能（參照 room.html 之樣式與結構修訂）
+        // =====================================================================
         function exportToExcel() {
             if (!currentTitle || currentLessons.length === 0) {
                 alert('請先查詢時間表');
                 return;
             }
 
+            if (typeof XLSX === 'undefined') {
+                alert('Excel 匯出元件載入中，請稍候片刻再試。');
+                return;
+            }
+
             const wb = XLSX.utils.book_new();
-            const rows = [];
+
+            // 樣式定義
+            const borderBlack = {
+                top: { style: "medium", color: { rgb: "000000" } },
+                bottom: { style: "medium", color: { rgb: "000000" } },
+                left: { style: "medium", color: { rgb: "000000" } },
+                right: { style: "medium", color: { rgb: "000000" } }
+            };
+
+            const titleStyle = {
+                font: { name: "Segoe UI", sz: 14, bold: true },
+                alignment: { horizontal: "left", vertical: "center" }
+            };
+
+            const headerStyle = {
+                font: { name: "Segoe UI", sz: 11, bold: true },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: borderBlack,
+                fill: { fgColor: { rgb: "FFFFFF" } }
+            };
+
+            const timeColStyle = {
+                font: { name: "Segoe UI", sz: 10, bold: true },
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: borderBlack
+            };
+
+            const specialRowStyle = {
+                font: { name: "Segoe UI", sz: 11, bold: true },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: borderBlack
+            };
+
+            const cellStyle = {
+                font: { name: "Segoe UI", sz: 10 },
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: borderBlack
+            };
+
+            const ws = {};
             const merges = [];
+            const rowHeights = [];
 
-            // Row 1: 空列
-            rows.push([]);
-
-            // Row 2: 標題（例如：時間表: 黃溢進）
+            // 處理標題名稱
             let titleName = currentTitle;
             if (currentTitle.includes(' 的時間表')) {
                 titleName = currentTitle.split(' 的時間表')[0].replace('班別 ', '');
             }
-            rows.push([`時間表: ${titleName}`]);
 
-            // Row 3: 表頭
-            rows.push(['', '星期一', '星期二', '星期三', '星期四', '星期五']);
+            // Row 0 (Excel A1): 標題
+            ws["A1"] = { v: `時間表: ${titleName}`, s: titleStyle };
+            merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
+            rowHeights.push({ hpt: 28 });
+
+            // Row 1 (Excel A2): 表頭
+            const headers = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
+            headers.forEach((h, colIdx) => {
+                const cellRef = XLSX.utils.encode_cell({ r: 1, c: colIdx });
+                ws[cellRef] = { v: h, s: headerStyle };
+            });
+            rowHeights.push({ hpt: 24 });
 
             const isClassQuery = currentTitle.includes('班別');
 
-            // 轉換 24 小時制為中文 12 小時制 (如 14:00 -> 下午 2:00)
+            // 24 小時制轉中文 12 小時制
             function toChinese12Hr(timeStr) {
                 if (!timeStr) return '';
                 const parts = timeStr.split(':');
@@ -487,7 +539,7 @@
                 return slot.label || '';
             }
 
-            // 課堂單元格內容格式化（附帶 \n 換行）
+            // 課堂單元格內容格式化
             function formatLessonCellForExcel(dayLessons, day, slotPeriod) {
                 if (!dayLessons || dayLessons.length === 0) {
                     if (day === 3 && slotPeriod === '10') {
@@ -498,7 +550,6 @@
 
                 const lines = [];
 
-                // 週三第 10 節特殊時間提示
                 if (day === 3 && slotPeriod === '10') {
                     lines.push('下午 2:40 - 下午 3:30');
                 }
@@ -606,43 +657,47 @@
                 return lines.join('\n');
             }
 
-            // 逐一建構每一列數據
-            timeSlots.forEach(slot => {
-                const rowIndex = rows.length;
-                const row = [];
+            let currentR = 2; // 從第 3 列（Index 2）開始填入時間表數據
 
-                // Column A: 上/下午時間（加換行及前綴）
+            timeSlots.forEach(slot => {
                 const start12 = toChinese12Hr(slot.time);
                 const end12 = toChinese12Hr(slot.endTime);
-                row.push(`${start12}\n-${end12}`);
+                const formattedTime = `${start12}\n-${end12}`;
+
+                // Column A: 時間欄位
+                const timeCellRef = XLSX.utils.encode_cell({ r: currentR, c: 0 });
+                ws[timeCellRef] = { v: formattedTime, s: timeColStyle };
 
                 if (slot.isBreak) {
                     const label = getChineseBreakLabel(slot);
-                    row.push(label, label, label, label, label);
-                    merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: 5 } });
+                    const bRef = XLSX.utils.encode_cell({ r: currentR, c: 1 });
+                    ws[bRef] = { v: label, s: specialRowStyle };
+
+                    for (let c = 2; c <= 5; c++) {
+                        const cellRef = XLSX.utils.encode_cell({ r: currentR, c: c });
+                        ws[cellRef] = { v: "", s: specialRowStyle };
+                    }
+                    merges.push({ s: { r: currentR, c: 1 }, e: { r: currentR, c: 5 } });
+                    rowHeights.push({ hpt: 22 });
                 } else {
                     for (let day = 1; day <= 5; day++) {
                         const dayLessons = currentLessons.filter(
                             lesson => lesson.day === day && lesson.period === parseInt(slot.period)
                         );
-                        row.push(formatLessonCellForExcel(dayLessons, day, slot.period));
+                        const cellText = formatLessonCellForExcel(dayLessons, day, slot.period);
+                        const cellRef = XLSX.utils.encode_cell({ r: currentR, c: day });
+                        ws[cellRef] = { v: cellText, s: cellStyle };
                     }
+                    rowHeights.push({ hpt: 45 });
                 }
-                rows.push(row);
+
+                currentR++;
             });
 
-            const ws = XLSX.utils.aoa_to_sheet(rows);
-
-            // 設置跨欄合併與欄寬
+            ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: currentR - 1, c: 5 } });
             ws['!merges'] = merges;
-            ws['!cols'] = [
-                { wch: 16 }, // Col A
-                { wch: 18 }, // Col B
-                { wch: 18 }, // Col C
-                { wch: 18 }, // Col D
-                { wch: 18 }, // Col E
-                { wch: 18 }  // Col F
-            ];
+            ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+            ws['!rows'] = rowHeights;
 
             XLSX.utils.book_append_sheet(wb, ws, '時間表');
 
