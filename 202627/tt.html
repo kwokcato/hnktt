@@ -437,7 +437,7 @@
         }
 
         // =====================================================================
-        // 匯出 EXCEL 功能（已修訂教師查詢樣式：第一行科目/第二行教師/第三行房間）
+        // 匯出 EXCEL 功能（班別查詢下保留主班房與班主任完整資訊）
         // =====================================================================
         function exportToExcel() {
             if (!currentTitle || currentLessons.length === 0) {
@@ -494,10 +494,18 @@
             const merges = [];
             const rowHeights = [];
 
+            const isClassQuery = currentTitle.includes('班別');
+
             // 處理標題名稱
             let titleName = currentTitle;
-            if (currentTitle.includes(' 的時間表')) {
-                titleName = currentTitle.split(' 的時間表')[0].replace('班別 ', '');
+            if (isClassQuery) {
+                // 班別查詢：保留「班別 1A (主班房: R101 | 班主任: CHAN TM 陳大文)」
+                titleName = currentTitle.replace(' 的時間表', '');
+            } else {
+                // 教師查詢：僅保留教師名稱
+                if (currentTitle.includes(' 的時間表')) {
+                    titleName = currentTitle.split(' 的時間表')[0];
+                }
             }
 
             // Row 0 (Excel A1): 標題
@@ -512,8 +520,6 @@
                 ws[cellRef] = { v: h, s: headerStyle };
             });
             rowHeights.push({ hpt: 24 });
-
-            const isClassQuery = currentTitle.includes('班別');
 
             // 24 小時制轉中文 12 小時制
             function toChinese12Hr(timeStr) {
@@ -543,7 +549,7 @@
             function formatLessonCellForExcel(dayLessons, day, slotPeriod) {
                 if (!dayLessons || dayLessons.length === 0) {
                     if (day === 3 && slotPeriod === '10') {
-                        return '下午 2:40 - 下午 3:30\n(CPA)';
+                        return '(CPA 14:40 - 15:30)';
                     }
                     return '';
                 }
@@ -551,10 +557,11 @@
                 const lines = [];
 
                 if (day === 3 && slotPeriod === '10') {
-                    lines.push('下午 2:40 - 下午 3:30');
+                    lines.push('(CPA 14:40 - 15:30)');
                 }
 
                 if (isClassQuery) {
+                    // 班別查詢：顯示科目、房間、教師名稱
                     const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
                     const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
                     const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
@@ -570,7 +577,8 @@
                         lines.push('X2');
                         if (rooms) lines.push(rooms);
                         if (teachers) lines.push(`(${teachers})`);
-                    } else if (hasIct && slotPeriod !== '10') {
+                    //} else if (hasIct && slotPeriod !== '10') {
+		} else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
                         lines.push('X3');
                         if (rooms) lines.push(rooms);
                         if (teachers) lines.push(`(${teachers})`);
@@ -592,7 +600,7 @@
                         if (teachers) lines.push(`(${teachers})`);
                     }
                 } else {
-                    // 教師查詢樣式修正：獨立三行（第一行科目，第二行教師，第三行房間）
+                    // 教師查詢：儲存格內僅顯示「班別 + 科目」、「協同教師（如有）」與「房間」
                     const firstLesson = dayLessons[0];
                     const isPE = firstLesson.subject === 'PE';
                     const isMaup = firstLesson.subject === 'MAUP';
@@ -607,19 +615,12 @@
                             .sort()
                             .join(',');
 
-                        // 第一行：科目 (班別 + PE)
                         lines.push(`${allClasses} PE`);
-                        // 第二行：教師
-                        lines.push(otherTeachers ? `${firstLesson.teacher} (${otherTeachers})` : firstLesson.teacher);
-                        // 第三行：房間
+                        if (otherTeachers) lines.push(`(${otherTeachers})`);
                         if (firstLesson.room) lines.push(firstLesson.room);
 
                     } else if (isMaup) {
-                        // 第一行：科目 (班別 + MAUP)
                         lines.push(`${firstLesson.class} MAUP`);
-                        // 第二行：教師
-                        lines.push(firstLesson.teacher);
-                        // 第三行：房間
                         if (firstLesson.room) lines.push(firstLesson.room);
 
                     } else {
@@ -653,11 +654,8 @@
                             classDisplay = simplifyClassNames(allClasses);
                         }
 
-                        // 第一行：科目 (班別 + 科目)
                         lines.push(`${classDisplay} ${firstLesson.subject}`);
-                        // 第二行：教師
-                        lines.push(coTeachers ? `${firstLesson.teacher} (${coTeachers})` : firstLesson.teacher);
-                        // 第三行：房間
+                        if (coTeachers) lines.push(`(${coTeachers})`);
                         if (firstLesson.room) lines.push(firstLesson.room);
                     }
                 }
