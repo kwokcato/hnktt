@@ -261,6 +261,24 @@
             background-color: #219150;
         }
 
+        /* Excel 按鈕樣式 */
+        .excel-btn {
+            background-color: #107c41;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.2s ease;
+        }
+
+        .excel-btn:hover {
+            background-color: #0b5a2f;
+        }
+
         /* 隱藏列印專用區域 */
         #printArea {
             display: none;
@@ -383,6 +401,7 @@
                     </select>
                 </div>
                 <button id="printBtn" class="print-btn" onclick="printRoomTimetable()">列印時間表</button>
+                <button id="excelBtn" class="excel-btn" onclick="exportToExcel()">匯出 EXCEL</button>
             </div>
             <table id="timetableTable" style="display: none;">
                 <thead>
@@ -435,6 +454,25 @@
         let timetableData = []; // 儲存所有的課表資料
         let uniqueRooms = [];   // 儲存所有不重複的房間名稱
         const weekdayNames = { 1: '星期一', 2: '星期二', 3: '星期三', 4: '星期四', 5: '星期五' };
+
+        // 時段劃分定義（列印與 Excel 匯出共用）
+        const scheduleStructure = [
+            { type: 'special', time: '上午 8:05 - 上午 8:20', label: '課前集會' },
+            { type: 'period', period: 1, time: '上午 8:20 - 上午 8:55' },
+            { type: 'period', period: 2, time: '上午 8:55 - 上午 9:30' },
+            { type: 'special', time: '上午 9:30 - 上午 9:45', label: '小息' },
+            { type: 'period', period: 3, time: '上午 9:45 - 上午 10:20' },
+            { type: 'period', period: 4, time: '上午 10:20 - 上午 10:55' },
+            { type: 'special', time: '上午 10:55 - 上午 11:10', label: '小息' },
+            { type: 'period', period: 5, time: '上午 11:10 - 上午 11:45' },
+            { type: 'period', period: 6, time: '上午 11:45 - 下午 12:20' },
+            { type: 'period', period: 7, time: '下午 12:20 - 下午 12:55' },
+            { type: 'special', time: '下午 12:55 - 下午 2:00', label: '午膳' },
+            { type: 'special', time: '下午 2:00 - 下午 2:05', label: '午間宣佈' },
+            { type: 'period', period: 8, time: '下午 2:05 - 下午 2:40' },
+            { type: 'period', period: 9, time: '下午 2:40 - 下午 3:15' },
+            { type: 'period', period: 10, time: '下午 3:15 - 下午 3:50' }
+        ];
 
         // 頁面載入完成後執行
         document.addEventListener('DOMContentLoaded', () => {
@@ -785,8 +823,61 @@
             statusElement.style.display = 'block';
         }
 
+        // 輔助函數：獲取指定房間、星期與節數的內容（對應附圖/列印格式）
+        function getCellContentForRoom(room, day, period) {
+            const lessons = timetableData.filter(d => d.room === room && d.week === day && d.period === period);
+
+            if (lessons.length === 0) return '';
+
+            const subjectGroups = {};
+            lessons.forEach(l => {
+                if (!subjectGroups[l.subject]) {
+                    subjectGroups[l.subject] = {
+                        subject: l.subject,
+                        classes: [],
+                        teachers: []
+                    };
+                }
+                let classLetter = l.className;
+                const match = l.className.match(/^\d+([A-Za-z]+)$/);
+                if (match) {
+                    classLetter = match[1];
+                }
+                
+                subjectGroups[l.subject].classes.push({ letter: classLetter, full: l.className });
+                if (l.teacher) {
+                    subjectGroups[l.subject].teachers.push(l.teacher);
+                }
+            });
+
+            return Object.values(subjectGroups).map(group => {
+                const uniqueFullClasses = Array.from(new Set(group.classes.map(c => c.full)));
+                const matchFirst = group.classes[0].full.match(/^(\d+)[A-Za-z]+$/);
+                
+                let mergedClassName = uniqueFullClasses.join('/');
+                if (matchFirst) {
+                    const grade = matchFirst[1];
+                    const allSameGrade = group.classes.every(c => c.full.startsWith(grade));
+                    if (allSameGrade) {
+                        const letters = Array.from(new Set(group.classes.map(c => c.letter))).sort().join('');
+                        mergedClassName = grade + letters;
+                    }
+                }
+                
+                const uniqueTeachers = Array.from(new Set(group.teachers.filter(t => t)));
+                const teacherStr = uniqueTeachers.join(',');
+
+                let itemStr = `${mergedClassName} ${group.subject}`;
+                if (teacherStr) {
+                    itemStr += ` ${teacherStr}`;
+                }
+                itemStr += ` ${room}`;
+                return itemStr;
+            });
+        }
+
         // =====================================================================
-        // 修訂後的列印功能函數（正確處理混合分組與附圖排版）
+        // 列印功能函數（依據附圖格式繪製）
         // =====================================================================
         function printRoomTimetable() {
             const selectedRoom = document.getElementById('roomSelect').value;
@@ -796,25 +887,6 @@
             }
 
             const printArea = document.getElementById('printArea');
-
-            // 構建與附圖完全一致的時間表時段劃分
-            const schedule = [
-                { type: 'special', time: '上午 8:05<br>-上午 8:20', label: '課前集會' },
-                { type: 'period', period: 1, time: '上午 8:20<br>-上午 8:55' },
-                { type: 'period', period: 2, time: '上午 8:55<br>-上午 9:30' },
-                { type: 'special', time: '上午 9:30<br>-上午 9:45', label: '小息' },
-                { type: 'period', period: 3, time: '上午 9:45<br>-上午 10:20' },
-                { type: 'period', period: 4, time: '上午 10:20<br>-上午 10:55' },
-                { type: 'special', time: '上午 10:55<br>-上午 11:10', label: '小息' },
-                { type: 'period', period: 5, time: '上午 11:10<br>-上午 11:45' },
-                { type: 'period', period: 6, time: '上午 11:45<br>-下午 12:20' },
-                { type: 'period', period: 7, time: '下午 12:20<br>-下午 12:55' },
-                { type: 'special', time: '下午 12:55<br>-下午 2:00', label: '午膳' },
-                { type: 'special', time: '下午 2:00<br>-下午 2:05', label: '午間宣佈' },
-                { type: 'period', period: 8, time: '下午 2:05<br>-下午 2:40' },
-                { type: 'period', period: 9, time: '下午 2:40<br>-下午 3:15' },
-                { type: 'period', period: 10, time: '下午 3:15<br>-下午 3:50' }
-            ];
 
             let html = `<div class="print-title">時間表: ${selectedRoom}</div>`;
             html += `<table class="print-table">`;
@@ -830,69 +902,18 @@
             </thead>`;
             html += `<tbody>`;
 
-            schedule.forEach(rowInfo => {
+            scheduleStructure.forEach(rowInfo => {
+                const timeLabel = rowInfo.time.replace(' - ', '<br>-');
                 html += `<tr>`;
-                html += `<td class="time-col">${rowInfo.time}</td>`;
+                html += `<td class="time-col">${timeLabel}</td>`;
 
                 if (rowInfo.type === 'special') {
                     html += `<td colspan="5" class="special-row">${rowInfo.label}</td>`;
                 } else {
                     const p = rowInfo.period;
                     for (let day = 1; day <= 5; day++) {
-                        const lessons = timetableData.filter(d => d.room === selectedRoom && d.week === day && d.period === p);
-
-                        if (lessons.length > 0) {
-                            // 同樣按科目(subject)進行分組，實現跨班混合合併邏輯（例如 5A, 5B, 5D 合併為 5ABD）
-                            const subjectGroups = {};
-                            lessons.forEach(l => {
-                                if (!subjectGroups[l.subject]) {
-                                    subjectGroups[l.subject] = {
-                                        subject: l.subject,
-                                        classes: [],
-                                        teachers: []
-                                    };
-                                }
-                                let classLetter = l.className;
-                                const match = l.className.match(/^\d+([A-Za-z]+)$/);
-                                if (match) {
-                                    classLetter = match[1];
-                                }
-                                
-                                subjectGroups[l.subject].classes.push({ letter: classLetter, full: l.className });
-                                if (l.teacher) {
-                                    subjectGroups[l.subject].teachers.push(l.teacher);
-                                }
-                            });
-
-                            const detailsArray = Object.values(subjectGroups).map(group => {
-                                const uniqueFullClasses = Array.from(new Set(group.classes.map(c => c.full)));
-                                const matchFirst = group.classes[0].full.match(/^(\d+)[A-Za-z]+$/);
-                                
-                                let mergedClassName = uniqueFullClasses.join('/');
-                                if (matchFirst) {
-                                    const grade = matchFirst[1];
-                                    const allSameGrade = group.classes.every(c => c.full.startsWith(grade));
-                                    if (allSameGrade) {
-                                        const letters = Array.from(new Set(group.classes.map(c => c.letter))).sort().join('');
-                                        mergedClassName = grade + letters;
-                                    }
-                                }
-                                
-                                const uniqueTeachers = Array.from(new Set(group.teachers.filter(t => t)));
-                                const teacherStr = uniqueTeachers.join(',');
-
-                                let itemStr = `${mergedClassName} ${group.subject}`;
-                                if (teacherStr) {
-                                    itemStr += ` ${teacherStr}`;
-                                }
-                                itemStr += ` ${selectedRoom}`;
-                                return itemStr;
-                            });
-
-                            html += `<td>${detailsArray.join('<br>')}</td>`;
-                        } else {
-                            html += `<td></td>`;
-                        }
+                        const detailsArray = getCellContentForRoom(selectedRoom, day, p);
+                        html += `<td>${detailsArray ? detailsArray.join('<br>') : ''}</td>`;
                     }
                 }
                 html += `</tr>`;
@@ -903,6 +924,76 @@
 
             // 觸發瀏覽器列印
             window.print();
+        }
+
+        // =====================================================================
+        // 新增功能：匯出 EXCEL（顯示格式與列印版本完全一樣）
+        // =====================================================================
+        function exportToExcel() {
+            const selectedRoom = document.getElementById('roomSelect').value;
+            if (!selectedRoom) {
+                alert('請先選擇房間！');
+                return;
+            }
+
+            // 構建帶有 Excel 相容樣式的 HTML 表格
+            let excelHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">`;
+            excelHtml += `<head><meta charset="UTF-8">`;
+            excelHtml += `<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>${selectedRoom}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->`;
+            excelHtml += `<style>
+                table { border-collapse: collapse; width: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, 'Microsoft JhengHei', sans-serif; }
+                th, td { border: 2px solid #000000; text-align: center; vertical-align: middle; padding: 6px; font-size: 11pt; color: #000000; }
+                th { font-weight: bold; background-color: #FFFFFF; font-size: 12pt; }
+                .title { font-size: 14pt; font-weight: bold; text-align: left; border: none !important; padding-bottom: 10px; }
+                .time-col { font-weight: bold; font-size: 10pt; white-space: nowrap; }
+                .special-row { font-weight: bold; font-size: 12pt; }
+                br { mso-data-placement: same-cell; }
+            </style></head><body>`;
+
+            excelHtml += `<table>`;
+            excelHtml += `<tr><td colspan="6" class="title">時間表: ${selectedRoom}</td></tr>`;
+            excelHtml += `<tr>
+                <th class="time-col"></th>
+                <th>星期一</th>
+                <th>星期二</th>
+                <th>星期三</th>
+                <th>星期四</th>
+                <th>星期五</th>
+            </tr>`;
+
+            scheduleStructure.forEach(rowInfo => {
+                excelHtml += `<tr>`;
+                excelHtml += `<td class="time-col">${rowInfo.time}</td>`;
+
+                if (rowInfo.type === 'special') {
+                    excelHtml += `<td colspan="5" class="special-row">${rowInfo.label}</td>`;
+                } else {
+                    const p = rowInfo.period;
+                    for (let day = 1; day <= 5; day++) {
+                        const detailsArray = getCellContentForRoom(selectedRoom, day, p);
+                        if (detailsArray && detailsArray.length > 0) {
+                            // 在 Excel 中使用 mso-data-placement:same-cell 確保跨班資訊在同格內換行
+                            excelHtml += `<td>${detailsArray.join('<br style="mso-data-placement:same-cell;"/>')}</td>`;
+                        } else {
+                            excelHtml += `<td></td>`;
+                        }
+                    }
+                }
+                excelHtml += `</tr>`;
+            });
+
+            excelHtml += `</table></body></html>`;
+
+            // 下載 Excel (.xls 檔案)
+            const blob = new Blob(['\ufeff' + excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `房間時間表_${selectedRoom}.xls`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
