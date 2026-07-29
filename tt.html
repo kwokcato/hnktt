@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教師/班別時間表查詢</title>
     
+    <!-- 引入原生 Excel (.xlsx) 產生套件（支援邊框與換行樣式） -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
     <script>
     // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
     const SCHOOL_DOMAIN = "bhnkc.edu.hk"; 
@@ -25,20 +28,18 @@
     }
 
     // ==========================================
-    // 【已重啟】 Google 登入驗證機制
+    // Google 登入驗證機制
     // ==========================================
     const id_token = window.sessionStorage.getItem('google_id_token');
     let is_authenticated = true;
 
     if (id_token) {
         const payload = decodeJwtResponse(id_token);
-        // 檢查憑證是否存在、網域是否符合貴校，以及憑證是否過期
         if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp && (payload.exp * 1000) > Date.now()) {
             is_authenticated = true;
         }
     }
 
-    // 若未通過驗證，直接將最外層視窗導向登入頁 index.html
     if (!is_authenticated) {
         window.top.location.href = 'index.html';
     }
@@ -46,7 +47,6 @@
     </script>
  
     <style>
-        /* 來自 hnkstyle.css 的樣式 */
         .refresh-btn {
             position: fixed;
             top: 10px;
@@ -77,7 +77,6 @@
             opacity: 0.7;
         }
 
-        /* tt.html 原有樣式 */
         #result h3 {
             margin: 5px 0;
             padding: 0;
@@ -223,7 +222,6 @@
 <body oncontextmenu="return false;">
     
     <script>
-        // 停用語音/右鍵選單與開發者工具快捷鍵
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
         });
@@ -278,8 +276,6 @@
         </table>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const teacherNameInput = document.getElementById('teacherName');
@@ -315,9 +311,6 @@
             { time: '15:15', period: '10', endTime: '15:50', isBreak: false }
         ];
 
-        // ==========================================
-        // Google Sheet JSONP 引擎核心
-        // ==========================================
         window.handleGoogleSheetResponse = function(jsonData) {
             try {
                 if (!jsonData || !jsonData.table || !jsonData.table.rows) {
@@ -331,13 +324,14 @@
                     const c = row.c;
                     if (c && c.length >= 7) {
                         allLessons.push({
-                            year:    c[0] ? String(c[0].v).trim() : '',
-                            day:     c[1] ? parseInt(c[1].v) : 0,
-                            period:  c[2] ? parseInt(c[2].v) : 0,
-                            teacher: c[3] ? String(c[3].v).trim() : '',
-                            class:   c[4] ? String(c[4].v).trim() : '',
-                            subject: c[5] ? String(c[5].v).trim() : '',
-                            room:    c[6] ? String(c[6].v).trim() : ''
+                            year:           c[0] ? String(c[0].v).trim() : '',
+                            day:            c[1] ? parseInt(c[1].v) : 0,
+                            period:         c[2] ? parseInt(c[2].v) : 0,
+                            teacher:        c[3] ? String(c[3].v).trim() : '',
+                            class:          c[4] ? String(c[4].v).trim() : '',
+                            subject:        c[5] ? String(c[5].v).trim() : '',
+                            room:           c[6] ? String(c[6].v).trim() : '', 
+                            teacherChinese: c[7] ? String(c[7].v).trim() : (c[6] ? String(c[6].v).trim() : '')
                         });
                     }
                 });
@@ -349,29 +343,28 @@
                 
                 populateDropdowns();
                 loadingDiv.style.display = 'none';
-                resultDiv.innerHTML = '<p style="color:green;">時間表數據已從雲端 Google Sheet 同步（最新狀態）</p>';
+                resultDiv.innerHTML = '<p style="color:green;">時間表數據已同步（最新狀態）</p>';  
                 initExportButtons();
                 
             } catch (error) {
                 console.error('解析雲端資料時出錯:', error);
-                loadingDiv.innerHTML = `<p style="color:red">數據解析失敗: ${error.message}<br>請確認該 Google Sheet 是否已「發佈到網路」。</p>`;
+                loadingDiv.innerHTML = `<p style="color:red">數據解析失敗: ${error.message}<br>請通知系統管理員。</p>`; 
             }
         };
 
         function loadGoogleSheetData() {
-            const sheetId = '1S7RkDGhtRYcM9Tv304fqeOSz1RsQX2pzS3oNuQAVKRs';
+            const sheetId = '10TdramDTMZLQxl-jShrZeYJLCTtq0iu98PVPb-sZXyU';
             const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&t=`;
             
             const script = document.createElement('script');
             script.src = url + Date.now(); 
             script.onerror = function() {
-                loadingDiv.innerHTML = `<p style="color:red">連線至 Google 伺服器失敗，正在嘗試重新連線...</p>`;
+                loadingDiv.innerHTML = `<p style="color:red">未能連上數據庫。<br>請通知系統管理員。<br>請使用 CHROME 或 EDGE 瀏覽器。</p>`; 
                 setTimeout(loadGoogleSheetData, 2000);
             };
             document.head.appendChild(script);
         }
-        // ==========================================
-        
+
         function initExportButtons() {
             exportBtnGroup.innerHTML = `
                 <button id="printBtn" class="export-btn">列印時間表</button>
@@ -442,6 +435,281 @@
             }
             return null;
         }
+
+        // =====================================================================
+        // 匯出 EXCEL 功能（班別查詢下保留主班房與班主任完整資訊）
+        // =====================================================================
+        function exportToExcel() {
+            if (!currentTitle || currentLessons.length === 0) {
+                alert('請先查詢時間表');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                alert('Excel 匯出元件載入中，請稍候片刻再試。');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            // 樣式定義
+            const borderBlack = {
+                top: { style: "medium", color: { rgb: "000000" } },
+                bottom: { style: "medium", color: { rgb: "000000" } },
+                left: { style: "medium", color: { rgb: "000000" } },
+                right: { style: "medium", color: { rgb: "000000" } }
+            };
+
+            const titleStyle = {
+                font: { name: "Segoe UI", sz: 14, bold: true },
+                alignment: { horizontal: "left", vertical: "center" }
+            };
+
+            const headerStyle = {
+                font: { name: "Segoe UI", sz: 11, bold: true },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: borderBlack,
+                fill: { fgColor: { rgb: "FFFFFF" } }
+            };
+
+            const timeColStyle = {
+                font: { name: "Segoe UI", sz: 10, bold: true },
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: borderBlack
+            };
+
+            const specialRowStyle = {
+                font: { name: "Segoe UI", sz: 11, bold: true },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: borderBlack
+            };
+
+            const cellStyle = {
+                font: { name: "Segoe UI", sz: 10 },
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: borderBlack
+            };
+
+            const ws = {};
+            const merges = [];
+            const rowHeights = [];
+
+            const isClassQuery = currentTitle.includes('班別');
+
+            // 處理標題名稱
+            let titleName = currentTitle;
+            if (isClassQuery) {
+                // 班別查詢：保留「班別 1A (主班房: R101 | 班主任: CHAN TM 陳大文)」
+                titleName = currentTitle.replace(' 的時間表', '');
+            } else {
+                // 教師查詢：僅保留教師名稱
+                if (currentTitle.includes(' 的時間表')) {
+                    titleName = currentTitle.split(' 的時間表')[0];
+                }
+            }
+
+            // Row 0 (Excel A1): 標題
+            ws["A1"] = { v: `時間表: ${titleName}`, s: titleStyle };
+            merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
+            rowHeights.push({ hpt: 28 });
+
+            // Row 1 (Excel A2): 表頭
+            const headers = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
+            headers.forEach((h, colIdx) => {
+                const cellRef = XLSX.utils.encode_cell({ r: 1, c: colIdx });
+                ws[cellRef] = { v: h, s: headerStyle };
+            });
+            rowHeights.push({ hpt: 24 });
+
+            // 24 小時制轉中文 12 小時制
+            function toChinese12Hr(timeStr) {
+                if (!timeStr) return '';
+                const parts = timeStr.split(':');
+                let h = parseInt(parts[0], 10);
+                const m = parts[1] ? parts[1].padStart(2, '0') : '00';
+                let period = '上午';
+                if (h >= 12) {
+                    period = '下午';
+                    if (h > 12) h -= 12;
+                }
+                return `${period} ${h}:${m}`;
+            }
+
+            // 非課堂時段中文名稱映射
+            function getChineseBreakLabel(slot) {
+                if (slot.time === '8:05') return '課前集會';
+                if (slot.time === '9:30') return '小息';
+                if (slot.time === '10:55') return '小息';
+                if (slot.time === '12:55') return '午膳';
+                if (slot.time === '14:00') return '午間宣佈';
+                return slot.label || '';
+            }
+
+            // 課堂單元格內容格式化
+            function formatLessonCellForExcel(dayLessons, day, slotPeriod) {
+                if (!dayLessons || dayLessons.length === 0) {
+                    if (day === 3 && slotPeriod === '10') {
+                        return '(CPA 14:40 - 15:30)';
+                    }
+                    return '';
+                }
+
+                const lines = [];
+
+                if (day === 3 && slotPeriod === '10') {
+                    lines.push('(CPA 14:40 - 15:30)');
+                }
+
+                if (isClassQuery) {
+                    // 班別查詢：顯示科目、房間、教師名稱
+                    const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
+                    const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
+                    const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
+                    const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
+                    const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
+                    const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
+
+                    if (hasChem && hasIct) {
+                        lines.push('X2/X3');
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    } else if (hasChem && slotPeriod !== '10') {
+                        lines.push('X2');
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    //} else if (hasIct && slotPeriod !== '10') {
+		} else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
+                        lines.push('X3');
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    } else if (hasPHY && slotPeriod !== '10') {
+                        lines.push('X1');
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    } else if (hasMaup) {
+                        lines.push('MAUP');
+                        if (teachers) lines.push(`(${teachers})`);
+                    } else if (slotPeriod === '10' && currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) {
+                        const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / ');
+                        lines.push('Make-up Classes');
+                        lines.push(subjects);
+                    } else {
+                        const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                        lines.push(subjects);
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    }
+                } else {
+                    // 教師查詢：儲存格內僅顯示「班別 + 科目」、「協同教師（如有）」與「房間」
+                    const firstLesson = dayLessons[0];
+                    const isPE = firstLesson.subject === 'PE';
+                    const isMaup = firstLesson.subject === 'MAUP';
+
+                    if (isPE) {
+                        const allPELessons = allLessons.filter(
+                            l => l.day === day && l.period === parseInt(slotPeriod) && l.subject === 'PE'
+                        );
+                        const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
+                        const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
+                            .filter(t => t !== firstLesson.teacher)
+                            .sort()
+                            .join(',');
+
+                        lines.push(`${allClasses} PE`);
+                        if (otherTeachers) lines.push(`(${otherTeachers})`);
+                        if (firstLesson.room) lines.push(firstLesson.room);
+
+                    } else if (isMaup) {
+                        lines.push(`${firstLesson.class} MAUP`);
+                        if (firstLesson.room) lines.push(firstLesson.room);
+
+                    } else {
+                        const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
+                        const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
+                        let coTeachers = '';
+
+                        if (shouldShowCoTeachers) {
+                            const sameLessons = allLessons.filter(
+                                l => l.day === day &&
+                                     l.period === parseInt(slotPeriod) &&
+                                     l.class === firstLesson.class &&
+                                     l.subject === firstLesson.subject
+                            );
+                            coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
+                                .filter(t => t !== firstLesson.teacher)
+                                .sort()
+                                .join(',');
+                        }
+
+                        const groupedLessons = allLessons.filter(
+                            l => l.day === day &&
+                                 l.period === parseInt(slotPeriod) &&
+                                 l.subject === firstLesson.subject &&
+                                 l.teacher === firstLesson.teacher
+                        );
+
+                        let classDisplay = firstLesson.class;
+                        if (groupedLessons.length > 1) {
+                            const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+                            classDisplay = simplifyClassNames(allClasses);
+                        }
+
+                        lines.push(`${classDisplay} ${firstLesson.subject}`);
+                        if (coTeachers) lines.push(`(${coTeachers})`);
+                        if (firstLesson.room) lines.push(firstLesson.room);
+                    }
+                }
+
+                return lines.join('\n');
+            }
+
+            let currentR = 2; // 從第 3 列（Index 2）開始填入時間表數據
+
+            timeSlots.forEach(slot => {
+                const start12 = toChinese12Hr(slot.time);
+                const end12 = toChinese12Hr(slot.endTime);
+                const formattedTime = `${start12}\n-${end12}`;
+
+                // Column A: 時間欄位
+                const timeCellRef = XLSX.utils.encode_cell({ r: currentR, c: 0 });
+                ws[timeCellRef] = { v: formattedTime, s: timeColStyle };
+
+                if (slot.isBreak) {
+                    const label = getChineseBreakLabel(slot);
+                    const bRef = XLSX.utils.encode_cell({ r: currentR, c: 1 });
+                    ws[bRef] = { v: label, s: specialRowStyle };
+
+                    for (let c = 2; c <= 5; c++) {
+                        const cellRef = XLSX.utils.encode_cell({ r: currentR, c: c });
+                        ws[cellRef] = { v: "", s: specialRowStyle };
+                    }
+                    merges.push({ s: { r: currentR, c: 1 }, e: { r: currentR, c: 5 } });
+                    rowHeights.push({ hpt: 22 });
+                } else {
+                    for (let day = 1; day <= 5; day++) {
+                        const dayLessons = currentLessons.filter(
+                            lesson => lesson.day === day && lesson.period === parseInt(slot.period)
+                        );
+                        const cellText = formatLessonCellForExcel(dayLessons, day, slot.period);
+                        const cellRef = XLSX.utils.encode_cell({ r: currentR, c: day });
+                        ws[cellRef] = { v: cellText, s: cellStyle };
+                    }
+                    rowHeights.push({ hpt: 45 });
+                }
+
+                currentR++;
+            });
+
+            ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: currentR - 1, c: 5 } });
+            ws['!merges'] = merges;
+            ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+            ws['!rows'] = rowHeights;
+
+            XLSX.utils.book_append_sheet(wb, ws, '時間表');
+
+            const cleanTitle = currentTitle.split(' (')[0];
+            XLSX.writeFile(wb, `${cleanTitle}.xlsx`);
+        }
         
         function printTimetable() {
             if (!currentTitle || currentLessons.length === 0) {
@@ -464,9 +732,9 @@
                             .period-col { width: 30px; background-color: #3498db; color: white; font-size: 9px; }
                             .break-cell { background-color: #f2f2f2; font-style: italic; }
                             .empty-cell { background-color: #f9f9f9; }
-                            .subject { color: blue; font-size: 9px; }
+                            .subject { color: blue; font-size: 9px; word-wrap: break-word;}
                             .room { color: #555; font-size: 8px; }
-                            .teacher { font-size: 8px; }
+                            .teacher { font-size: 8px; word-wrap: break-word; }
                             .dismissal-time { font-size: 8px; color: #666; font-style: italic; }
                             @page { size: A4 portrait; margin: 5mm; }
                         </style>
@@ -617,53 +885,65 @@
                     } else {
                         if (isClassQuery) {
                             const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
+                            const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                             const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
-                            
+
                             if (hasChem && hasIct) {
                                 tableHTML += `<td>
-                                    <div>
+                                    <div class="main-lesson">
                                         <span style="color:blue;font-size:12px">X2/X3<br></span>
-                                        <span style="font-size:8px">(${teachers})</span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="font-size:8px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            } else if (hasChem) {
+                            } else if (hasChem && slot.period != '10') {
                                 tableHTML += `<td>
-                                    <div>
+                                    <div class="main-lesson">
                                         <span style="color:blue;font-size:12px">X2<br></span>
-                                        <span style="font-size:8px">(${teachers})</span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="font-size:8px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            } else if (hasIct) {
+                            } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {                                
                                 tableHTML += `<td>
-                                    <div>
+                                    <div class="main-lesson">
                                         <span style="color:blue;font-size:12px">X3<br></span>
-                                        <span style="font-size:7px">(${teachers})</span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="word-wrap:break-word;font-size:7px;">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            } else if (hasPHY && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
+                            } else if (hasPHY && slot.period != '10') {
                                 tableHTML += `<td>
-                                    <div>
+                                    <div class="main-lesson">
                                         <span style="color:blue;font-size:12px">X1<br></span>
-                                        <span style="font-size:7px">(${teachers})</span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="font-size:7px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
+                            } else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
+                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / '); 
+                                    tableHTML += `<td>
+                                        <div class="main-lesson">
+                                            <span class="subject" style="color:blue;font-size:12px;">Make-up Classes<br></span>
+                                            <span class="room" style="color:blue; font-size:8px;">${subjects}<br></span>
+                                        </div>
+                                    </td>`;
                             } else if (hasMaup) {
                                 tableHTML += `<td>
-                                    <div>
-                                        <span style="color:blue;font-size:9px">MAUP</span>
-                                        <span style="font-size:7px">(${teachers})</span>
+                                    <div class="main-lesson">
+                                        <span style="color:blue;font-size:9px">MAUP<br></span>
+                                        <span style="font-size:7px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
                             } else {
                                 const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
-                                const rooms = [...new Set(dayLessons.map(l => l.room))].join(',');
                                 tableHTML += `<td>
-                                    <div>
+                                    <div class="main-lesson">
                                         <span style="color:blue;font-size:9px">${subjects}<br></span>
-                                        <span style="color:#555;font-size:7px"> ${rooms}<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
                                         <span style="font-size:7px">(${teachers})</span>
                                     </div>
                                 </td>`;
@@ -747,32 +1027,31 @@
             });
             
             tableHTML += `</tbody></table>`;
-
             if (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) {
                 tableHTML += `
                     <div style="text-align:left;margin-top:10px;font-size:9px;">
                             <strong>Form 4:</strong><br>
-                            X1: PHY<sub>(PHY)</sub>/BM<sub>(R204)</sub> / ACC<sub>(R203)</sub> / ERS<sub>(R401)</sub> / VAD<sub>(AD)</sub><br>
-                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R204)</sub> / ECON<sub>(R203)</sub> / HMSC<sub>(R401)</sub> / THS<sub>(R321)</sub><br>
-                            X3: BIO3<sub>(BIO/R201/BIO)</sub> / ERS3<sub>(R401)</sub> / ICT<sub>(CR2)</sub> / MAM2<sub>(R204)</sub> / THS<sub>(R203)</sub> / VAD3<sub>(DF)</sub><br><br>
+                            X1: PHY<sub>(PHY)</sub>/BM<sub>(R401)</sub> / ACC<sub>(R302)</sub> / ERS<sub>(R304)</sub> / CHIS<sub>(HGR)</sub><br>
+                            X2: CHEM<sub>(CHEM)</sub> / HIST<sub>(HGR)</sub> / ECON<sub>(R302)</sub> / HMSC<sub>(R401)</sub> / THS<sub>(R304)</sub><br>
+                            X3: BIO<sub>(BIO)</sub> / AOAS<sub>(R304)</sub> / ICT<sub>(CR3)</sub> / MAM2<sub>(R423)</sub> / THS3<sub>(R302)</sub> / VAD3<sub>(AD)</sub> / GEOG<sub>(R401)</sub><br><br>
                     </div>
                 `;
             } else if (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) {
                 tableHTML += `
                     <div style="text-align:left;margin-top:10px;font-size:9px;">
                            <strong>Form 5:</strong><br>
-                            X1: BIO<sub>(BIO/R314/BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R413)</sub> / ACC<sub>(R414)</sub> / ERS<sub>(R412)</sub><br>
-                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R412)</sub> / ECON<sub>(R414)</sub> / VAD<sub>(AD)</sub> / HMSC<sub>(R413)</sub><br>
-                            X3: BIO3<sub>(BIO/R402/BIO)</sub> / ERS3<sub>(R412)</sub> / ICT<sub>(CR1)</sub> / MAM2<sub>(R413)</sub> / THS<sub>(R414)</sub> / VAD3<sub>(AD)</sub><br><br>
+                            X1: PHY<sub>(PHY)</sub>/BM<sub>(R403)</sub> / ACC<sub>(R404)</sub> / ERS<sub>(R411)</sub> / VAD<sub>(AD)</sub><br>
+                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(HGR)</sub> / ECON<sub>(R403)</sub> / HMSC<sub>(R404)</sub> / THS<sub>(R411)</sub><br>
+                            X3: BIO3<sub>(BIO)</sub> / ERS3<sub>(R411)</sub> / ICT<sub>(CR1)</sub> / MAM2<sub>(R423)</sub> / THS3<sub>(R403)</sub> / VAD3<sub>(DF)</sub><br><br>
                     </div>
                 `;
             } else if (currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) {
                 tableHTML += `
                     <div style="text-align:left;margin-top:10px;font-size:9px;">
                             <strong>Form 6:</strong><br>
-                            X1: BIO<sub>(BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R403)</sub> / ACC<sub>(R404)</sub> / ERS<sub>(R411)</sub><br>
-                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R403)</sub> / ECON<sub>(R404)</sub> / VAD<sub>(AD)</sub> / HMSC<sub>(R411)</sub><br>
-                            X3: BIO3/ERS3<sub>(R411)</sub> / ICT<sub>(CR3)</sub> / MAM2<sub>(R403)</sub> / THS<sub>(R404)</sub> / VAD3<sub>(DF)</sub>
+                            X1: BIO<sub>(R311/BIO/BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R413)</sub> / ACC<sub>(R414)</sub> / ERS<sub>(R412)</sub><br>
+                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(HGR)</sub> / ECON<sub>(R414)</sub> / VAD<sub>(AD)</sub> / HMSC<sub>(R413)</sub><br>
+                            X3: BIO3<sub>(BIO/BIO/R413)</sub> / ERS3<sub>(R412)</sub> / ICT<sub>(CR1)</sub> / MAM2<sub>(R423)</sub> / THS3<sub>(R414)</sub> / VAD3<sub>(AD)</sub><br><br>
                     </div>
                 `;
             }
@@ -801,149 +1080,32 @@
             }
             return result.join(' ');
         }
-        
-        function exportToExcel() {
-            if (!currentTitle || currentLessons.length === 0) {
-                alert('請先查詢時間表');
-                return;
-            }
 
-            const wb = XLSX.utils.book_new();
-            const rows = [];
-            
-            rows.push([currentTitle]);
-            rows.push([]);
-            
-            const headerRow = ['Time', 'Period', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-            rows.push(headerRow);
-            
-            const isClassQuery = currentTitle.includes('班別');
-            
-            timeSlots.forEach(slot => {
-                const row = [];
-                row.push(`${slot.time}-${slot.endTime}`);
-                row.push(slot.period || '');
-                
-                if (slot.isBreak) {
-                    for (let day = 1; day <= 5; day++) {
-                        row.push(slot.label);
-                    }
-                } else {
-                    for (let day = 1; day <= 5; day++) {
-                        const dayLessons = currentLessons.filter(
-                            lesson => lesson.day === day && lesson.period === parseInt(slot.period)
-                        );
-                        
-                        if (dayLessons.length === 0) {
-                            if (day === 3 && slot.period === '10') {
-                                row.push('(CPA 14:40 - 15:30)');
-                            } else {
-                                row.push('');
-                            }
-                        } else {
-                            if (isClassQuery) {
-                                const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
-                                const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
-                                const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
-                                const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
-                                const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
-                                
-                                if (hasChem && hasIct) {
-                                    row.push(`X2/X3 (${teachers})`);
-                                } else if (hasChem) {
-                                    row.push(`X2 (${teachers})`);
-                                } else if (hasIct) {
-                                    row.push(`X3 (${teachers})`);
-                                } else if (hasPHY && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
-                                    row.push(`X1 (${teachers})`);
-                                } else if (hasMaup) {
-                                    row.push(`MAUP (${teachers})`);
-                                } else {
-                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
-                                    const rooms = [...new Set(dayLessons.map(l => l.room))].join(',');
-                                    row.push(`${subjects} ${rooms} (${teachers})`);
-                                }
-                            } else {
-                                const firstLesson = dayLessons[0];
-                                const isPE = firstLesson.subject === 'PE';
-                                const isMaup = firstLesson.subject === 'MAUP';
-                                
-                                if (isPE) {
-                                    const allPELessons = allLessons.filter(
-                                        lesson => lesson.day === day && 
-                                                 lesson.period === parseInt(slot.period) &&
-                                                 lesson.subject === 'PE'
-                                    );
-                                    
-                                    const allClasses = [...new Set(allPELessons.map(l => l.class))].sort().join('/');
-                                    const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
-                                        .filter(t => t !== firstLesson.teacher)
-                                        .sort()
-                                        .join(',');
-                                    
-                                    row.push(`${allClasses} PE${otherTeachers ? ` (${otherTeachers})` : ''}`);
-                                } else if (isMaup) {
-                                    row.push(`${firstLesson.class} MAUP`);
-                                } else {
-                                    const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
-                                    const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
-                                    let coTeachers = '';
-                                    
-                                    if (shouldShowCoTeachers) {
-                                        const sameLessons = allLessons.filter(
-                                            lesson => lesson.day === day && 
-                                                     lesson.period === parseInt(slot.period) &&
-                                                     lesson.class === firstLesson.class &&
-                                                     lesson.subject === firstLesson.subject
-                                        );
-                                        
-                                        coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
-                                            .filter(t => t !== firstLesson.teacher)
-                                            .sort()
-                                            .join(',');
-                                    }
-
-                                    const groupedLessons = allLessons.filter(
-                                        lesson => lesson.day === day && 
-                                                 lesson.period === parseInt(slot.period) &&
-                                                 lesson.subject === firstLesson.subject &&
-                                                 lesson.teacher === firstLesson.teacher
-                                    );
-
-                                    let classDisplay = firstLesson.class;
-                                    if (groupedLessons.length > 1) {
-                                        const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
-                                        const simplifiedClasses = simplifyClassNames(allClasses);
-                                        classDisplay = simplifiedClasses;
-                                    }
-                                    
-                                    row.push(`${classDisplay} ${firstLesson.subject} ${firstLesson.room}${coTeachers ? ` (${coTeachers})` : ''}`);
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                rows.push(row);
-            });
-            
-            const ws = XLSX.utils.aoa_to_sheet(rows);
-            XLSX.utils.book_append_sheet(wb, ws, '時間表');
-            XLSX.writeFile(wb, `${currentTitle}.xlsx`);
-        }
-        
         function formatLessonForExport(lesson, isClassQuery) {
             if (isClassQuery) {
                 let subject = lesson.subject;
-                if (subject.includes('PHY') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
+                if (subject.includes('PHY')) subject = 'X1';
                 if (subject.includes('CHEM')) subject = 'X2';
                 if (subject.includes('ICT')) subject = 'X3';
-                return `<span style="color:blue;font-size:12px">${subject}<br></span> <span style="font-size:8px">(${lesson.teacher})</span>`;
+                return `<span style="color:blue;font-size:12px">${subject}<br></span>${lesson.room ? `<span style="color:#555;font-size:8px">${lesson.room}<br></span>` : ''}<span style="font-size:8px">(${lesson.teacher})</span>`;
             }
             if (lesson.subject === 'MAUP') {
                 return `<span style="color:blue;font-size:9px">${lesson.class} MAUP</span>`;
             }
-            return `<span style="color:blue;font-size:12px">${lesson.class} ${lesson.subject}<br></span> <span style="color:#555;font-size:8px">${lesson.room}</span>`;
+
+            const groupedLessons = allLessons.filter(
+                l => l.day === lesson.day && 
+                     l.period === lesson.period && 
+                     l.subject === lesson.subject && 
+                     l.teacher === lesson.teacher
+            );
+
+            let classDisplay = lesson.class;
+            if (groupedLessons.length > 1) {
+                const allClasses = [...new Set(groupedLessons.map(l => l.class))].sort();
+                classDisplay = simplifyClassNames(allClasses);
+            }
+            return `<span style="color:blue;font-size:12px">${classDisplay} ${lesson.subject}<br></span><span style="color:#555;font-size:8px">${lesson.room}</span>`;
         }
 
         teacherNameInput.addEventListener('keydown', function(e) {
@@ -1026,7 +1188,38 @@
                 return;
             }
             
-            currentTitle = `班別 ${className} 的時間表`;
+            const cpaLessons = currentLessons.filter(
+                item => item.subject && item.subject.toUpperCase() === 'CPA'
+            );
+
+            const teacherMap = new Map();
+            cpaLessons.forEach(item => {
+                if (item.teacher && !teacherMap.has(item.teacher)) {
+                    const displayName = item.teacherChinese 
+                        ? `${item.teacher} ${item.teacherChinese}` 
+                        : item.teacher;
+                    teacherMap.set(item.teacher, displayName);
+                }
+            });
+            const cpaTeachers = [...teacherMap.values()].join(', ');
+
+            const cpaRooms = [...new Set(
+                cpaLessons
+                    .map(item => item.room)
+                    .filter(room => room && room.trim() !== '')
+            )].join(', ');
+
+            let infoParts = [];
+            if (cpaRooms) {
+                infoParts.push(`主班房: ${cpaRooms}`);
+            }
+            if (cpaTeachers) {
+                infoParts.push(`班主任: ${cpaTeachers}`);
+            }
+
+            const extraInfoText = infoParts.length > 0 ? ` (${infoParts.join(' | ')})` : '';
+            
+            currentTitle = `班別 ${className} 的時間表${extraInfoText}`;
             resultDiv.innerHTML = `<h3 style="margin:0;">${currentTitle}</h3>`;
             renderTimetable(currentLessons, true);
         }
@@ -1083,7 +1276,7 @@
                         }
                         continue;
                     }
-                    
+
                     if (dayLessons.length === 0) {
                         tableHTML += `<td class="empty-cell"></td>`;
                     } else {
@@ -1094,9 +1287,7 @@
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
                             
-                            // 獲取該時段所有選修科目的去重房間列表
                             const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
-                            
                             if (hasChem && hasIct) {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
@@ -1105,7 +1296,7 @@
                                         <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            } else if (hasChem) {
+                            } else if (hasChem && slot.period != '10') {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span class="subject" style="color:blue;font-size:14px;">X2<bR></span>
@@ -1113,7 +1304,7 @@
                                         <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            } else if (hasIct) {
+                            } else if (hasIct && ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span class="subject" style="color:blue;font-size:14px;">X3<br></span>
@@ -1121,7 +1312,7 @@
                                         <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            } else if (hasPHY && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) {
+                            } else if (hasPHY && slot.period != '10') {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span class="subject" style="color:blue;font-size:14px;">X1<br></span>
@@ -1136,6 +1327,14 @@
                                         <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                     </div>
                                 </td>`;
+                           }  else if ((currentTitle.includes('班別') && /^[6][A-D]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
+                                    const subjects = [...new Set(dayLessons.map(l => l.subject))].join(' / ');
+                                    tableHTML += `<td>
+                                        <div class="main-lesson">
+                                            <span class="subject" style="color:blue;font-size:12px;">Make-up Classes<br></span>
+                                            <span class="room" style="color:blue;font-size:9px;">${subjects}<br></span>
+                                        </div>
+                                    </td>`;
                             } else {
                                 const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
                                 const roomsList = [...new Set(dayLessons.map(l => l.room))].join(',');
@@ -1225,16 +1424,15 @@
             });
             
             tableHTML += `</tbody>`;
-            
             if (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) {
                 tableHTML += `
                     <tfoot>
                         <tr><td colspan="7" style="text-align:left;padding:10px;background-color:#f5f5f5;">
                             <strong>選修科目組合:</strong><br>
                             <strong>Form 4:</strong><br>
-                            X1: PHY<sub>(PHY)</sub> / BM<sub>(R204)</sub> / ACC<sub>(R203)</sub> / ERS<sub>(R401)</sub> / VAD<sub>(AD)</sub><br>
-                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R204)</sub> / ECON<sub>(R203)</sub> / HMSC<sub>(R401)</sub> / THS<sub>(R321)</sub><br>
-                            X3: BIO3<sub>(BIO/R201/BIO)</sub> / ERS3<sub>(R401)</sub> / ICT<sub>(CR2)</sub> / MAM2<sub>(R204)</sub> / THS<sub>(R203)</sub> / VAD3<sub>(DF)</sub><br><br>
+                            X1: PHY<sub>(PHY)</sub>/BM<sub>(R401)</sub> / ACC<sub>(R302)</sub> / ERS<sub>(R304)</sub> / CHIS<sub>(HGR)</sub><br>
+                            X2: CHEM<sub>(CHEM)</sub> / HIST<sub>(HGR)</sub> / ECON<sub>(R302)</sub> / HMSC<sub>(R401)</sub> / THS<sub>(R304)</sub><br>
+                            X3: BIO<sub>(BIO)</sub> / AOAS<sub>(R304)</sub> / ICT<sub>(CR3)</sub> / MAM2<sub>(R423)</sub> / THS3<sub>(R302)</sub> / VAD3<sub>(AD)</sub> / GEOG<sub>(R401)</sub><br><br>
                         </td></tr>
                     </tfoot>
                 `;
@@ -1244,9 +1442,9 @@
                         <tr><td colspan="7" style="text-align:left;padding:10px;background-color:#f5f5f5;">
                             <strong>選修科目組合:</strong><br>
                             <strong>Form 5:</strong><br>
-                            X1: BIO<sub>(BIO/R314/BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R413)</sub> / ACC<sub>(R414)</sub> / ERS<sub>(R412)</sub><br>
-                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R412)</sub> / ECON<sub>(R414)</sub> / VAD<sub>(AD)</sub> / HMSC<sub>(R413)</sub><br>
-                            X3: BIO3<sub>(BIO/R402/BIO)</sub> / ERS3<sub>(R412)</sub> / ICT<sub>(CR1)</sub> / MAM2<sub>(R413)</sub> / THS<sub>(R414)</sub> / VAD3<sub>(AD)</sub><br><br>
+                            X1: PHY<sub>(PHY)</sub>/BM<sub>(R403)</sub> / ACC<sub>(R404)</sub> / ERS<sub>(R411)</sub> / VAD<sub>(AD)</sub><br>
+                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(HGR)</sub> / ECON<sub>(R403)</sub> / HMSC<sub>(R404)</sub> / THS<sub>(R411)</sub><br>
+                            X3: BIO3<sub>(BIO)</sub> / ERS3<sub>(R411)</sub> / ICT<sub>(CR1)</sub> / MAM2<sub>(R423)</sub> / THS3<sub>(R403)</sub> / VAD3<sub>(DF)</sub><br><br>
                         </td></tr>
                     </tfoot>
                 `;
@@ -1256,9 +1454,9 @@
                         <tr><td colspan="7" style="text-align:left;padding:10px;background-color:#f5f5f5;">
                             <strong>選修科目組合:</strong><br>
                             <strong>Form 6:</strong><br>
-                            X1: BIO<sub>(BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R403)</sub> / ACC<sub>(R404)</sub> / ERS<sub>(R411)</sub><br>
-                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(R403)</sub> / ECON<sub>(R404)</sub> / VAD<sub>(AD)</sub> / HMSC<sub>(R411)</sub><br>
-                            X3: BIO3/ERS3<sub>(R411)</sub> / ICT<sub>(CR3)</sub> / MAM2<sub>(R403)</sub> / THS<sub>(R404)</sub> / VAD3<sub>(DF)</sub>
+                            X1: BIO<sub>(R311/BIO/BIO)</sub> / PHY<sub>(PHY)</sub> / BM<sub>(R413)</sub> / ACC<sub>(R414)</sub> / ERS<sub>(R412)</sub><br>
+                            X2: CHEM<sub>(CHEM)</sub> / CHIS<sub>(HGR)</sub> / ECON<sub>(R414)</sub> / VAD<sub>(AD)</sub> / HMSC<sub>(R413)</sub><br>
+                            X3: BIO3<sub>(BIO/BIO/R413)</sub> / ERS3<sub>(R412)</sub> / ICT<sub>(CR1)</sub> / MAM2<sub>(R423)</sub> / THS3<sub>(R414)</sub> / VAD3<sub>(AD)</sub><br><br>
                         </td></tr>
                     </tfoot>
                 `;
@@ -1271,7 +1469,7 @@
         function formatLesson(lesson, isClassQuery) {
             if (isClassQuery) {
                 let subject = lesson.subject;
-                if (subject.includes('PHY') && (currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1]))) subject = 'X1';
+                if (subject.includes('PHY')) subject = 'X1';
                 if (subject.includes('CHEM')) subject = 'X2';
                 if (subject.includes('ICT')) subject = 'X3';
                 return `<span class="subject" style="color:blue;font-size:12px;">${subject}</span> <span class="teacher" style="font-size:10px;">(${lesson.teacher})</span>`;

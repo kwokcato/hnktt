@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="robots" content="noindex, nofollow">
     <title>房間查詢系統</title>
+    
+    <!-- 引入原生 Excel (.xlsx) 產生套件（支援邊框與換行樣式） -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
     <script>
     // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
     const SCHOOL_DOMAIN = "bhnkc.edu.hk"; // 假設的網域名稱，請務必修改
@@ -33,16 +37,12 @@
         }
     }
 
-    // 項目 2：暫停 Google Login 驗證
     // if (!is_authenticated) {
     //     window.top.location.href = 'index.html';
     // }
     </script>
     
     <style>
-        /* =====================================================================
-           項目 4：完整嵌入您提供的 hnkstyle.css 內容
-           ===================================================================== */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f7f6;
@@ -52,6 +52,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            font-szie: 10px;
         }
 
         h1 {
@@ -59,7 +60,6 @@
             margin-bottom: 20px;
         }
 
-        /* 畫面根據瀏覽器大小調整，固定用盡 90% */
         .container {
             background-color: #fff;
             padding: 30px;
@@ -80,7 +80,7 @@
             background: none;
             border: none;
             padding: 10px 20px;
-            font-size: 16px;
+            font-size: 12px;
             cursor: pointer;
             color: #555;
             border-bottom: 2px solid transparent;
@@ -118,18 +118,18 @@
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 12px;
             box-sizing: border-box;
         }
 
         #roomSelect {
-            width: 30%;
+            width: 100%;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 10px;
             background-color: #fff;
         }
 
@@ -188,7 +188,7 @@
             background-color: #ecf0f1;
             padding: 6px 12px;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 12px;
             color: #2c3e50;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -242,13 +242,129 @@
             background-size: contain;
             opacity: 0.7;
         }
+
+        /* 列印按鈕樣式 */
+        .print-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.2s ease;
+        }
+
+        .print-btn:hover {
+            background-color: #219150;
+        }
+
+        /* Excel 按鈕樣式 */
+        .excel-btn {
+            background-color: #107c41;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.2s ease;
+        }
+
+        .excel-btn:hover {
+            background-color: #0b5a2f;
+        }
+
+        #printArea {
+            display: none;
+        }
+
+        /* =====================================================================
+           列印模式 CSS
+           ===================================================================== */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+
+            #printArea {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: #fff;
+                padding: 0;
+                margin: 0;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 10mm 8mm;
+            }
+
+            .print-title {
+                font-size: 14px;
+                font-weight: bold;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, 'Microsoft JhengHei', sans-serif;
+                margin-bottom: 10px;
+                color: #000;
+                text-align: left;
+            }
+
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, 'Microsoft JhengHei', sans-serif;
+                color: #000;
+                table-layout: fixed;
+            }
+
+            .print-table th, .print-table td {
+                border: 2.5px solid #000 !important;
+                padding: 3px 2px;
+                text-align: center;
+                vertical-align: middle;
+                font-size: 12px;
+                line-height: 1.35;
+                color: #000;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+
+            .print-table th {
+                font-size: 14px;
+                font-weight: bold;
+                background-color: #fff !important;
+                padding: 6px 2px;
+            }
+
+            .print-table .time-col {
+                font-weight: bold;
+                width: 17%;
+                font-size: 11.5px;
+                white-space: nowrap;
+            }
+
+            .print-table .special-row {
+                font-weight: bold;
+                font-size: 13px;
+                letter-spacing: 1px;
+            }
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
     <script>
         document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-    </script>
-    <script>
         document.addEventListener('keydown', (e) => {
             if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'u') || (e.ctrlKey && e.shiftKey && e.key === 'J')) {
                 e.preventDefault();
@@ -260,8 +376,10 @@
         <div class="refresh-icon"></div>
     </div>
 
+    <div id="printArea"></div>
+
     <div class="container">
-        <h1>房間查詢系統</h1>
+        <!-- <h1>房間查詢系統</h1> -->
 
         <div class="tabs">
             <button class="tab-button active" onclick="switchTab('roomTab')">按房間查詢</button>
@@ -271,11 +389,15 @@
         <div id="statusMessage" class="status-message"></div>
 
         <div id="roomTab" class="tab-content active">
-            <div class="form-group">
-                <label for="roomSelect">選擇房間：</label>
-                <select id="roomSelect">
-                    <option value="">-- 請選擇房間 --</option>
-                </select>
+            <div class="form-group" style="display: flex; align-items: flex-end; gap: 15px;">
+                <div style="width: 30%;">
+                    <label for="roomSelect">選擇房間：</label>
+                    <select id="roomSelect">
+                        <option value="">-- 請選擇房間 --</option>
+                    </select>
+                </div>
+                <button id="printBtn" class="print-btn" onclick="printRoomTimetable()">列印時間表</button>
+                <button id="excelBtn" class="excel-btn" onclick="exportToExcel()">匯出 EXCEL</button>
             </div>
             <table id="timetableTable" style="display: none;">
                 <thead>
@@ -324,28 +446,39 @@
     </div>
 
     <script>
-        // 全局變數
-        let timetableData = []; // 儲存所有的課表資料
-        let uniqueRooms = [];   // 儲存所有不重複的房間名稱
+        let timetableData = [];
+        let uniqueRooms = [];
         const weekdayNames = { 1: '星期一', 2: '星期二', 3: '星期三', 4: '星期四', 5: '星期五' };
 
-        // 頁面載入完成後執行
-        document.addEventListener('DOMContentLoaded', () => {
-            initDefaultWeekday(); // 根據今天日期，自動設定閒置房間分頁的預設星期
-            loadCSV(); // 載入資料
+        const scheduleStructure = [
+            { type: 'special', time: '上午 8:05 - 上午 8:20', label: '課前集會' },
+            { type: 'period', period: 1, time: '上午 8:20 - 上午 8:55' },
+            { type: 'period', period: 2, time: '上午 8:55 - 上午 9:30' },
+            { type: 'special', time: '上午 9:30 - 上午 9:45', label: '小息' },
+            { type: 'period', period: 3, time: '上午 9:45 - 上午 10:20' },
+            { type: 'period', period: 4, time: '上午 10:20 - 上午 10:55' },
+            { type: 'special', time: '上午 10:55 - 上午 11:10', label: '小息' },
+            { type: 'period', period: 5, time: '上午 11:10 - 上午 11:45' },
+            { type: 'period', period: 6, time: '上午 11:45 - 下午 12:20' },
+            { type: 'period', period: 7, time: '下午 12:20 - 下午 12:55' },
+            { type: 'special', time: '下午 12:55 - 下午 2:00', label: '午膳' },
+            { type: 'special', time: '下午 2:00 - 下午 2:05', label: '午間宣佈' },
+            { type: 'period', period: 8, time: '下午 2:05 - 下午 2:40' },
+            { type: 'period', period: 9, time: '下午 2:40 - 下午 3:15' },
+            { type: 'period', period: 10, time: '下午 3:15 - 下午 3:50' }
+        ];
 
-            // 綁定事件
+        document.addEventListener('DOMContentLoaded', () => {
+            initDefaultWeekday();
+            loadCSV();
+
             document.getElementById('roomSelect').addEventListener('change', onRoomChange);
             document.getElementById('weekdaySelect').addEventListener('change', onWeekdayChange);
             
-            // 綁定重整按鈕事件
             document.getElementById('pageRefreshBtn').addEventListener('click', function() {
                 this.style.transform = 'scale(1.2) rotate(360deg)';
                 this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
-                
-                // 重新載入資料
                 loadCSV();
-                
                 setTimeout(() => {
                     this.style.transform = '';
                     this.style.backgroundColor = '';
@@ -353,17 +486,14 @@
             });
         });
 
-        // 根據今天的日期自動選取下拉式選單的星期幾
         function initDefaultWeekday() {
-            let currentDay = new Date().getDay(); // 0 是星期日，1-5 是一到五，6 是星期六
-            // 若為週末（週六或週日），則預設選取星期一 (1)
+            let currentDay = new Date().getDay();
             if (currentDay === 0 || currentDay === 6) {
                 currentDay = 1;
             }
             document.getElementById('weekdaySelect').value = currentDay;
         }
 
-        // 項目 3：修改提取 CSV 部份，轉為提取自 Google Sheets (JSONP 模式)
         window.handleTTSheetResponse = function(jsonData) {
             try {
                 let csvText = "";
@@ -393,13 +523,12 @@
             document.getElementById('roomSelect').selectedIndex = 0;
             document.getElementById('freeRoomsStatusMessage').style.display = 'none';
 
-            // 重整時保留當前選定或自動設定的星期，不盲目清空
             if (!document.getElementById('weekdaySelect').value) {
                 initDefaultWeekday();
             }
 
             try {
-                const ttSheetId = '1S7RkDGhtRYcM9Tv304fqeOSz1RsQX2pzS3oNuQAVKRs';
+                const ttSheetId = '10TdramDTMZLQxl-jShrZeYJLCTtq0iu98PVPb-sZXyU';
                 const cacheBuster = Date.now();
 
                 const oldScriptTT = document.getElementById('script_tt_jsonp');
@@ -417,7 +546,6 @@
             }
         }
 
-        // 處理 CSV 文字資料
         function processCSVData(csvText) {
             if (csvText.startsWith('\uFEFF')) {
                 csvText = csvText.substring(1);
@@ -449,10 +577,7 @@
 
             uniqueRooms = Array.from(roomsSet).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
             populateRoomSelect();
-            
-            // 資料成功載入後，自動根據當前選取的星期載入閒置房間
             onWeekdayChange();
-            
             showStatus('成功載入最新雲端數據！請選擇上方功能進行查詢。', 'success');
         }
 
@@ -480,7 +605,6 @@
             document.getElementById('statusMessage').style.display = 'none';
         }
 
-        // 當選擇的房間改變時
         function onRoomChange() {
             const selectedRoom = document.getElementById('roomSelect').value;
             const table = document.getElementById('timetableTable');
@@ -504,56 +628,14 @@
 
                 for (let j = 1; j <= 5; j++) {
                     const cell = row.insertCell(j);
-                    
-                    if (j === 3 && i === 10) {
-                        cell.textContent = '-';
-                        cell.style.backgroundColor = '#eaeedf';
-                        continue;
-                    }
 
-                    const lessons = timetableData.filter(d => d.room === selectedRoom && d.week === j && d.period === i);
-
-                    if (lessons.length > 0) {
-                        // 根據科目(subject)進行分組，達成同科目跨班合併顯示的需求
-                        const subjectGroups = {};
-                        lessons.forEach(l => {
-                            if (!subjectGroups[l.subject]) {
-                                subjectGroups[l.subject] = {
-                                    subject: l.subject,
-                                    classes: [],
-                                    teachers: []
-                                };
-                            }
-                            let classLetter = l.className;
-                            const match = l.className.match(/^\d+([A-Za-z]+)$/);
-                            if (match) {
-                                classLetter = match[1];
-                            }
-                            
-                            subjectGroups[l.subject].classes.push({ letter: classLetter, full: l.className });
-                            subjectGroups[l.subject].teachers.push(l.teacher);
-                        });
-
-                        const detailsArray = Object.values(subjectGroups).map(group => {
-                            const uniqueFullClasses = Array.from(new Set(group.classes.map(c => c.full)));
-                            const matchFirst = group.classes[0].full.match(/^(\d+)[A-Za-z]+$/);
-                            
-                            let mergedClassName = uniqueFullClasses.join('/');
-                            if (matchFirst) {
-                                const grade = matchFirst[1];
-                                const allSameGrade = group.classes.every(c => c.full.startsWith(grade));
-                                if (allSameGrade) {
-                                    const letters = Array.from(new Set(group.classes.map(c => c.letter))).sort().join('');
-                                    mergedClassName = grade + letters;
-                                }
-                            }
-                            
-                            return `${mergedClassName} ${group.subject}`;
-                        });
-
+                    const detailsArray = getCellContentForRoom(selectedRoom, j, i);
+                    if (detailsArray && detailsArray.length > 0) {
                         cell.innerHTML = detailsArray.join('<br>');
+                        if (j === 3 && i === 10) {
+                            cell.style.backgroundColor = '#eaeedf';
+                        }
                     } else {
-                        // 沒有課的節數完全留白
                         cell.textContent = '';
                     }
                 }
@@ -575,10 +657,9 @@
                 }
             }
             
-            showStatus(`成功找到 「${selectedRoom}」 的房間時間表（最新）`, 'success');
+            showStatus(`成功找到 「${selectedRoom}」 的房間時間表`, 'success');
         }
 
-        // 當選擇的星期改變時（查詢閒置房間）
         function onWeekdayChange() {
             const weekday = parseInt(document.getElementById('weekdaySelect').value);
             const table = document.getElementById('freeRoomsTable');
@@ -627,14 +708,8 @@
                         roomSpan.className = 'room-name';
                         roomSpan.textContent = room;
                         
-                        // 滑鼠移入自動高亮，滑鼠移出自動移除高亮
-                        roomSpan.addEventListener('mouseover', () => {
-                            highlightAllRooms(room);
-                        });
-                        
-                        roomSpan.addEventListener('mouseout', () => {
-                            removeAllHighlights();
-                        });
+                        roomSpan.addEventListener('mouseover', () => { highlightAllRooms(room); });
+                        roomSpan.addEventListener('mouseout', () => { removeAllHighlights(); });
 
                         gridDiv.appendChild(roomSpan);
                     });
@@ -650,7 +725,7 @@
                 }
             }
             
-            showStatus(`成功找到 「${weekdayNames[weekday]}」 的閒置房間資訊（最新）`, 'success', 'freeRoomsStatusMessage');
+            showStatus(`成功找到 「${weekdayNames[weekday]}」 的閒置房間資訊`, 'success', 'freeRoomsStatusMessage');
         }
         
         function highlightAllRooms(roomName) {
@@ -674,6 +749,224 @@
             statusElement.textContent = message;
             statusElement.className = `status-message ${type}`;
             statusElement.style.display = 'block';
+        }
+
+        // 獲取指定房間、星期與節數的內容陣列
+        function getCellContentForRoom(room, day, period) {
+            // 星期三第十節加入 「CPA 放學時間 15:30」
+            if (day === 3 && period === 10) {
+                return ['(CPA 14:40 - 15:30)'];
+            }
+
+            const lessons = timetableData.filter(d => d.room === room && d.week === day && d.period === period);
+
+            if (lessons.length === 0) return [];
+
+            const subjectGroups = {};
+            lessons.forEach(l => {
+                if (!subjectGroups[l.subject]) {
+                    subjectGroups[l.subject] = {
+                        subject: l.subject,
+                        classes: [],
+                        teachers: []
+                    };
+                }
+                let classLetter = l.className;
+                const match = l.className.match(/^\d+([A-Za-z]+)$/);
+                if (match) {
+                    classLetter = match[1];
+                }
+                
+                subjectGroups[l.subject].classes.push({ letter: classLetter, full: l.className });
+                if (l.teacher) {
+                    subjectGroups[l.subject].teachers.push(l.teacher);
+                }
+            });
+
+            return Object.values(subjectGroups).map(group => {
+                const uniqueFullClasses = Array.from(new Set(group.classes.map(c => c.full)));
+                const matchFirst = group.classes[0].full.match(/^(\d+)[A-Za-z]+$/);
+                
+                let mergedClassName = uniqueFullClasses.join('/');
+                if (matchFirst) {
+                    const grade = matchFirst[1];
+                    const allSameGrade = group.classes.every(c => c.full.startsWith(grade));
+                    if (allSameGrade) {
+                        const letters = Array.from(new Set(group.classes.map(c => c.letter))).sort().join('');
+                        mergedClassName = grade + letters;
+                    }
+                }
+                
+                const uniqueTeachers = Array.from(new Set(group.teachers.filter(t => t)));
+                const teacherStr = uniqueTeachers.join(',');
+
+                let itemStr = `${mergedClassName} ${group.subject}`;
+                if (teacherStr) {
+                    itemStr += ` ${teacherStr}`;
+                }
+                return itemStr;
+            });
+        }
+
+        // =====================================================================
+        // 列印功能函數
+        // =====================================================================
+        function printRoomTimetable() {
+            const selectedRoom = document.getElementById('roomSelect').value;
+            if (!selectedRoom) {
+                alert('請先選擇房間！');
+                return;
+            }
+
+            const printArea = document.getElementById('printArea');
+
+            let html = `<div class="print-title">時間表: ${selectedRoom}</div>`;
+            html += `<table class="print-table">`;
+            html += `<thead>
+                <tr>
+                    <th class="time-col"></th>
+                    <th>星期一</th>
+                    <th>星期二</th>
+                    <th>星期三</th>
+                    <th>星期四</th>
+                    <th>星期五</th>
+                </tr>
+            </thead>`;
+            html += `<tbody>`;
+
+            scheduleStructure.forEach(rowInfo => {
+                const timeLabel = rowInfo.time.replace(' - ', '<br>-');
+                html += `<tr>`;
+                html += `<td class="time-col">${timeLabel}</td>`;
+
+                if (rowInfo.type === 'special') {
+                    html += `<td colspan="5" class="special-row">${rowInfo.label}</td>`;
+                } else {
+                    const p = rowInfo.period;
+                    for (let day = 1; day <= 5; day++) {
+                        const detailsArray = getCellContentForRoom(selectedRoom, day, p);
+                        html += `<td>${detailsArray ? detailsArray.join('<br>') : ''}</td>`;
+                    }
+                }
+                html += `</tr>`;
+            });
+
+            html += `</tbody></table>`;
+            printArea.innerHTML = html;
+
+            window.print();
+        }
+
+        // =====================================================================
+        // 匯出 EXCEL 功能
+        // =====================================================================
+        function exportToExcel() {
+            const selectedRoom = document.getElementById('roomSelect').value;
+            if (!selectedRoom) {
+                alert('請先選擇房間！');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                alert('Excel 匯出元件載入中，請稍候片刻再試。');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            const borderBlack = {
+                top: { style: "medium", color: { rgb: "000000" } },
+                bottom: { style: "medium", color: { rgb: "000000" } },
+                left: { style: "medium", color: { rgb: "000000" } },
+                right: { style: "medium", color: { rgb: "000000" } }
+            };
+
+            const titleStyle = {
+                font: { name: "Segoe UI", sz: 14, bold: true },
+                alignment: { horizontal: "left", vertical: "center" }
+            };
+
+            const headerStyle = {
+                font: { name: "Segoe UI", sz: 11, bold: true },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: borderBlack,
+                fill: { fgColor: { rgb: "FFFFFF" } }
+            };
+
+            const timeColStyle = {
+                font: { name: "Segoe UI", sz: 10, bold: true },
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: borderBlack
+            };
+
+            const specialRowStyle = {
+                font: { name: "Segoe UI", sz: 11, bold: true },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: borderBlack
+            };
+
+            const cellStyle = {
+                font: { name: "Segoe UI", sz: 10 },
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: borderBlack
+            };
+
+            const ws = {};
+            const merges = [];
+
+            // Row 0: 標題 ("時間表: [房間名稱]")
+            ws["A1"] = { v: `時間表: ${selectedRoom}`, s: titleStyle };
+            merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
+
+            // Row 1: 表頭 (星期一 至 星期五)
+            const headers = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
+            headers.forEach((h, colIdx) => {
+                const cellRef = XLSX.utils.encode_cell({ r: 1, c: colIdx });
+                ws[cellRef] = { v: h, s: headerStyle };
+            });
+
+            let currentR = 2;
+
+            scheduleStructure.forEach(rowInfo => {
+                const formattedTime = rowInfo.time.replace(' - ', '\n- ');
+                const timeCellRef = XLSX.utils.encode_cell({ r: currentR, c: 0 });
+                ws[timeCellRef] = { v: formattedTime, s: timeColStyle };
+
+                if (rowInfo.type === 'special') {
+                    const specialCellRef = XLSX.utils.encode_cell({ r: currentR, c: 1 });
+                    ws[specialCellRef] = { v: rowInfo.label, s: specialRowStyle };
+
+                    for (let c = 2; c <= 5; c++) {
+                        const emptyRef = XLSX.utils.encode_cell({ r: currentR, c: c });
+                        ws[emptyRef] = { v: "", s: specialRowStyle };
+                    }
+                    merges.push({ s: { r: currentR, c: 1 }, e: { r: currentR, c: 5 } });
+                } else {
+                    const p = rowInfo.period;
+                    for (let day = 1; day <= 5; day++) {
+                        const cellRef = XLSX.utils.encode_cell({ r: currentR, c: day });
+                        const detailsArray = getCellContentForRoom(selectedRoom, day, p);
+                        
+                        const cellText = (detailsArray && detailsArray.length > 0) ? detailsArray.join('\n') : '';
+                        ws[cellRef] = { v: cellText, s: cellStyle };
+                    }
+                }
+                currentR++;
+            });
+
+            ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: currentR - 1, c: 5 } });
+            ws['!merges'] = merges;
+            ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+
+            const rowHeights = [{ hpt: 28 }, { hpt: 24 }];
+            scheduleStructure.forEach(rowInfo => {
+                rowHeights.push({ hpt: rowInfo.type === 'special' ? 22 : 45 });
+            });
+            ws['!rows'] = rowHeights;
+
+            XLSX.utils.book_append_sheet(wb, ws, selectedRoom);
+
+            XLSX.writeFile(wb, `房間時間表_${selectedRoom}.xlsx`);
         }
     </script>
 </body>
