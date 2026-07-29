@@ -5,7 +5,7 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Content Security Policy：已調整 connect-src 與 img-src -->
+    <!-- Content Security Policy：允許內嵌腳本、Google 登入及發送紀錄至 Google Apps Script -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' 'nonce-r4nd0m123' https://accounts.google.com https://cdnjs.cloudflare.com;
@@ -90,18 +90,23 @@
         const TOKEN_SKEW_MS = 60 * 1000; // 時間偏移保險（1分鐘）
         const ENABLE_DEVTOOLS_BLOCK = false;
 
-        // 已填入你的 Apps Script 部署 URL
+        // 已設定測試成功的 Google Apps Script Web App URL
         const LOG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6qARRGablUvutV5IJTUfSyznJsXLIPvbfTJImi8bHYDgqcywNgOESGNN0qL3UXGk/exec";
 
-        // 發送紀錄至 Google Sheet 函式 (使用 sendBeacon 作為主要發送手段，確保跳轉前不被取消)
+        // 發送登入紀錄至 Google Sheet 函式
         function logLoginAttempt(email, status, reason = "", callback) {
+            if (!LOG_SCRIPT_URL) {
+                if (callback) callback();
+                return;
+            }
+
             const payload = JSON.stringify({
                 email: email,
                 status: status,
                 reason: reason
             });
 
-            // 方法一：優先嘗試使用 navigator.sendBeacon (背景異步發送，不受頁面跳轉影響)
+            // 優先嘗試使用 navigator.sendBeacon 以防頁面跳轉中斷請求
             let beaconSent = false;
             try {
                 if (navigator.sendBeacon) {
@@ -109,10 +114,9 @@
                     beaconSent = navigator.sendBeacon(LOG_SCRIPT_URL, blob);
                 }
             } catch (e) {
-                console.warn("Beacon failed, fallback to fetch", e);
+                console.warn("SendBeacon failed, fallback to fetch", e);
             }
 
-            // 方法二：若 sendBeacon 不支援或失敗，退回使用 fetch
             if (!beaconSent) {
                 fetch(LOG_SCRIPT_URL, {
                     method: "POST",
@@ -122,15 +126,15 @@
                 }).then(() => {
                     if (callback) callback();
                 }).catch(err => {
-                    console.error("Log fetch error:", err);
+                    console.error("Logging error:", err);
                     if (callback) callback();
                 });
             } else {
-                if (callback) setTimeout(callback, 300);
+                if (callback) setTimeout(callback, 200);
             }
         }
 
-        // 選擇性：封鎖右鍵與開發者工具
+        // 選擇性：封鎖右鍵與開發者工具（預設關閉）
         if (ENABLE_DEVTOOLS_BLOCK) {
             document.addEventListener('contextmenu', e => e.preventDefault());
             document.addEventListener('keydown', e => {
@@ -181,18 +185,20 @@
                 return;
             }
 
+            // 解開 Token 取出 User Email
             const payload = decodeJwtResponse(response.credential);
             const userEmail = payload?.email || "Unknown Email";
 
             if (!isTokenValid(response.credential)) {
                 showLoginError(`登入失敗：請使用有效且未過期的 @${SCHOOL_DOMAIN} 教職員帳戶`);
-                logLoginAttempt(userEmail, "FAIL", "Token 驗證失敗 (非教職員帳戶/過期/Domain不符)");
+                logLoginAttempt(userEmail, "FAIL", "Token 驗證失敗 (非教職員/過期/網域不符)");
                 return;
             }
 
-            // 登入成功 -> 寫入紀錄後再進行頁面跳轉
+            // 寫入成功紀錄後跳轉
             logLoginAttempt(userEmail, "SUCCESS", "登入成功", function() {
                 sessionStorage.setItem('google_id_token', response.credential);
+                // 清理任何舊的閒置計時資料
                 sessionStorage.removeItem('inactivity.logoutAt');
                 sessionStorage.removeItem('inactivity.warningAt');
                 sessionStorage.removeItem('inactivity.lastActiveAt');
@@ -227,6 +233,7 @@
             }
         });
 
+        // 回到本頁（例如上一頁）時，若 token 已過期，避免誤導
         window.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 const idToken = sessionStorage.getItem('google_id_token');
