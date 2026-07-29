@@ -156,6 +156,7 @@
         }
         .empty-cell {
             background-color: #ffffff;
+            height: 3.8em; /* 確保至少有三列文字的高度 */
         }
         .break-cell {
             background-color: #e6e6e6;
@@ -380,13 +381,12 @@
 
                 allTeachers = [...new Set(allLessons.map(item => item.teacher))].filter(Boolean).sort();
                 
-                const baseClasses = allLessons
-                    .filter(item => /^[1-6][A-D]$/i.test(item.class))
-                    .map(item => item.class.toUpperCase());
-                const groupClasses = allLessons
-                    .map(item => getEffectiveClass(item))
-                    .filter(c => c && c !== '');
-                allClasses = [...new Set([...baseClasses, ...groupClasses])].sort();
+                // 選單僅保留單一班別（例如 1A, 1B ... 6D），排除合班/分組班別（如 1AB）
+                allClasses = [...new Set(
+                    allLessons
+                        .map(item => item.class.trim().toUpperCase())
+                        .filter(cls => /^[1-6][A-Z]$/i.test(cls))
+                )].sort();
                 
                 populateDropdowns();
                 loadingDiv.style.display = 'none';
@@ -652,13 +652,10 @@
                             l => l.day === day && l.period === parseInt(slotPeriod) && l.subject === 'PE'
                         );
                         const allClassesList = [...new Set(allPELessons.map(l => getEffectiveClass(l)))].sort().join('/');
-                        const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
-                            .filter(t => t !== firstLesson.teacher)
-                            .sort()
-                            .join(',');
+                        const teachersList = [...new Set(allPELessons.map(l => l.teacher))].sort().join(',');
 
                         lines.push(`${allClassesList} PE`);
-                        if (otherTeachers) lines.push(`(${otherTeachers})`);
+                        if (teachersList) lines.push(`(${teachersList})`);
                         if (firstLesson.room) lines.push(firstLesson.room);
 
                     } else if (isMaup) {
@@ -668,32 +665,28 @@
                     } else {
                         const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
                         const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
-                        let coTeachers = '';
 
+                        const teacherSlotLessons = currentLessons.filter(
+                            l => l.day === day && 
+                                 l.period === parseInt(slotPeriod) && 
+                                 l.subject === firstLesson.subject
+                        );
+                        const teacherEffectiveClasses = [...new Set(teacherSlotLessons.map(l => getEffectiveClass(l)))].sort();
+                        const classDisplay = teacherEffectiveClasses.length > 1
+                            ? simplifyClassNames(teacherEffectiveClasses)
+                            : (teacherEffectiveClasses[0] || getEffectiveClass(firstLesson));
+
+                        let coTeachers = '';
                         if (shouldShowCoTeachers) {
                             const sameLessons = allLessons.filter(
-                                l => l.day === day &&
+                                l => l.day === day && 
                                      l.period === parseInt(slotPeriod) &&
-                                     l.class === firstLesson.class &&
-                                     l.subject === firstLesson.subject
+                                     l.subject === firstLesson.subject &&
+                                     teacherEffectiveClasses.includes(getEffectiveClass(l))
                             );
                             coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
-                                .filter(t => t !== firstLesson.teacher)
                                 .sort()
                                 .join(',');
-                        }
-
-                        const groupedLessons = allLessons.filter(
-                            l => l.day === day &&
-                                 l.period === parseInt(slotPeriod) &&
-                                 l.subject === firstLesson.subject &&
-                                 l.teacher === firstLesson.teacher
-                        );
-
-                        let classDisplay = getEffectiveClass(firstLesson);
-                        if (groupedLessons.length > 1) {
-                            const allClassesList = [...new Set(groupedLessons.map(l => getEffectiveClass(l)))].sort();
-                            classDisplay = simplifyClassNames(allClassesList);
                         }
 
                         lines.push(`${classDisplay} ${firstLesson.subject}`);
@@ -772,7 +765,7 @@
                             .time-col { width: 80px; background-color: #3498db; color: white; font-size: 9px; }
                             .period-col { width: 30px; background-color: #3498db; color: white; font-size: 9px; }
                             .break-cell { background-color: #f2f2f2; font-style: italic; }
-                            .empty-cell { background-color: #f9f9f9; }
+                            .empty-cell { background-color: #f9f9f9; height: 3.8em; }
                             .subject { color: blue; font-size: 9px; word-wrap: break-word;}
                             .room { color: #555; font-size: 8px; }
                             .teacher { font-size: 8px; word-wrap: break-word; }
@@ -908,7 +901,7 @@
                     
                     if (day === 3 && slot.period === '10') {
                         if (dayLessons.length === 0) {
-                            tableHTML += `<td style="background-color:#f9f9f9;">
+                            tableHTML += `<td class="empty-cell" style="background-color:#f9f9f9;height:3.8em;">
                                 <div class="dismissal-time" style="font-size:8px;">(CPA 14:40 - 15:30)</div>
                             </td>`;
                         } else {
@@ -922,7 +915,7 @@
                     }
                     
                     if (dayLessons.length === 0) {
-                        tableHTML += `<td style="background-color:#f9f9f9;"></td>`;
+                        tableHTML += `<td class="empty-cell" style="background-color:#f9f9f9;height:3.8em;"></td>`;
                     } else {
                         if (isClassQuery) {
                             const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
@@ -1009,15 +1002,12 @@
                                 );
                                 
                                 const allClassesList = [...new Set(allPELessons.map(l => getEffectiveClass(l)))].sort().join('/');
-                                const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
-                                    .filter(t => t !== firstLesson.teacher)
-                                    .sort()
-                                    .join(',');
+                                const teachersList = [...new Set(allPELessons.map(l => l.teacher))].sort().join(',');
                                 
                                 tableHTML += `<td>
                                     <div>
                                         <span style="color:blue;font-size:9px">${allClassesList} PE</span>
-                                        ${otherTeachers ? `<span style="font-size:8px">(${otherTeachers})</span>` : ''}
+                                        ${teachersList ? `<span style="font-size:8px">(${teachersList})</span>` : ''}
                                     </div>
                                 </td>`;
                             } else if (isMaup) {
@@ -1029,36 +1019,31 @@
                             } else {
                                 const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
                                 const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
+
+                                const teacherSlotLessons = currentLessons.filter(
+                                    l => l.day === day && 
+                                         l.period === parseInt(slot.period) && 
+                                         l.subject === firstLesson.subject
+                                );
+                                const teacherEffectiveClasses = [...new Set(teacherSlotLessons.map(l => getEffectiveClass(l)))].sort();
+                                const classDisplay = teacherEffectiveClasses.length > 1
+                                    ? simplifyClassNames(teacherEffectiveClasses)
+                                    : (teacherEffectiveClasses[0] || getEffectiveClass(firstLesson));
+
                                 let coTeachers = '';
-                                
                                 if (shouldShowCoTeachers) {
                                     const sameLessons = allLessons.filter(
                                         lesson => lesson.day === day && 
                                                  lesson.period === parseInt(slot.period) &&
-                                                 lesson.class === firstLesson.class &&
-                                                 lesson.subject === firstLesson.subject
+                                                 lesson.subject === firstLesson.subject &&
+                                                 teacherEffectiveClasses.includes(getEffectiveClass(lesson))
                                     );
                                     
                                     coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
-                                        .filter(t => t !== firstLesson.teacher)
                                         .sort()
                                         .join(',');
                                 }
 
-                                const groupedLessons = allLessons.filter(
-                                    lesson => lesson.day === day && 
-                                             lesson.period === parseInt(slot.period) &&
-                                             lesson.subject === firstLesson.subject &&
-                                             lesson.teacher === firstLesson.teacher
-                                );
-
-                                let classDisplay = getEffectiveClass(firstLesson);
-                                if (groupedLessons.length > 1) {
-                                    const allClassesList = [...new Set(groupedLessons.map(l => getEffectiveClass(l)))].sort();
-                                    const simplifiedClasses = simplifyClassNames(allClassesList);
-                                    classDisplay = simplifiedClasses;
-                                }
-                                
                                 tableHTML += `<td>
                                     <div>
                                         <span style="color:blue;font-size:9px">${classDisplay} ${firstLesson.subject}<br></span>
@@ -1141,19 +1126,29 @@
                 return `<span style="color:blue;font-size:9px">${getEffectiveClass(lesson)} MAUP</span>`;
             }
 
-            const groupedLessons = allLessons.filter(
+            const teacherSlotLessons = currentLessons.filter(
                 l => l.day === lesson.day && 
                      l.period === lesson.period && 
-                     l.subject === lesson.subject && 
-                     l.teacher === lesson.teacher
+                     l.subject === lesson.subject
             );
+            const teacherEffectiveClasses = [...new Set(teacherSlotLessons.map(l => getEffectiveClass(l)))].sort();
+            const classDisplay = teacherEffectiveClasses.length > 1 
+                ? simplifyClassNames(teacherEffectiveClasses) 
+                : (teacherEffectiveClasses[0] || getEffectiveClass(lesson));
 
-            let classDisplay = getEffectiveClass(lesson);
-            if (groupedLessons.length > 1) {
-                const allClassesList = [...new Set(groupedLessons.map(l => getEffectiveClass(l)))].sort();
-                classDisplay = simplifyClassNames(allClassesList);
+            const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
+            let coTeachers = '';
+            if (!noCoTeacherSubjects.includes(lesson.subject)) {
+                const sameLessons = allLessons.filter(
+                    l => l.day === lesson.day && 
+                         l.period === lesson.period && 
+                         l.subject === lesson.subject && 
+                         teacherEffectiveClasses.includes(getEffectiveClass(l))
+                );
+                coTeachers = [...new Set(sameLessons.map(l => l.teacher))].sort().join(',');
             }
-            return `<span style="color:blue;font-size:12px">${classDisplay} ${lesson.subject}<br></span><span style="color:#555;font-size:8px">${lesson.room}</span>`;
+
+            return `<span style="color:blue;font-size:12px">${classDisplay} ${lesson.subject}<br></span><span style="color:#555;font-size:8px">${lesson.room}<br></span>${coTeachers ? `<span style="font-size:8px">(${coTeachers})</span>` : ''}`;
         }
 
         teacherNameInput.addEventListener('keydown', function(e) {
@@ -1310,7 +1305,7 @@
                     
                     if (day === 3 && slot.period === '10') {
                         if (dayLessons.length === 0) {
-                            tableHTML += `<td class="empty-cell">
+                            tableHTML += `<td class="empty-cell" style="height:3.8em;">
                                 <div class="dismissal-time" style="font-size:10px;">(CPA 14:40 - 15:30)</div>
                             </td>`;
                         } else {
@@ -1324,7 +1319,7 @@
                     }
 
                     if (dayLessons.length === 0) {
-                        tableHTML += `<td class="empty-cell"></td>`;
+                        tableHTML += `<td class="empty-cell" style="height:3.8em;"></td>`;
                     } else {
                         if (isClassQuery) {
                             const teachers = [...new Set(dayLessons.map(l => l.teacher))].join(',');
@@ -1415,15 +1410,12 @@
                                 );
                                 
                                 const allClassesList = [...new Set(allPELessons.map(l => getEffectiveClass(l)))].sort().join('/');
-                                const otherTeachers = [...new Set(allPELessons.map(l => l.teacher))]
-                                    .filter(t => t !== firstLesson.teacher)
-                                    .sort()
-                                    .join(',');
+                                const teachersList = [...new Set(allPELessons.map(l => l.teacher))].sort().join(',');
                                 
                                 tableHTML += `<td>
                                     <div class="main-lesson">
                                         <span class="subject" style="color:blue;font-size:14px;">${allClassesList} PE</span>
-                                        ${otherTeachers ? `<span class="teacher" style="font-size:10px;">(${otherTeachers})</span>` : ''}
+                                        ${teachersList ? `<span class="teacher" style="font-size:10px;">(${teachersList})</span>` : ''}
                                     </div>
                                 </td>`;
                             } else if (isMaup) {
@@ -1435,34 +1427,29 @@
                             } else {
                                 const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
                                 const shouldShowCoTeachers = !noCoTeacherSubjects.includes(firstLesson.subject);
+
+                                const teacherSlotLessons = currentLessons.filter(
+                                    l => l.day === day && 
+                                         l.period === parseInt(slot.period) && 
+                                         l.subject === firstLesson.subject
+                                );
+                                const teacherEffectiveClasses = [...new Set(teacherSlotLessons.map(l => getEffectiveClass(l)))].sort();
+                                const classDisplay = teacherEffectiveClasses.length > 1 
+                                    ? simplifyClassNames(teacherEffectiveClasses) 
+                                    : (teacherEffectiveClasses[0] || getEffectiveClass(firstLesson));
+
                                 let coTeachers = '';
-                                
                                 if (shouldShowCoTeachers) {
                                     const sameLessons = allLessons.filter(
                                         lesson => lesson.day === day && 
                                                  lesson.period === parseInt(slot.period) &&
-                                                 lesson.class === firstLesson.class &&
-                                                 lesson.subject === firstLesson.subject
+                                                 lesson.subject === firstLesson.subject &&
+                                                 teacherEffectiveClasses.includes(getEffectiveClass(lesson))
                                     );
                                     
                                     coTeachers = [...new Set(sameLessons.map(l => l.teacher))]
-                                        .filter(t => t !== firstLesson.teacher)
                                         .sort()
                                         .join(',');
-                                }
-
-                                const groupedLessons = allLessons.filter(
-                                    lesson => lesson.day === day && 
-                                             lesson.period === parseInt(slot.period) &&
-                                             lesson.subject === firstLesson.subject &&
-                                             lesson.teacher === firstLesson.teacher
-                                );
-
-                                let classDisplay = getEffectiveClass(firstLesson);
-                                if (groupedLessons.length > 1) {
-                                    const allClassesList = [...new Set(groupedLessons.map(l => getEffectiveClass(l)))].sort();
-                                    const simplifiedClasses = simplifyClassNames(allClassesList);
-                                    classDisplay = simplifiedClasses;
                                 }
                                 
                                 tableHTML += `<td>
@@ -1534,20 +1521,29 @@
                 return `<span class="subject" style="color:blue;font-size:10px;">${getEffectiveClass(lesson)} MAUP</span>`;
             }
 
-            const groupedLessons = allLessons.filter(
+            const teacherSlotLessons = currentLessons.filter(
                 l => l.day === lesson.day && 
                      l.period === lesson.period && 
-                     l.subject === lesson.subject && 
-                     l.teacher === lesson.teacher
+                     l.subject === lesson.subject
             );
+            const teacherEffectiveClasses = [...new Set(teacherSlotLessons.map(l => getEffectiveClass(l)))].sort();
+            const classDisplay = teacherEffectiveClasses.length > 1 
+                ? simplifyClassNames(teacherEffectiveClasses) 
+                : (teacherEffectiveClasses[0] || getEffectiveClass(lesson));
 
-            let classDisplay = getEffectiveClass(lesson);
-            if (groupedLessons.length > 1) {
-                const allClassesList = [...new Set(groupedLessons.map(l => getEffectiveClass(l)))].sort();
-                const simplifiedClasses = simplifyClassNames(allClassesList);
-                classDisplay = simplifiedClasses;
+            const noCoTeacherSubjects = ['ARD', 'CPA', 'READ', 'MAUP'];
+            let coTeachers = '';
+            if (!noCoTeacherSubjects.includes(lesson.subject)) {
+                const sameLessons = allLessons.filter(
+                    l => l.day === lesson.day && 
+                         l.period === lesson.period && 
+                         l.subject === lesson.subject && 
+                         teacherEffectiveClasses.includes(getEffectiveClass(l))
+                );
+                coTeachers = [...new Set(sameLessons.map(l => l.teacher))].sort().join(',');
             }
-            return `<span class="subject" style="color:blue;font-size:14px;">${classDisplay} ${lesson.subject}</span> <span class="room" style="color:#555;font-size:10px;">${lesson.room}</span>`;
+
+            return `<span class="subject" style="color:blue;font-size:14px;">${classDisplay} ${lesson.subject}<br></span><span class="room" style="color:#555;font-size:10px;">${lesson.room}<br></span>${coTeachers ? `<span class="teacher" style="font-size:10px;">(${coTeachers})</span>` : ''}`;
         }
 
         loadGoogleSheetData();
