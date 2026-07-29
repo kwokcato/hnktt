@@ -332,6 +332,46 @@
             return w.includes('even') || w.includes('雙') || w === '2';
         }
 
+        // 格式化科目與課室輔助函式 (例如：BIO (R311))
+        function formatSubjWithRoom(lessons) {
+            return [...new Set(lessons.map(l => l.subject + (l.room ? ` (${l.room})` : '')))].filter(Boolean).join(' / ');
+        }
+
+        // 格式化補課科目與教師、課室輔助函式 (例如：CHIN (CHM R413 / NKK R401 / PKK R201))
+        function formatSubjWithTeacherRoom(lessons, isHtml = true) {
+            if (!lessons || lessons.length === 0) return '';
+            
+            const subjectMap = new Map();
+            lessons.forEach(l => {
+                const subj = l.subject ? l.subject.trim() : '';
+                if (!subj) return;
+                if (!subjectMap.has(subj)) {
+                    subjectMap.set(subj, []);
+                }
+                const teacherRoom = [l.teacher ? l.teacher.trim() : '', l.room ? l.room.trim() : ''].filter(Boolean).join(' ');
+                if (teacherRoom) {
+                    subjectMap.get(subj).push(teacherRoom);
+                }
+            });
+
+            const resultParts = [];
+            subjectMap.forEach((infoList, subj) => {
+                const uniqueInfo = [...new Set(infoList)];
+                if (uniqueInfo.length > 0) {
+                    const infoStr = uniqueInfo.join(' / ');
+                    if (isHtml) {
+                        resultParts.push(`${subj} <span style="font-size: 9px; font-weight: normal; color: #555;">(${infoStr})</span>`);
+                    } else {
+                        resultParts.push(`${subj} (${infoStr})`);
+                    }
+                } else {
+                    resultParts.push(subj);
+                }
+            });
+
+            return resultParts.join(' / ');
+        }
+
         // 計算並取得該課堂的有效班別名稱
         function getEffectiveClass(lesson) {
             if (!lesson || !lesson.class) return '';
@@ -649,11 +689,11 @@
                         lines.push('MAUP');
                         if (teachers) lines.push(`(${teachers})`);
                     } else if (slotPeriod === '10' && currentTitle.includes('班別') && /^[6][A-Z]$/i.test(currentTitle.split(' ')[1])) {
-                        // 修訂1：中六第十節不用顯示單/雙周文字
+                        // 中六第十節補課格 (包含教師與課室顯示)
                         const oddLessons = dayLessons.filter(l => isOddLesson(l));
                         const evenLessons = dayLessons.filter(l => isEvenLesson(l));
-                        const oddSubjects = [...new Set(oddLessons.map(l => l.subject))].filter(Boolean).join(' / ');
-                        const evenSubjects = [...new Set(evenLessons.map(l => l.subject))].filter(Boolean).join(' / ');
+                        const oddSubjects = formatSubjWithTeacherRoom(oddLessons, false);
+                        const evenSubjects = formatSubjWithTeacherRoom(evenLessons, false);
 
                         lines.push(oddSubjects || '');
                         lines.push('----------------');
@@ -716,7 +756,6 @@
                                 .join(',');
                         }
 
-                        // 修訂3：教師時間表，單雙用英文 (Odd) / (Even) 顯示
                         let weekTag = '';
                         if (firstLesson.week) {
                             const w = firstLesson.week.toLowerCase();
@@ -997,11 +1036,11 @@
                                     </div>
                                 </td>`;
                             } else if ((currentTitle.includes('班別') && /^[6][A-Z]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
-                                    // 修訂1：不用顯示單/雙周文字
+                                    // 中六第十節補課格 (包含教師與課室顯示)
                                     const oddLessons = dayLessons.filter(l => isOddLesson(l));
                                     const evenLessons = dayLessons.filter(l => isEvenLesson(l));
-                                    const oddSubjects = [...new Set(oddLessons.map(l => l.subject))].filter(Boolean).join(' / ');
-                                    const evenSubjects = [...new Set(evenLessons.map(l => l.subject))].filter(Boolean).join(' / ');
+                                    const oddSubjects = formatSubjWithTeacherRoom(oddLessons, true);
+                                    const evenSubjects = formatSubjWithTeacherRoom(evenLessons, true);
 
                                     tableHTML += `<td>
                                         <div style="border-bottom: 1px dashed #999; padding-bottom: 2px; margin-bottom: 2px;">
@@ -1088,7 +1127,6 @@
                                         .join(',');
                                 }
 
-                                // 修訂3：教師時間表單雙周用英文標示 (Odd) / (Even)
                                 let weekTag = '';
                                 if (firstLesson.week) {
                                     const w = firstLesson.week.toLowerCase();
@@ -1201,7 +1239,6 @@
                 coTeachers = [...new Set(sameLessons.map(l => l.teacher))].sort().join(',');
             }
 
-            // 修訂3：教師時間表單雙周用英文標示 (Odd) / (Even)
             let weekTag = '';
             if (lesson.week) {
                 const w = lesson.week.toLowerCase();
@@ -1435,11 +1472,11 @@
                                     </div>
                                 </td>`;
                            } else if ((currentTitle.includes('班別') && /^[6][A-Z]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
-                                    // 修訂1：不用顯示單/雙周文字
+                                    // 中六第十節補課格 (包含教師與課室顯示)
                                     const oddLessons = dayLessons.filter(l => isOddLesson(l));
                                     const evenLessons = dayLessons.filter(l => isEvenLesson(l));
-                                    const oddSubjects = [...new Set(oddLessons.map(l => l.subject))].filter(Boolean).join(' / ');
-                                    const evenSubjects = [...new Set(evenLessons.map(l => l.subject))].filter(Boolean).join(' / ');
+                                    const oddSubjects = formatSubjWithTeacherRoom(oddLessons, true);
+                                    const evenSubjects = formatSubjWithTeacherRoom(evenLessons, true);
 
                                     tableHTML += `<td>
                                         <div style="border-bottom: 1px dashed #999; padding-bottom: 4px; margin-bottom: 4px; min-height: 1.8em; display: flex; align-items: center; justify-content: center;">
@@ -1522,7 +1559,6 @@
                                         .join(',');
                                 }
                                 
-                                // 修訂3：教師時間表單雙周用英文標示 (Odd) / (Even)
                                 let weekTag = '';
                                 if (firstLesson.week) {
                                     const w = firstLesson.week.toLowerCase();
@@ -1622,7 +1658,6 @@
                 coTeachers = [...new Set(sameLessons.map(l => l.teacher))].sort().join(',');
             }
 
-            // 修訂3：教師時間表單雙周用英文標示 (Odd) / (Even)
             let weekTag = '';
             if (lesson.week) {
                 const w = lesson.week.toLowerCase();
