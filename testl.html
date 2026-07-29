@@ -5,7 +5,7 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Content Security Policy：已加入 https://script.google.com 與 https://script.googleusercontent.com 允許發送紀錄 -->
+    <!-- Content Security Policy：允許與 Apps Script 連線 -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' 'nonce-r4nd0m123' https://accounts.google.com https://cdnjs.cloudflare.com;
@@ -90,28 +90,28 @@
         const TOKEN_SKEW_MS = 60 * 1000; // 時間偏移保險（1分鐘）
         const ENABLE_DEVTOOLS_BLOCK = false;
 
-        // 請替換為你部署 Apps Script 後取得的 Web App URL
+        // 請填入部署 Apps Script 取得的 Web App URL
         const LOG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6qARRGablUvutV5IJTUfSyznJsXLIPvbfTJImi8bHYDgqcywNgOESGNN0qL3UXGk/exec";
 
-        // 發送登入記錄至 Google Sheet
-        function logLoginAttempt(username, status, reason = "") {
-            if (!LOG_SCRIPT_URL || LOG_SCRIPT_URL.includes("AKfycbx6qARRGablUvutV5IJTUfSyznJsXLIPvbfTJImi8bHYDgqcywNgOESGNN0qL3UXGk")) return;
+        // 將登入紀錄發送至 Google Sheet
+        function logLoginAttempt(email, status, reason = "") {
+            if (!LOG_SCRIPT_URL || LOG_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbx6qARRGablUvutV5IJTUfSyznJsXLIPvbfTJImi8bHYDgqcywNgOESGNN0qL3UXGk/exec")) return;
             
             fetch(LOG_SCRIPT_URL, {
                 method: "POST",
-                mode: "no-cors", // 避免跨域 CORS 問題
+                mode: "no-cors",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    username: username,
+                    email: email,
                     status: status,
                     reason: reason
                 })
-            }).catch(err => console.error("Logging failed:", err));
+            }).catch(err => console.error("Logging error:", err));
         }
 
-        // 選擇性：封鎖右鍵與開發者工具（預設關閉）
+        // 選擇性：封鎖右鍵與開發者工具
         if (ENABLE_DEVTOOLS_BLOCK) {
             document.addEventListener('contextmenu', e => e.preventDefault());
             document.addEventListener('keydown', e => {
@@ -162,26 +162,25 @@
                 return;
             }
 
-            // 解析 JWT Payload 獲取 User Email/Username
+            // 解析 JWT Payload 獲取用戶電郵地址 (Email)
             const payload = decodeJwtResponse(response.credential);
-            const username = payload?.email || "Unknown User";
+            const userEmail = payload?.email || "Unknown Email";
 
             if (!isTokenValid(response.credential)) {
                 showLoginError(`登入失敗：請使用有效且未過期的 @${SCHOOL_DOMAIN} 教職員帳戶`);
-                logLoginAttempt(username, "FAIL", "Token 驗證失敗 (非教職員/過期/Domain不符)");
+                logLoginAttempt(userEmail, "FAIL", "Token 驗證失敗 (非教職員帳戶/過期/Domain不符)");
                 return;
             }
 
-            // 登入成功記錄
-            logLoginAttempt(username, "SUCCESS", "登入成功");
+            // 登入成功紀錄
+            logLoginAttempt(userEmail, "SUCCESS", "登入成功");
 
             sessionStorage.setItem('google_id_token', response.credential);
-            // 清理任何舊的閒置計時資料
             sessionStorage.removeItem('inactivity.logoutAt');
             sessionStorage.removeItem('inactivity.warningAt');
             sessionStorage.removeItem('inactivity.lastActiveAt');
 
-            // 延遲 300ms 跳轉，確保日誌請求順利送出
+            // 稍作延遲確保日誌請求發送完畢後跳轉
             setTimeout(() => {
                 window.location.href = "main.html";
             }, 300);
@@ -214,7 +213,6 @@
             }
         });
 
-        // 回到本頁（例如上一頁）時，若 token 已過期，避免誤導
         window.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 const idToken = sessionStorage.getItem('google_id_token');
