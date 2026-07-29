@@ -359,7 +359,7 @@
             const script = document.createElement('script');
             script.src = url + Date.now(); 
             script.onerror = function() {
-                loadingDiv.innerHTML = `<p style="color:red">未能連上數據庫。<br>請通知系統管理員。</p>`; 
+                loadingDiv.innerHTML = `<p style="color:red">未能連上數據庫。<br>請通知系統管理員。<br>請使用 CHROME 或 EDGE 瀏覽器。</p>`; 
                 setTimeout(loadGoogleSheetData, 2000);
             };
             document.head.appendChild(script);
