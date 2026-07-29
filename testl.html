@@ -5,12 +5,12 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Content Security Policy：允許與 Apps Script 連線 -->
+    <!-- Content Security Policy：已調整 connect-src 與 img-src -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' 'nonce-r4nd0m123' https://accounts.google.com https://cdnjs.cloudflare.com;
       style-src 'self' 'unsafe-inline';
-      img-src 'self' data:;
+      img-src 'self' data: https:;
       frame-src 'self' https://accounts.google.com;
       connect-src 'self' https://script.google.com https://script.googleusercontent.com;
       frame-ancestors 'self';
@@ -90,25 +90,44 @@
         const TOKEN_SKEW_MS = 60 * 1000; // 時間偏移保險（1分鐘）
         const ENABLE_DEVTOOLS_BLOCK = false;
 
-        // 請填入部署 Apps Script 取得的 Web App URL
+        // 已填入你的 Apps Script 部署 URL
         const LOG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6qARRGablUvutV5IJTUfSyznJsXLIPvbfTJImi8bHYDgqcywNgOESGNN0qL3UXGk/exec";
 
-        // 將登入紀錄發送至 Google Sheet
-        function logLoginAttempt(email, status, reason = "") {
-            if (!LOG_SCRIPT_URL || LOG_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbx6qARRGablUvutV5IJTUfSyznJsXLIPvbfTJImi8bHYDgqcywNgOESGNN0qL3UXGk/exec")) return;
-            
-            fetch(LOG_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    email: email,
-                    status: status,
-                    reason: reason
-                })
-            }).catch(err => console.error("Logging error:", err));
+        // 發送紀錄至 Google Sheet 函式 (使用 sendBeacon 作為主要發送手段，確保跳轉前不被取消)
+        function logLoginAttempt(email, status, reason = "", callback) {
+            const payload = JSON.stringify({
+                email: email,
+                status: status,
+                reason: reason
+            });
+
+            // 方法一：優先嘗試使用 navigator.sendBeacon (背景異步發送，不受頁面跳轉影響)
+            let beaconSent = false;
+            try {
+                if (navigator.sendBeacon) {
+                    const blob = new Blob([payload], { type: 'text/plain; charset=utf-8' });
+                    beaconSent = navigator.sendBeacon(LOG_SCRIPT_URL, blob);
+                }
+            } catch (e) {
+                console.warn("Beacon failed, fallback to fetch", e);
+            }
+
+            // 方法二：若 sendBeacon 不支援或失敗，退回使用 fetch
+            if (!beaconSent) {
+                fetch(LOG_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "text/plain; charset=utf-8" },
+                    body: payload
+                }).then(() => {
+                    if (callback) callback();
+                }).catch(err => {
+                    console.error("Log fetch error:", err);
+                    if (callback) callback();
+                });
+            } else {
+                if (callback) setTimeout(callback, 300);
+            }
         }
 
         // 選擇性：封鎖右鍵與開發者工具
@@ -162,7 +181,6 @@
                 return;
             }
 
-            // 解析 JWT Payload 獲取用戶電郵地址 (Email)
             const payload = decodeJwtResponse(response.credential);
             const userEmail = payload?.email || "Unknown Email";
 
@@ -172,18 +190,14 @@
                 return;
             }
 
-            // 登入成功紀錄
-            logLoginAttempt(userEmail, "SUCCESS", "登入成功");
-
-            sessionStorage.setItem('google_id_token', response.credential);
-            sessionStorage.removeItem('inactivity.logoutAt');
-            sessionStorage.removeItem('inactivity.warningAt');
-            sessionStorage.removeItem('inactivity.lastActiveAt');
-
-            // 稍作延遲確保日誌請求發送完畢後跳轉
-            setTimeout(() => {
+            // 登入成功 -> 寫入紀錄後再進行頁面跳轉
+            logLoginAttempt(userEmail, "SUCCESS", "登入成功", function() {
+                sessionStorage.setItem('google_id_token', response.credential);
+                sessionStorage.removeItem('inactivity.logoutAt');
+                sessionStorage.removeItem('inactivity.warningAt');
+                sessionStorage.removeItem('inactivity.lastActiveAt');
                 window.location.href = "main.html";
-            }, 300);
+            });
         }
 
         // 初始化
