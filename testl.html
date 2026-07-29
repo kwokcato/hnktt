@@ -91,11 +91,11 @@
         const ENABLE_DEVTOOLS_BLOCK = false;
 
         // 請替換為你部署 Apps Script 後取得的 Web App URL
-        const LOG_SCRIPT_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+        const LOG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6qARRGablUvutV5IJTUfSyznJsXLIPvbfTJImi8bHYDgqcywNgOESGNN0qL3UXGk/exec";
 
         // 發送登入記錄至 Google Sheet
         function logLoginAttempt(username, status, reason = "") {
-            if (!LOG_SCRIPT_URL || LOG_SCRIPT_URL.includes("YOUR_SCRIPT_ID")) return;
+            if (!LOG_SCRIPT_URL || LOG_SCRIPT_URL.includes("AKfycbx6qARRGablUvutV5IJTUfSyznJsXLIPvbfTJImi8bHYDgqcywNgOESGNN0qL3UXGk")) return;
             
             fetch(LOG_SCRIPT_URL, {
                 method: "POST",
