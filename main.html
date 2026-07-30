@@ -185,6 +185,7 @@
                     <button class="tab-button" onclick="openTab(event, 'rooms')">房間時間表</button>
                     <button class="tab-button" onclick="openTab(event, 'freePeriods')">教師空堂查詢</button>
                     <button class="tab-button" onclick="openTab(event, 'commonFreePeriods')">共同空堂搜尋</button>
+                    <button class="tab-button" onclick="openTab(event, 'lessonExchange')">調堂系統 (試用版）</button>
                 </div>
                 <button id="logout-button" onclick="logout()">登出系統</button>
             </div>
@@ -208,6 +209,12 @@
                 <div class="loading">載入共同空堂搜尋功能...</div>
                 <iframe id="meetingFrame" onload="hideLoading('commonFreePeriods')"></iframe>
             </div>
+
+            <div id="lessonExchange" class="tab-content">
+                <div class="loading">載入調堂系統 (試用版)...</div>
+                <iframe id="exchangeFrame" onload="hideLoading('lessonExchange')"></iframe>
+            </div>
+
         </div>
         
         <div class="footer">
@@ -368,6 +375,7 @@
                 document.getElementById('roomFrame').src = "room.html";
                 document.getElementById('freeFrame').src = "free.html";
                 document.getElementById('meetingFrame').src = "bysub.html";
+                document.getElementById('exchangeFrame').src = "lesson_exchange.html";
             }
         }
 
@@ -397,6 +405,7 @@
             document.getElementById('roomFrame').addEventListener('load', function() { addIframeActivity(this); });
             document.getElementById('freeFrame').addEventListener('load', function() { addIframeActivity(this); });
             document.getElementById('meetingFrame').addEventListener('load', function() { addIframeActivity(this); });
+            document.getElementById('exchangeFrame').addEventListener('load', function() { addIframeActivity(this); });
 
             // 初始設定門檻
             resetInactivityTimer();
