@@ -157,7 +157,7 @@
             font-size: 14px;
         }
         .long-input {
-            width: 380px; 
+            width: 320px; 
             max-width: 100%;
         }
         .normal-input {
@@ -209,7 +209,7 @@
             cursor: pointer;
         }
 
-        /* 精簡版中六已完結提示盒 */
+        /* 獨立條件提示盒 */
         .f6-ended-box {
             background: #fff7ed;
             border: 1px solid #fed7aa;
@@ -229,6 +229,18 @@
             width: 15px;
             height: 15px;
             accent-color: #ea580c;
+        }
+
+        .grade-select-box {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            flex-wrap: wrap;
         }
 
         .action-btn {
@@ -301,7 +313,6 @@
             color: white;
         }
 
-        /* 縮小版中六橙色字體樣式 */
         .f6-mini-tag {
             color: #ea580c;
             font-size: 11px;
@@ -363,6 +374,7 @@
                     <option value="5">星期五 (Friday)</option>
                 </select>
 
+                <!-- 獨立條件一：中六已完結 -->
                 <label class="f6-ended-box" for="f6EndedCheckbox">
                     <input type="checkbox" id="f6EndedCheckbox">
                     🎓 中六已完結
@@ -372,6 +384,21 @@
                     <label for="multiTeacherInput">教師姓名：</label>
                     <input type="text" id="multiTeacherInput" class="long-input" placeholder="例如: KAA CCA 或 KAA, CCA">
                     <button id="clearMultiBtn" class="clear-btn">清除</button>
+                </div>
+            </div>
+
+            <!-- 獨立條件二：年級篩選 (可多選) -->
+            <div class="filter-row">
+                <div class="grade-select-box">
+                    <label>篩選任教年級 (多選)：</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="1"> 中一</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="2"> 中二</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="3"> 中三</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="4"> 中四</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="5"> 中五</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="6"> 中六</label>
+                    <button type="button" id="selectAllGradesBtn" class="shortcut-btn">全選</button>
+                    <button type="button" id="clearAllGradesBtn" class="shortcut-btn">清除</button>
                 </div>
             </div>
 
@@ -450,6 +477,8 @@
         const periodCheckboxGroup = document.getElementById('periodCheckboxGroup');
         const selectAllPeriodsBtn = document.getElementById('selectAllPeriodsBtn');
         const clearAllPeriodsBtn = document.getElementById('clearAllPeriodsBtn');
+        const selectAllGradesBtn = document.getElementById('selectAllGradesBtn');
+        const clearAllGradesBtn = document.getElementById('clearAllGradesBtn');
         
         // 模式二 DOM
         const filterWrapper = document.getElementById('filterWrapper');
@@ -461,24 +490,36 @@
         let currentActiveTab = "query"; 
         const dayNames = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
 
+        // 取得所選的年級條件
+        function getSelectedGrades() {
+            const chks = document.querySelectorAll('.grade-filter-chk:checked');
+            return Array.from(chks).map(c => c.value);
+        }
+
+        // 判斷教師是否有任教或屬於選定年級
+        function teacherTeachesSelectedGrades(teacher, selectedGrades) {
+            if (selectedGrades.length === 0) return true; // 未選擇年級則不做此過濾
+            const teacherLessons = allLessons.filter(l => l.teacher === teacher);
+            return teacherLessons.some(l => selectedGrades.some(g => l.class && l.class.includes(g)));
+        }
+
         // 計算教師在「現時」是否為空堂的輔助函式
         function getTeacherCurrentStatus(teacher, targetDay, isF6Ended) {
             const now = new Date();
             const currentDay = now.getDay(); // 1 = 星期一, ..., 5 = 星期五
             const currentMin = now.getHours() * 60 + now.getMinutes();
 
-            // 學校各節次時間對照表（可按貴校實際作息時間自行修改）
             const periodSchedule = [
-                { p: 1,  start: 8 * 60 + 15, end: 8 * 60 + 55 },   // 第1節: 08:15 - 08:55
-                { p: 2,  start: 8 * 60 + 55, end: 9 * 60 + 35 },   // 第2節: 08:55 - 09:35
-                { p: 3,  start: 9 * 60 + 50, end: 10 * 60 + 30 },  // 第3節: 09:50 - 10:30
-                { p: 4,  start: 10 * 60 + 30, end: 11 * 60 + 10 }, // 第4節: 10:30 - 11:10
-                { p: 5,  start: 11 * 60 + 25, end: 12 * 60 + 5 },  // 第5節: 11:25 - 12:05
-                { p: 6,  start: 12 * 60 + 5,  end: 12 * 60 + 45 }, // 第6節: 12:05 - 12:45
-                { p: 7,  start: 13 * 60 + 55, end: 14 * 60 + 30 }, // 第7節: 13:55 - 14:30
-                { p: 8,  start: 14 * 60 + 30, end: 15 * 60 + 5 },  // 第8節: 14:30 - 15:05
-                { p: 9,  start: 15 * 60 + 15, end: 15 * 60 + 50 }, // 第9節: 15:15 - 15:50
-                { p: 10, start: 15 * 60 + 50, end: 16 * 60 + 25 }  // 第10節: 15:50 - 16:25
+                { p: 1,  start: 8 * 60 + 15, end: 8 * 60 + 55 },   
+                { p: 2,  start: 8 * 60 + 55, end: 9 * 60 + 35 },   
+                { p: 3,  start: 9 * 60 + 50, end: 10 * 60 + 30 },  
+                { p: 4,  start: 10 * 60 + 30, end: 11 * 60 + 10 }, 
+                { p: 5,  start: 11 * 60 + 25, end: 12 * 60 + 5 },  
+                { p: 6,  start: 12 * 60 + 5,  end: 12 * 60 + 45 }, 
+                { p: 7,  start: 13 * 60 + 55, end: 14 * 60 + 30 }, 
+                { p: 8,  start: 14 * 60 + 30, end: 15 * 60 + 5 },  
+                { p: 9,  start: 15 * 60 + 15, end: 15 * 60 + 50 }, 
+                { p: 10, start: 15 * 60 + 50, end: 16 * 60 + 25 }  
             ];
 
             let currentPeriod = null;
@@ -489,15 +530,12 @@
                 }
             }
 
-            // 若非課堂時間（如小息、午膳、放學後或週末）
             if (currentPeriod === null) {
                 return `<span class="status-tag" style="background-color: #2ecc71;">FREE 空堂 (非課堂時間)</span>`;
             }
 
-            // 對比選擇的星期/今日在該節數的課表
             const checkDay = (currentDay >= 1 && currentDay <= 5) ? currentDay : targetDay;
 
-            // 星期三第 10 節預設無課
             if (checkDay === 3 && currentPeriod === 10) {
                 return `<span class="status-tag" style="background-color: #2ecc71;">FREE 空堂</span>`;
             }
@@ -613,7 +651,7 @@
             const script = document.createElement('script');
             script.src = url + Date.now(); 
             script.onerror = function() {
-                loadingDiv.innerHTML = `<span style="orange;">⚠️ 連線失敗，正在重試...</span>`;
+                loadingDiv.innerHTML = `<span style="color:orange;">⚠️ 連線失敗，正在重試...</span>`;
                 setTimeout(loadGoogleSheetData, 2000);
             };
             document.head.appendChild(script);
@@ -639,6 +677,7 @@
 
             const targetDay = parseInt(daySelect.value);
             const isF6Ended = f6EndedCheckbox.checked; 
+            const selectedGrades = getSelectedGrades();
             
             const maxPeriod = (targetDay === 3) ? 9 : 10;
             const selectedPeriods = [];
@@ -663,9 +702,16 @@
 
             allTeachers.forEach(teacher => {
                 const teacherUpper = teacher.toUpperCase();
+                
+                // 1. 姓名關鍵字過濾
                 if (teacherKeywords.length > 0) {
                     const matchesAnyKeyword = teacherKeywords.some(keyword => teacherUpper.startsWith(keyword));
                     if (!matchesAnyKeyword) return; 
+                }
+
+                // 2. 年級條件獨立過濾
+                if (!teacherTeachesSelectedGrades(teacher, selectedGrades)) {
+                    return;
                 }
 
                 const statusMap = {};        
@@ -741,7 +787,20 @@
             searchResultsDiv.innerHTML = html;
         }
 
-        // 按鈕事件
+        // 年級全選/清除
+        selectAllGradesBtn.addEventListener('click', function() {
+            document.querySelectorAll('.grade-filter-chk').forEach(chk => chk.checked = true);
+            executePeriodQuery();
+        });
+        clearAllGradesBtn.addEventListener('click', function() {
+            document.querySelectorAll('.grade-filter-chk').forEach(chk => chk.checked = false);
+            executePeriodQuery();
+        });
+        document.querySelectorAll('.grade-filter-chk').forEach(chk => {
+            chk.addEventListener('change', executePeriodQuery);
+        });
+
+        // 節數全選/清除與切換
         selectAllPeriodsBtn.addEventListener('click', function() {
             const targetDay = parseInt(daySelect.value);
             const maxPeriod = (targetDay === 3) ? 9 : 10;
