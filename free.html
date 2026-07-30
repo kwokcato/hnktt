@@ -284,6 +284,15 @@
             top: 0;
         }
 
+        .sortable-th {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .sortable-th:hover {
+            background-color: #2980b9;
+        }
+
         .results-table tr:nth-child(even) {
             background-color: #f8fafc;
         }
@@ -501,6 +510,10 @@
         let currentActiveTab = "query"; 
         const dayNames = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
 
+        // 排序狀態管理
+        let currentSortColumn = 'name'; // 'name', 'freeCount', 'dailyLessons'
+        let currentSortOrder = 'asc';    // 'asc', 'desc'
+
         // 取得所選的年級與班別字母
         function getSelectedGrades() {
             return Array.from(document.querySelectorAll('.grade-filter-chk:checked')).map(c => c.value);
@@ -519,9 +532,7 @@
                 if (!l.class) return false;
                 const cls = l.class.toUpperCase();
 
-                // 檢查年級
                 const matchesGrade = (selectedGrades.length === 0) || selectedGrades.some(g => cls.includes(g));
-                // 檢查班別字母 (A/B/C/D)
                 const matchesLetter = (selectedLetters.length === 0) || selectedLetters.some(lettr => cls.includes(lettr));
 
                 return matchesGrade && matchesLetter;
@@ -577,6 +588,23 @@
                     return `<span class="status-tag" style="background-color: #e74c3c;">BUSY 上課中</span>`;
                 }
             }
+        }
+
+        // 計算教師在指定天數的總上課節數
+        function calculateDailyLessonsCount(teacher, targetDay, isF6Ended) {
+            const maxPeriod = (targetDay === 3) ? 9 : 10;
+            let busyCount = 0;
+
+            for (let p = 1; p <= maxPeriod; p++) {
+                const matchingLessons = allLessons.filter(l => l.teacher === teacher && l.day === targetDay && l.period === p);
+                if (matchingLessons.length > 0) {
+                    const allLessonsAreF6 = matchingLessons.every(l => l.class && l.class.includes('6'));
+                    if (!(isF6Ended && allLessonsAreF6)) {
+                        busyCount++;
+                    }
+                }
+            }
+            return busyCount;
         }
 
         // 自動同步兩個中六核取方塊的狀態
@@ -696,6 +724,17 @@
             }
         }
 
+        // 欄位排序處理器
+        window.handleSort = function(column) {
+            if (currentSortColumn === column) {
+                currentSortOrder = (currentSortOrder === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = column;
+                currentSortOrder = 'asc';
+            }
+            executePeriodQuery();
+        };
+
         // 功能一：特定時段篩選計算
         function executePeriodQuery() {
             if (currentActiveTab !== "query") return;
@@ -775,9 +814,13 @@
                             return ` ${p} `;
                         });
 
+                    const dailyCount = calculateDailyLessonsCount(teacher, targetDay, isF6Ended);
+
                     freeTeachersResult.push({
                         name: teacher,
                         currentStatusHtml: getTeacherCurrentStatus(teacher, targetDay, isF6Ended),
+                        freeCount: freeCount,
+                        dailyLessons: dailyCount,
                         displayPeriods: periodDisplayStrings
                     });
                 }
@@ -788,14 +831,34 @@
                 return;
             }
 
+            // 執行資料排序邏輯
+            freeTeachersResult.sort((a, b) => {
+                let valA = a[currentSortColumn];
+                let valB = b[currentSortColumn];
+
+                if (typeof valA === 'string') {
+                    const cmp = valA.localeCompare(valB);
+                    return (currentSortOrder === 'asc') ? cmp : -cmp;
+                } else {
+                    return (currentSortOrder === 'asc') ? (valA - valB) : (valB - valA);
+                }
+            });
+
+            // 取得標頭排序圖示
+            const getSortIcon = (col) => {
+                if (currentSortColumn !== col) return ' ↕';
+                return currentSortOrder === 'asc' ? ' ▲' : ' ▼';
+            };
+
             let html = `
                 <div style="margin-bottom:8px; font-weight:bold; color:#2c3e50; font-size:14px;">🔍 符合條件的空堂教師 (共 ${freeTeachersResult.length} 位)：</div>
                 <table class="results-table">
                     <thead>
                         <tr>
-                            <th style="width: 25%;">教師姓名</th>
-                            <th style="width: 20%;">當前狀態</th>
-                            <th>具體空堂時段</th>
+                            <th style="width: 20%;" class="sortable-th" onclick="handleSort('name')">教師姓名${getSortIcon('name')}</th>
+                            <th style="width: 22%;">狀態</th>
+                            <th class="sortable-th" onclick="handleSort('freeCount')">具體空堂時段${getSortIcon('freeCount')}</th>
+                            <th style="width: 18%; text-align: center;" class="sortable-th" onclick="handleSort('dailyLessons')">當天總上課節數${getSortIcon('dailyLessons')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -806,6 +869,7 @@
                         <td><strong>${item.name}</strong></td>
                         <td>${item.currentStatusHtml}</td>
                         <td><span style="color: #2980b9; font-weight: 500; display:flex; gap:10px; flex-wrap:wrap;">${item.displayPeriods.join(', ')}</span></td>
+                        <td style="text-align: center;"><strong>${item.dailyLessons}</strong> 節</td>
                     </tr>
                 `;
             });
