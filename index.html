@@ -224,7 +224,7 @@
                 });
                 google.accounts.id.renderButton(
                     document.getElementById("google-signin-button"),
-                    { type: "standard", theme: "outline", size: "large", text: "signin_with", shape: "rectangular", logo_alignment: "center" }
+                    { type: "standard", theme: "outline", size: "large", text: "signin_with", shape: "rectangular", logo_alignment: "left" }
                 );
                 google.accounts.id.prompt(n => {
                     if (n.isNotDisplayed() || n.isSkipped()) console.log("One Tap 未顯示或已跳過");
