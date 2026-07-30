@@ -74,7 +74,7 @@
     <div id="login-container">
         <h1>佛教何南金中學</h1>
         <p>請使用學校 Google 帳戶登入</p>
-        <div id="google-signin-button" style="text-align: center;"></div>
+        <div id="google-signin-button"></div>
         <div id="login-error" role="alert" aria-live="polite"></div>
         <p style="font-size: 10px">建議使用 Google Chrome 或 Microsoft Edge 瀏覽器。</p>
     </div>
@@ -224,7 +224,7 @@
                 });
                 google.accounts.id.renderButton(
                     document.getElementById("google-signin-button"),
-                    { type: "standard", theme: "outline", size: "large", text: "signin_with", shape: "rectangular", logo_alignment: "left" }
+                    { type: "standard", theme: "outline", size: "large", text: "signin_with", shape: "rectangular", logo_alignment: "center" }
                 );
                 google.accounts.id.prompt(n => {
                     if (n.isNotDisplayed() || n.isSkipped()) console.log("One Tap 未顯示或已跳過");
