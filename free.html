@@ -542,25 +542,39 @@
             });
         }
 
-        // 計算教師在「現時」是否為空堂的輔助函式
+        // 計算教師在「現時」是否為空堂的輔助函式（已更新為貴校正確時間表）
         function getTeacherCurrentStatus(teacher, targetDay, isF6Ended) {
             const now = new Date();
             const currentDay = now.getDay(); 
             const currentMin = now.getHours() * 60 + now.getMinutes();
-
-            const periodSchedule = [
-                { p: 1,  start: 8 * 60 + 15, end: 8 * 60 + 55 },   
-                { p: 2,  start: 8 * 60 + 55, end: 9 * 60 + 35 },   
-                { p: 3,  start: 9 * 60 + 50, end: 10 * 60 + 30 },  
-                { p: 4,  start: 10 * 60 + 30, end: 11 * 60 + 10 }, 
-                { p: 5,  start: 11 * 60 + 25, end: 12 * 60 + 5 },  
-                { p: 6,  start: 12 * 60 + 5,  end: 12 * 60 + 45 }, 
-                { p: 7,  start: 13 * 60 + 55, end: 14 * 60 + 30 }, 
-                { p: 8,  start: 14 * 60 + 30, end: 15 * 60 + 5 },  
-                { p: 9,  start: 15 * 60 + 15, end: 15 * 60 + 50 }, 
-                { p: 10, start: 15 * 60 + 50, end: 16 * 60 + 25 }  
+        
+            // 判斷今天是否為星期三，採用對應的時間表
+            const isWednesday = (currentDay === 3);
+        
+            // 貴校正確課節時間表（以分鐘計算）
+            const periodSchedule = isWednesday ? [
+                { p: 1,  start: 8 * 60 + 20, end: 8 * 60 + 55 },   // 08:20 - 08:55
+                { p: 2,  start: 8 * 60 + 55, end: 9 * 60 + 30 },   // 08:55 - 09:30
+                { p: 3,  start: 9 * 60 + 40, end: 10 * 60 + 20 },  // 09:40 - 10:20
+                { p: 4,  start: 10 * 60 + 20, end: 10 * 60 + 55 }, // 10:20 - 10:55
+                { p: 5,  start: 11 * 60 + 10, end: 11 * 60 + 45 }, // 11:10 - 11:45
+                { p: 6,  start: 11 * 60 + 45, end: 12 * 60 + 20 }, // 11:45 - 12:20
+                { p: 7,  start: 12 * 60 + 20, end: 12 * 60 + 55 }, // 12:20 - 12:55
+                { p: 8,  start: 14 * 60 + 0,  end: 14 * 60 + 40 }, // 14:00 - 14:40
+                { p: 9,  start: 14 * 60 + 40, end: 15 * 60 + 30 }  // 周三第九節：14:40 - 15:30
+            ] : [
+                { p: 1,  start: 8 * 60 + 20, end: 8 * 60 + 55 },   // 08:20 - 08:55
+                { p: 2,  start: 8 * 60 + 55, end: 9 * 60 + 30 },   // 08:55 - 09:30
+                { p: 3,  start: 9 * 60 + 40, end: 10 * 60 + 20 },  // 09:40 - 10:20
+                { p: 4,  start: 10 * 60 + 20, end: 10 * 60 + 55 }, // 10:20 - 10:55
+                { p: 5,  start: 11 * 60 + 10, end: 11 * 60 + 45 }, // 11:10 - 11:45
+                { p: 6,  start: 11 * 60 + 45, end: 12 * 60 + 20 }, // 11:45 - 12:20
+                { p: 7,  start: 12 * 60 + 20, end: 12 * 60 + 55 }, // 12:20 - 12:55
+                { p: 8,  start: 14 * 60 + 0,  end: 14 * 60 + 40 }, // 14:00 - 14:40
+                { p: 9,  start: 14 * 60 + 40, end: 15 * 60 + 15 }, // 14:40 - 15:15
+                { p: 10, start: 15 * 60 + 15, end: 15 * 60 + 50 }  // 15:15 - 15:50
             ];
-
+        
             let currentPeriod = null;
             for (let slot of periodSchedule) {
                 if (currentMin >= slot.start && currentMin < slot.end) {
@@ -568,19 +582,22 @@
                     break;
                 }
             }
-
+        
+            // 若不在任何課堂時間內（例如午休 12:55-14:00 或放學後）
             if (currentPeriod === null) {
                 return `<span class="status-tag" style="background-color: #2ecc71;">FREE 空堂 (非課堂時間)</span>`;
             }
-
+        
+            // 只有當「查詢的星期」與「今天」一致時，才顯示即時 BUSY/FREE 狀態
             const checkDay = (currentDay >= 1 && currentDay <= 5) ? currentDay : targetDay;
-
+        
+            // 星期三沒有第 10 節
             if (checkDay === 3 && currentPeriod === 10) {
                 return `<span class="status-tag" style="background-color: #2ecc71;">FREE 空堂</span>`;
             }
-
+        
             const matchingLessons = allLessons.filter(l => l.teacher === teacher && l.day === checkDay && l.period === currentPeriod);
-
+        
             if (matchingLessons.length === 0) {
                 return `<span class="status-tag" style="background-color: #2ecc71;">FREE 空堂</span>`;
             } else {
