@@ -52,7 +52,7 @@
 <body>
 
 <div class="container">
-    <!-- <h2>🔄 同班別「調堂/對換」自動配對系統</h2> -->
+    <h2>🔄 同班別「調堂/對換」自動配對系統</h2>
     
     <!-- 📌 新增的溫馨提示標語 -->
     <div class="system-notice">
@@ -63,7 +63,7 @@
 
     <div class="filter-section">
         <div class="filter-row">
-            <label for="myTeacherSelect">1. 你的簡稱：</label>
+            <label for="myTeacherSelect">1. 你的姓名（申請人）：</label>
             <select id="myTeacherSelect"><option value="">-- 請選擇教師 --</option></select>
 
             <label for="targetClassSelect">2. 目標班別：</label>
@@ -81,7 +81,7 @@
                 <option value="5">星期五</option>
             </select>
 
-            <label>4. 原定課堂時段（請勾選連續節數）：</label>
+            <label>4. 缺席連堂時段（請勾選連續節數）：</label>
             <div class="checkbox-group">
                 <label><input type="checkbox" class="my-p-chk" value="1"> 1</label>
                 <label><input type="checkbox" class="my-p-chk" value="2"> 2</label>
@@ -108,13 +108,16 @@ let allTeachers = [];
 let allClasses = [];
 const dayNames = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
 
-// 🚫 不可調堂黑名單
+// 🚫 不可調堂黑名單（已移除 GEOG 及 HIST，改由動態邏輯判斷年級）
 const prohibitedSubjects = [
-    "READ", "PLM", "PE", "ARD",
+    "READ", "PLM", "ARD", "PE", 
     "BIO", "PHY", "CHEM", "BM", "ACC", "HMSC", "THS", "THS3", 
-    "VAD", "VAD3", "ICT", "ERS", "ERS3", "BIO3", "GEOG", 
-    "HIST", "CHIS", "ECON", "ASOS", "MAM2"
+    "VAD", "VAD3", "ICT", "ERS", "ERS3", "BIO3", 
+    "CHIS", "ECON", "ASOS", "MAM2"
 ];
+
+// 高中（中四至中六）不可調堂的選修科目
+const seniorElectiveSubjects = ["GEOG", "HIST"];
 
 // Google Sheet 載入與解析
 function loadGoogleSheetData() {
@@ -225,9 +228,21 @@ function getTeacherDailyWorkload(teacher, day) {
 // 檢查課堂是否有禁止調堂科目
 function checkLessonRestrictions(targetClass, day, periods) {
     const periodLessons = allLessons.filter(l => l.day === day && periods.includes(l.period) && (l.class.includes(targetClass) || targetClass.includes(l.class)));
+    
+    // 判斷班別是否屬於高中（S4, S5, S6 或 4, 5, 6 開頭）
+    const isSeniorLevel = /^(S[456]|[456])/.test(targetClass.toUpperCase());
+
     for (let l of periodLessons) {
+        // 1. 通用禁止調堂科目檢查
         if (prohibitedSubjects.some(subj => l.subject.includes(subj))) {
-            return { invalid: true, reason: ` 包含不可調堂的科目，例如選修科目或多班分組科目。` };
+            return { invalid: true, reason: `選修科目或多班分組科目不適宜作出調堂處理。` };
+        }
+        
+        // 2. 高中 GEOG / HIST 專屬限制檢查
+        if (isSeniorLevel) {
+            if (seniorElectiveSubjects.some(subj => l.subject.includes(subj))) {
+                return { invalid: true, reason: `高中選修科目不可調堂。` };
+            }
         }
     }
     return { invalid: false };
