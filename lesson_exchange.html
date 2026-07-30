@@ -227,7 +227,7 @@ function checkLessonRestrictions(targetClass, day, periods) {
     const periodLessons = allLessons.filter(l => l.day === day && periods.includes(l.period) && (l.class.includes(targetClass) || targetClass.includes(l.class)));
     for (let l of periodLessons) {
         if (prohibitedSubjects.some(subj => l.subject.includes(subj))) {
-            return { invalid: true, reason: `包含禁止調堂科目 (${l.subject})。` };
+            return { invalid: true, reason: ` 包含不可調堂的科目，例如選修科目或多班分組科目。` };
         }
     }
     return { invalid: false };
