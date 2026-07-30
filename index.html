@@ -67,6 +67,13 @@
         @media (max-width: 480px) {
             #login-container { padding: 20px; }
         }
+        #google-signin-button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 15px; /* 可選：增加與下方提示文字的距離 */
+        }
     </style>
 
     <!-- Google Sign-In -->
@@ -226,7 +233,7 @@
                 });
                 google.accounts.id.renderButton(
                     document.getElementById("google-signin-button"),
-                    { type: "standard", theme: "outline", size: "large", text: "signin_with", shape: "rectangular", logo_alignment: "left" }
+                    { type: "standard", theme: "outline", size: "large", text: "signin_with", shape: "rectangular", logo_alignment: "left"}
                 );
                 google.accounts.id.prompt(n => {
                     if (n.isNotDisplayed() || n.isSkipped()) console.log("One Tap 未顯示或已跳過");
