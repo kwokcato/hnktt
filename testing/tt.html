@@ -332,18 +332,26 @@
             return w.includes('even') || w.includes('雙') || w === '2';
         }
 
-        // 格式化科目與課室輔助函式 (例如：BIO (R311))
-        function formatSubjWithRoom(lessons) {
-            return [...new Set(lessons.map(l => l.subject + (l.room ? ` (${l.room})` : '')))].filter(Boolean).join(' / ');
+        // 取得課堂科目名稱（英文或中文）
+        function getLessonSubject(l, useChinese = false) {
+            if (useChinese && l.subjectChinese && l.subjectChinese.trim() !== '') {
+                return l.subjectChinese.trim();
+            }
+            return l.subject ? l.subject.trim() : '';
         }
 
-        // 格式化補課科目與教師、課室輔助函式 (例如：CHIN (CHM R413 / NKK R401 / PKK R201))
-        function formatSubjWithTeacherRoom(lessons, isHtml = true) {
+        // 格式化科目與課室輔助函式 (例如：BIO (R311))
+        function formatSubjWithRoom(lessons, useChinese = false) {
+            return [...new Set(lessons.map(l => getLessonSubject(l, useChinese) + (l.room ? ` (${l.room})` : '')))].filter(Boolean).join(' / ');
+        }
+
+        // 格式化補課科目與教師、課室輔助函式
+        function formatSubjWithTeacherRoom(lessons, isHtml = true, useChinese = false) {
             if (!lessons || lessons.length === 0) return '';
             
             const subjectMap = new Map();
             lessons.forEach(l => {
-                const subj = l.subject ? l.subject.trim() : '';
+                const subj = getLessonSubject(l, useChinese);
                 if (!subj) return;
                 if (!subjectMap.has(subj)) {
                     subjectMap.set(subj, []);
@@ -435,7 +443,8 @@
                             room:           c[6] ? String(c[6].v).trim() : '', 
                             teacherChinese: c[7] ? String(c[7].v).trim() : (c[6] ? String(c[6].v).trim() : ''),
                             group:          c[8] && c[8].v !== null && c[8].v !== undefined ? String(c[8].v).trim() : '',
-                            week:           c[9] && c[9].v !== null && c[9].v !== undefined ? String(c[9].v).trim() : ''
+                            week:           c[9] && c[9].v !== null && c[9].v !== undefined ? String(c[9].v).trim() : '',
+                            subjectChinese: c[10] && c[10].v !== null && c[10].v !== undefined ? String(c[10].v).trim() : '' // 第11欄：中文科目
                         });
                     }
                 });
@@ -544,7 +553,7 @@
         }
 
         // =====================================================================
-        // 匯出 EXCEL 功能
+        // 匯出 EXCEL 功能 (包含 Sheet 1 英文版 & Sheet 2 中文版)
         // =====================================================================
         function exportToExcel() {
             if (!currentTitle || currentLessons.length === 0) {
@@ -596,10 +605,6 @@
                 border: borderBlack
             };
 
-            const ws = {};
-            const merges = [];
-            const rowHeights = [];
-
             const isClassQuery = currentTitle.includes('班別');
 
             let titleName = currentTitle;
@@ -610,17 +615,6 @@
                     titleName = currentTitle.split(' 的時間表')[0];
                 }
             }
-
-            ws["A1"] = { v: `時間表: ${titleName}`, s: titleStyle };
-            merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
-            rowHeights.push({ hpt: 28 });
-
-            const headers = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
-            headers.forEach((h, colIdx) => {
-                const cellRef = XLSX.utils.encode_cell({ r: 1, c: colIdx });
-                ws[cellRef] = { v: h, s: headerStyle };
-            });
-            rowHeights.push({ hpt: 24 });
 
             function toChinese12Hr(timeStr) {
                 if (!timeStr) return '';
@@ -644,7 +638,7 @@
                 return slot.label || '';
             }
 
-            function formatLessonCellForExcel(dayLessons, day, slotPeriod) {
+            function formatLessonCellForExcel(dayLessons, day, slotPeriod, useChinese = false) {
                 if (!dayLessons || dayLessons.length === 0) {
                     if (day === 3 && slotPeriod === '10') {
                         return '(CPA 14:40 - 15:30)';
@@ -674,8 +668,7 @@
                         if (rooms) lines.push(rooms);
                         if (teachers) lines.push(`(${teachers})`);
                     } else if (isForm4or5 || slotPeriod !== '10') {
-                        // 參考 PRINT 功能邏輯：正常提取科目並顯示
-                        const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                        const subjects = [...new Set(dayLessons.map(l => getLessonSubject(l, useChinese)))].join('/');
                         let subjectDisplay = subjects;
                         if (hasGroup && groupClassNames.length > 0) {
                             subjectDisplay = `${groupClassNames.join('/')} ${subjects}`;
@@ -684,20 +677,19 @@
                         if (rooms) lines.push(rooms);
                         if (teachers) lines.push(`(${teachers})`);
                     } else if (hasMaup) {
-                        lines.push('MAUP');
+                        lines.push(useChinese ? '班主任課' : 'MAUP');
                         if (teachers) lines.push(`(${teachers})`);
                     } else if (slotPeriod === '10' && currentTitle.includes('班別') && /^[6][A-Z]$/i.test(currentTitle.split(' ')[1])) {
-                        // 中六第十節補課格 (與 PRINT 功能保持一致)
                         const oddLessons = dayLessons.filter(l => isOddLesson(l));
                         const evenLessons = dayLessons.filter(l => isEvenLesson(l));
-                        const oddSubjects = formatSubjWithTeacherRoom(oddLessons, false);
-                        const evenSubjects = formatSubjWithTeacherRoom(evenLessons, false);
+                        const oddSubjects = formatSubjWithTeacherRoom(oddLessons, false, useChinese);
+                        const evenSubjects = formatSubjWithTeacherRoom(evenLessons, false, useChinese);
 
                         lines.push(oddSubjects || '');
                         lines.push('----------------');
                         lines.push(evenSubjects || '');
                     } else {
-                        const subjects = [...new Set(dayLessons.map(l => l.subject))].join('/');
+                        const subjects = [...new Set(dayLessons.map(l => getLessonSubject(l, useChinese)))].join('/');
                         let subjectDisplay = subjects;
                         if (hasGroup && groupClassNames.length > 0) {
                             subjectDisplay = `${groupClassNames.join('/')} ${subjects}`;
@@ -711,6 +703,7 @@
                     const firstLesson = dayLessons[0];
                     const isPE = firstLesson.subject === 'PE';
                     const isMaup = firstLesson.subject === 'MAUP';
+                    const currentSubj = getLessonSubject(firstLesson, useChinese);
 
                     if (isPE) {
                         const allPELessons = allLessons.filter(
@@ -719,12 +712,12 @@
                         const allClassesList = [...new Set(allPELessons.map(l => getEffectiveClass(l)))].sort().join('/');
                         const teachersList = [...new Set(allPELessons.map(l => l.teacher))].sort().join(',');
 
-                        lines.push(`${allClassesList} PE`);
+                        lines.push(`${allClassesList} ${currentSubj}`);
                         if (teachersList) lines.push(`(${teachersList})`);
                         if (firstLesson.room) lines.push(firstLesson.room);
 
                     } else if (isMaup) {
-                        lines.push(`${getEffectiveClass(firstLesson)} MAUP`);
+                        lines.push(`${getEffectiveClass(firstLesson)} ${currentSubj}`);
                         if (firstLesson.room) lines.push(firstLesson.room);
 
                     } else {
@@ -762,7 +755,7 @@
                             else weekTag = ` (${firstLesson.week})`;
                         }
 
-                        lines.push(`${classDisplay} ${firstLesson.subject}${weekTag}`);
+                        lines.push(`${classDisplay} ${currentSubj}${weekTag}`);
                         if (coTeachers) lines.push(`(${coTeachers})`);
                         if (firstLesson.room) lines.push(firstLesson.room);
                     }
@@ -771,48 +764,74 @@
                 return lines.join('\n');
             }
 
-            let currentR = 2;
+            // 建立 WorkSheet 的通用生成函式
+            function createSheet(useChinese = false) {
+                const ws = {};
+                const merges = [];
+                const rowHeights = [];
 
-            timeSlots.forEach(slot => {
-                const start12 = toChinese12Hr(slot.time);
-                const end12 = toChinese12Hr(slot.endTime);
-                const formattedTime = `${start12}\n-${end12}`;
+                ws["A1"] = { v: `時間表: ${titleName}${useChinese ? ' (中文)' : ''}`, s: titleStyle };
+                merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
+                rowHeights.push({ hpt: 28 });
 
-                const timeCellRef = XLSX.utils.encode_cell({ r: currentR, c: 0 });
-                ws[timeCellRef] = { v: formattedTime, s: timeColStyle };
+                const headers = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
+                headers.forEach((h, colIdx) => {
+                    const cellRef = XLSX.utils.encode_cell({ r: 1, c: colIdx });
+                    ws[cellRef] = { v: h, s: headerStyle };
+                });
+                rowHeights.push({ hpt: 24 });
 
-                if (slot.isBreak) {
-                    const label = getChineseBreakLabel(slot);
-                    const bRef = XLSX.utils.encode_cell({ r: currentR, c: 1 });
-                    ws[bRef] = { v: label, s: specialRowStyle };
+                let currentR = 2;
 
-                    for (let c = 2; c <= 5; c++) {
-                        const cellRef = XLSX.utils.encode_cell({ r: currentR, c: c });
-                        ws[cellRef] = { v: "", s: specialRowStyle };
+                timeSlots.forEach(slot => {
+                    const start12 = toChinese12Hr(slot.time);
+                    const end12 = toChinese12Hr(slot.endTime);
+                    const formattedTime = `${start12}\n-${end12}`;
+
+                    const timeCellRef = XLSX.utils.encode_cell({ r: currentR, c: 0 });
+                    ws[timeCellRef] = { v: formattedTime, s: timeColStyle };
+
+                    if (slot.isBreak) {
+                        const label = getChineseBreakLabel(slot);
+                        const bRef = XLSX.utils.encode_cell({ r: currentR, c: 1 });
+                        ws[bRef] = { v: label, s: specialRowStyle };
+
+                        for (let c = 2; c <= 5; c++) {
+                            const cellRef = XLSX.utils.encode_cell({ r: currentR, c: c });
+                            ws[cellRef] = { v: "", s: specialRowStyle };
+                        }
+                        merges.push({ s: { r: currentR, c: 1 }, e: { r: currentR, c: 5 } });
+                        rowHeights.push({ hpt: 22 });
+                    } else {
+                        for (let day = 1; day <= 5; day++) {
+                            const dayLessons = currentLessons.filter(
+                                lesson => lesson.day === day && lesson.period === parseInt(slot.period)
+                            );
+                            const cellText = formatLessonCellForExcel(dayLessons, day, slot.period, useChinese);
+                            const cellRef = XLSX.utils.encode_cell({ r: currentR, c: day });
+                            ws[cellRef] = { v: cellText, s: cellStyle };
+                        }
+                        rowHeights.push({ hpt: 45 });
                     }
-                    merges.push({ s: { r: currentR, c: 1 }, e: { r: currentR, c: 5 } });
-                    rowHeights.push({ hpt: 22 });
-                } else {
-                    for (let day = 1; day <= 5; day++) {
-                        const dayLessons = currentLessons.filter(
-                            lesson => lesson.day === day && lesson.period === parseInt(slot.period)
-                        );
-                        const cellText = formatLessonCellForExcel(dayLessons, day, slot.period);
-                        const cellRef = XLSX.utils.encode_cell({ r: currentR, c: day });
-                        ws[cellRef] = { v: cellText, s: cellStyle };
-                    }
-                    rowHeights.push({ hpt: 45 });
-                }
 
-                currentR++;
-            });
+                    currentR++;
+                });
 
-            ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: currentR - 1, c: 5 } });
-            ws['!merges'] = merges;
-            ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
-            ws['!rows'] = rowHeights;
+                ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: currentR - 1, c: 5 } });
+                ws['!merges'] = merges;
+                ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+                ws['!rows'] = rowHeights;
 
-            XLSX.utils.book_append_sheet(wb, ws, '時間表');
+                return ws;
+            }
+
+            // Sheet 1: 英文版
+            const ws1 = createSheet(false);
+            XLSX.utils.book_append_sheet(wb, ws1, '時間表');
+
+            // Sheet 2: 中文版 (科目取自第11欄)
+            const ws2 = createSheet(true);
+            XLSX.utils.book_append_sheet(wb, ws2, '時間表 (中文)');
 
             const cleanTitle = currentTitle.split(' (')[0];
             XLSX.writeFile(wb, `${cleanTitle}.xlsx`);
