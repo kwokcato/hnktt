@@ -692,6 +692,13 @@
                         lines.push('X2/X3');
                         if (rooms) lines.push(rooms);
                         if (teachers) lines.push(`(${teachers})`);
+                    } else if ((currentTitle.includes('班別') && /^[45][A-D]$/i.test(currentTitle.split(' ')[1])) || slotPeriod !== '10') {
+                        if (hasIct) { lines.push('X3');}
+                        else if (hasChem) {lines.push('X2');}
+                        else if (hasPHY) {lines.push('X1');}
+                        if (rooms) lines.push(rooms);
+                        if (teachers) lines.push(`(${teachers})`);
+                    
                     } else if (isForm4or5 || slotPeriod !== '10') {
                         const subjects = [...new Set(dayLessons.map(l => getLessonSubject(l, useChinese)))].join('/');
                         let subjectDisplay = subjects;
@@ -1053,6 +1060,32 @@
                                         <span style="font-size:8px; word-wrap: break-word">(${teachers})</span>
                                     </div>
                                 </td>`;
+
+                                } else if (hasIct && ((currentTitle.includes('班別') && /^[45][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {                                
+                                tableHTML += `<td>
+                                    <div class="main-lesson">
+                                        <span style="color:blue;font-size:12px">X3<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="word-wrap:break-word;font-size:7px;">(${teachers})</span>
+                                    </div>
+                                </td>`;   
+                                } else if (hasChem && ((currentTitle.includes('班別') && /^[45][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {                                
+                                tableHTML += `<td>
+                                    <div class="main-lesson">
+                                        <span style="color:blue;font-size:12px">X2<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="word-wrap:break-word;font-size:7px;">(${teachers})</span>
+                                    </div>
+                                </td>`;   
+                                } else if (hasPHY && ((currentTitle.includes('班別') && /^[45][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {                                
+                                tableHTML += `<td>
+                                    <div class="main-lesson">
+                                        <span style="color:blue;font-size:12px">X1<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="word-wrap:break-word;font-size:7px;">(${teachers})</span>
+                                    </div>
+                                </td>`;                               
+          /*                      
                             } else if ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') {                                
                                 const subjects = [...new Set(dayLessons.map(l => getLessonSubject(l, useChinese)))].join('/');
                                 let subjectDisplay = subjects;
@@ -1065,7 +1098,7 @@
                                         <span style="color:#555;font-size:7px">${rooms}<br></span>
                                         <span style="font-size:7px">(${teachers})</span>
                                     </div>
-                                </td>`;
+                                </td>`;   */
                             } else if ((currentTitle.includes('班別') && /^[6][A-Z]$/i.test(currentTitle.split(' ')[1])) && slot.period === '10') {
                                     // 中六第十節補課格 (包含教師與課室顯示)
                                     const oddLessons = dayLessons.filter(l => isOddLesson(l));
@@ -1471,7 +1504,32 @@
                                         <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                     </div>
                                 </td>`;
-                            } else if ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') {                                
+                                } else if (hasIct && ((currentTitle.includes('班別') && /^[45][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {                                
+                                tableHTML += `<td>
+                                    <div class="main-lesson">
+                                        <span style="color:blue;font-size:12px">X3<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="word-wrap:break-word;font-size:7px;">(${teachers})</span>
+                                    </div>
+                                </td>`;   
+                                } else if (hasChem && ((currentTitle.includes('班別') && /^[45][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {                                
+                                tableHTML += `<td>
+                                    <div class="main-lesson">
+                                        <span style="color:blue;font-size:12px">X2<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="word-wrap:break-word;font-size:7px;">(${teachers})</span>
+                                    </div>
+                                </td>`;   
+                                } else if (hasPHY && ((currentTitle.includes('班別') && /^[45][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') ) {                                
+                                tableHTML += `<td>
+                                    <div class="main-lesson">
+                                        <span style="color:blue;font-size:12px">X1<br></span>
+                                        <span style="color:#555;font-size:7px">${rooms}<br></span>
+                                        <span style="word-wrap:break-word;font-size:7px;">(${teachers})</span>
+                                    </div>
+                                </td>`; 
+                                
+ /*                           } else if ((currentTitle.includes('班別') && /^[4][A-D]$/i.test(currentTitle.split(' ')[1])) || (currentTitle.includes('班別') && /^[5][A-D]$/i.test(currentTitle.split(' ')[1])) || slot.period != '10') {                                
                                 const subjects = [...new Set(dayLessons.map(l => getLessonSubject(l, useChinese)))].join('/');
                                 let subjectDisplay = subjects;
                                 if (hasGroup && groupClassNames.length > 0) {
@@ -1483,7 +1541,7 @@
                                         <span class="room" style="color:#555;font-size:10px;">${rooms}<br></span>
                                         <span class="teacher" style="font-size:10px;">(${teachers})</span>
                                     </div>
-                                </td>`;
+                                </td>`;  */
                             } else if (hasMaup) {
                                 tableHTML += `<td>
                                     <div class="main-lesson">
