@@ -9,7 +9,6 @@
         .container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         h2 { color: #2c3e50; border-bottom: 2px solid #e67e22; padding-bottom: 8px; margin-top: 0; }
         
-        /* 溫馨提示區塊 */
         .system-notice {
             background-color: #fffbe6;
             border: 1px solid #ffe58f;
@@ -47,31 +46,117 @@
         .info-box { padding: 15px; background: #fff3cd; color: #856404; border-radius: 4px; border: 1px solid #ffeeba; margin-top: 10px; }
         .co-teacher-alert { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
         #loading { color: #7f8c8d; font-style: italic; margin-bottom: 15px; }
+
+        .teacher-link {
+            color: #1d4ed8;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .teacher-link:hover {
+            color: #1e40af;
+        }
+
+        /* 教師時間表樣式 */
+        .timetable-section {
+            margin-top: 25px;
+            padding: 15px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .timetable-section h4 {
+            margin-top: 0;
+            color: #1e293b;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 6px;
+        }
+        .timetable-grid {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: center;
+        }
+        .timetable-grid th, .timetable-grid td {
+            border: 1px solid #cbd5e1;
+            padding: 6px;
+            height: 48px;
+            vertical-align: middle;
+        }
+        .timetable-grid th {
+            background-color: #f1f5f9;
+            color: #334155;
+        }
+        /* 第 3、5、8 節前方（頂部）加上雙橫線 */
+        .double-line-top td {
+            border-top: 3px double #334155 !important;
+        }
+        .timetable-cell-has-class {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-weight: bold;
+            line-height: 1.3;
+        }
+        .timetable-cell-empty {
+            color: #94a3b8;
+            background-color: #fafafa;
+        }
+
+        /* 要求調堂的節（申請人原定節數）：紅色外框與淺紅底色 */
+        .timetable-cell-red-highlight {
+            border: 2.5px solid #ef4444 !important;
+            background-color: #fef2f2 !important;
+            color: #991b1b !important;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 被換到的節（對方原定節數）：橙色外框與淺橙底色 */
+        .timetable-cell-orange-highlight {
+            border: 2.5px solid #f97316 !important;
+            background-color: #fff7ed !important;
+            color: #c2410c !important;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 圖例說明樣式 */
+        .timetable-legend {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-box-red {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #ef4444;
+            background-color: #fef2f2;
+        }
+        .legend-box-orange {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #f97316;
+            background-color: #fff7ed;
+        }
     </style>
 </head>
 <body>
     <script>
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-        });
-    </script>
-    <script>
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
         document.addEventListener('keydown', (e) => {
-            // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
-            if (
-                e.key === 'F12' ||
-                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
-                (e.ctrlKey && e.key === 'u') ||
-                (e.ctrlKey && e.shiftKey && e.key === 'J')
-            ) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'u') || (e.ctrlKey && e.shiftKey && e.key === 'J')) {
                 e.preventDefault();
             }
         });
     </script>
 <div class="container">
-    <!-- <h2>🔄 同班別「調堂/對換」自動配對系統</h2> -->
-    
-    <!-- 📌 新增的溫馨提示標語 -->
     <div class="system-notice">
         📌 <strong>溫馨提示：</strong>本系統配對結果僅供參考，最終調堂方案必須與相關受影響教師溝通並達成共識後，始可提出申請。
     </div>
@@ -117,6 +202,7 @@
     </div>
 
     <div id="swapResults"></div>
+    <div id="teacherTimetableContainer"></div>
 </div>
 
 <script>
@@ -125,7 +211,6 @@ let allTeachers = [];
 let allClasses = [];
 const dayNames = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
 
-// 🚫 不可調堂黑名單（已移除 GEOG 及 HIST，改由動態邏輯判斷年級）
 const prohibitedSubjects = [
     "READ", "PLM", "ARD", "PE", "PRM",
     "BIO", "PHY", "CHEM", "BM", "ACC", "HMSC", "THS", "THS3", 
@@ -133,10 +218,9 @@ const prohibitedSubjects = [
     "CHIS", "ECON", "ASOS", "MAM2"
 ];
 
-// 高中（中四至中六）不可調堂的選修科目
+const strictSingleTeacherSubjects = ["ENG", "MATH", "ENGLISH", "MATHEMATICS"];
 const seniorElectiveSubjects = ["GEOG", "HIST"];
 
-// Google Sheet 載入與解析
 function loadGoogleSheetData() {
     const sheetId = '10TdramDTMZLQxl-jShrZeYJLCTtq0iu98PVPb-sZXyU';
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&t=${Date.now()}`;
@@ -186,7 +270,6 @@ window.handleGoogleSheetResponse = function(jsonData) {
     allTeachers = Array.from(teacherMap.entries()).sort((a,b) => a[0].localeCompare(b[0]));
     allClasses = [...new Set(allLessons.map(l => l.class).filter(c => c))].sort();
 
-    // 🎯 選項完全重置，不設定預設選擇
     const teacherSelect = document.getElementById('myTeacherSelect');
     teacherSelect.innerHTML = '<option value="">-- 請選擇教師 --</option>';
     allTeachers.forEach(([code, name]) => {
@@ -202,7 +285,6 @@ window.handleGoogleSheetResponse = function(jsonData) {
     document.getElementById('loading').style.display = 'none';
 };
 
-// 驗證節數組合是否屬於合法的四大區塊
 function isValidPeriodBlock(periods) {
     if (!periods || periods.length === 0) return false;
 
@@ -214,7 +296,6 @@ function isValidPeriodBlock(periods) {
     ];
 
     const sorted = [...periods].sort((a, b) => a - b);
-    
     return validBlocks.some(block => {
         if (block.length !== sorted.length) return false;
         return block.every((val, index) => val === sorted[index]);
@@ -242,60 +323,179 @@ function getTeacherDailyWorkload(teacher, day) {
     return uniquePeriods.size;
 }
 
-// 檢查課堂是否有禁止調堂科目
 function checkLessonRestrictions(targetClass, day, periods) {
     const periodLessons = allLessons.filter(l => l.day === day && periods.includes(l.period) && (l.class.includes(targetClass) || targetClass.includes(l.class)));
-    
-    // 判斷班別是否屬於高中（S4, S5, S6 或 4, 5, 6 開頭）
     const isSeniorLevel = /^(S[456]|[456])/.test(targetClass.toUpperCase());
 
-    for (let l of periodLessons) {
-        // 1. 通用禁止調堂科目檢查
-        if (prohibitedSubjects.some(subj => l.subject.includes(subj))) {
-            return { invalid: true, reason: `選修科目或多班分組科目不適宜作出調堂處理。` };
-        }
+    for (let p of periods) {
+        const pLessons = periodLessons.filter(l => l.period === p);
         
-        // 2. 高中 GEOG / HIST 專屬限制檢查
-        if (isSeniorLevel) {
-            if (seniorElectiveSubjects.some(subj => l.subject.includes(subj))) {
+        for (let l of pLessons) {
+            if (prohibitedSubjects.some(subj => l.subject.includes(subj))) {
+                return { invalid: true, reason: `選修科目或特定分組科目不適宜作出調堂處理。` };
+            }
+            if (isSeniorLevel && seniorElectiveSubjects.some(subj => l.subject.includes(subj))) {
                 return { invalid: true, reason: `高中選修科目不可調堂。` };
             }
         }
+
+        const engMathLessons = pLessons.filter(l => strictSingleTeacherSubjects.some(subj => l.subject.includes(subj)));
+        if (engMathLessons.length > 0) {
+            const teachersCount = new Set(engMathLessons.map(l => l.teacher)).size;
+            if (teachersCount > 1) {
+                return { invalid: true, reason: `英文科及數學科若屬多於一人任教（分組/協同），不可調堂及不可被調。` };
+            }
+        }
     }
+
     return { invalid: false };
 }
 
-// 連堂完整性檢查
 function isSplittingConsecutiveLesson(targetClass, day, candidatePeriods) {
     const dayClassLessons = allLessons.filter(l => l.class === targetClass && l.day === day);
 
     for (let p of candidatePeriods) {
         const currentLessons = dayClassLessons.filter(l => l.period === p);
-        
         for (let l of currentLessons) {
             if (p > 1 && !candidatePeriods.includes(p - 1)) {
                 const prevLesson = dayClassLessons.find(prev => prev.period === p - 1 && prev.teacher === l.teacher && prev.subject === l.subject);
                 if (prevLesson) return true;
             }
-
             if (p < 10 && !candidatePeriods.includes(p + 1)) {
                 const nextLesson = dayClassLessons.find(next => next.period === p + 1 && next.teacher === l.teacher && next.subject === l.subject);
                 if (nextLesson) return true;
             }
         }
     }
-
     return false;
 }
 
-// 核心配對邏輯
+function formatClassNames(classList) {
+    const uniqueClasses = [...new Set(classList)].sort();
+    if (uniqueClasses.length === 0) return '';
+    if (uniqueClasses.length === 1) return uniqueClasses[0];
+
+    const groups = {};
+    uniqueClasses.forEach(c => {
+        const match = c.match(/^([S\d]+)([A-Z]+)$/i);
+        if (match) {
+            const grade = match[1];
+            const letter = match[2];
+            if (!groups[grade]) groups[grade] = [];
+            groups[grade].push(letter);
+        } else {
+            if (!groups[c]) groups[c] = [];
+        }
+    });
+
+    const result = [];
+    for (const [grade, letters] of Object.entries(groups)) {
+        if (letters.length > 0) {
+            result.push(`${grade}${letters.join('')}`);
+        } else {
+            result.push(grade);
+        }
+    }
+    return result.join(' / ');
+}
+
+/**
+ * 顯示教師時間表
+ * @param {string} teacherCode 教師代碼
+ * @param {number|null} reqDay 要求調堂的星期（紅色）
+ * @param {Array<number>} reqPeriods 要求調堂的節數（紅色）
+ * @param {number|null} targetDay 被換到的星期（橙色）
+ * @param {Array<number>} targetPeriods 被換到的節數（橙色）
+ */
+function showTeacherTimetable(teacherCode, reqDay = null, reqPeriods = [], targetDay = null, targetPeriods = []) {
+    const container = document.getElementById('teacherTimetableContainer');
+    const teacherLessons = allLessons.filter(l => l.teacher === teacherCode);
+    const teacherDisplayName = teacherLessons[0]?.teacherDisplayName || teacherCode;
+
+    let tableHtml = `
+        <div class="timetable-section">
+            <h4>📅 教師課表：${teacherDisplayName}</h4>
+            <div class="timetable-legend">
+                <div class="legend-item"><div class="legend-box-red"></div><span>要求調堂的節（申請人原定節數）</span></div>
+                <div class="legend-item"><div class="legend-box-orange"></div><span>被換到的節（對方原定節數）</span></div>
+            </div>
+            <table class="timetable-grid">
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">節數</th>
+                        <th style="width: 18.4%;">星期一</th>
+                        <th style="width: 18.4%;">星期二</th>
+                        <th style="width: 18.4%;">星期三</th>
+                        <th style="width: 18.4%;">星期四</th>
+                        <th style="width: 18.4%;">星期五</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    for (let p = 1; p <= 10; p++) {
+        const rowClass = [3, 5, 8].includes(p) ? 'class="double-line-top"' : '';
+        tableHtml += `<tr ${rowClass}><td><strong>第 ${p} 節</strong></td>`;
+        for (let d = 1; d <= 5; d++) {
+            const lessons = teacherLessons.filter(l => l.day === d && l.period === p);
+            
+            // 判斷是否高亮
+            const isRedHighlight = (reqDay === d && reqPeriods.includes(p));
+            const isOrangeHighlight = (targetDay === d && targetPeriods.includes(p));
+
+            let highlightClass = '';
+            let cellNote = '';
+
+            if (isRedHighlight) {
+                highlightClass = ' timetable-cell-red-highlight';
+                cellNote = ' (要求調堂節)';
+            } else if (isOrangeHighlight) {
+                highlightClass = ' timetable-cell-orange-highlight';
+                cellNote = ' (被換到的節)';
+            }
+
+            if (lessons.length > 0) {
+                const groupMap = new Map();
+                lessons.forEach(l => {
+                    const key = `${l.subject}___${l.room}`;
+                    if (!groupMap.has(key)) {
+                        groupMap.set(key, { classes: [], subject: l.subject, room: l.room });
+                    }
+                    groupMap.get(key).classes.push(l.class);
+                });
+
+                const contentArr = [];
+                groupMap.forEach(group => {
+                    const formattedClasses = formatClassNames(group.classes);
+                    let block = `<div>${formattedClasses}<br>${group.subject}`;
+                    if (group.room) {
+                        block += `<br>${group.room}`;
+                    }
+                    block += `</div>`;
+                    contentArr.push(block);
+                });
+
+                tableHtml += `<td class="timetable-cell-has-class${highlightClass}">${contentArr.join('<hr style="border:0;border-top:1px dashed #93c5fd;margin:4px 0;">')}</td>`;
+            } else {
+                tableHtml += `<td class="timetable-cell-empty${highlightClass}">${isRedHighlight || isOrangeHighlight ? cellNote.replace(' (', '').replace(')', '') : '空堂'}</td>`;
+            }
+        }
+        tableHtml += `</tr>`;
+    }
+
+    tableHtml += `</tbody></table></div>`;
+    container.innerHTML = tableHtml;
+    container.scrollIntoView({ behavior: 'smooth' });
+}
+
 document.getElementById('searchSwapBtn').addEventListener('click', function() {
     const myTeacher = document.getElementById('myTeacherSelect').value;
     const targetClass = document.getElementById('targetClassSelect').value;
     const myDayVal = document.getElementById('myDaySelect').value;
     const myPeriods = Array.from(document.querySelectorAll('.my-p-chk:checked')).map(c => parseInt(c.value));
 
-    // 🎯 提示未填寫完整欄位
+    document.getElementById('teacherTimetableContainer').innerHTML = '';
+
     if (!myTeacher) { alert("請先選擇「你的姓名」！"); return; }
     if (!targetClass) { alert("請選擇「目標班別」！"); return; }
     if (!myDayVal) { alert("請選擇「原定課堂星期」！"); return; }
@@ -309,7 +509,6 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
         return;
     }
 
-    // 驗證 1：申請人課堂
     const myActualLessons = allLessons.filter(l => 
         l.teacher === myTeacher && 
         l.day === myDay && 
@@ -321,7 +520,6 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
         return;
     }
 
-    // 驗證 2：班別
     const hasClassMatch = myActualLessons.some(l => l.class.includes(targetClass) || targetClass.includes(l.class));
     if (!hasClassMatch) {
         const actualClasses = [...new Set(myActualLessons.map(l => l.class))].join(', ');
@@ -329,7 +527,6 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
         return;
     }
 
-    // 驗證 3：課程限制
     const myCheck = checkLessonRestrictions(targetClass, myDay, myPeriods);
     if (myCheck.invalid) {
         resultsDiv.innerHTML = `<div class="warning-box">🚫 <strong>無法調堂：</strong>您於 ${dayNames[myDay]} 第 ${myPeriods.join(', ')} 節的課堂<sup>${myCheck.reason}</sup></div>`;
@@ -338,7 +535,6 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
 
     resultsDiv.innerHTML = '正在進行連堂保護驗證與交叉配對...';
 
-    // 搜尋申請人的協同教師
     const coTeacherLessons = allLessons.filter(l => 
         l.day === myDay && 
         myPeriods.includes(l.period) && 
@@ -356,7 +552,6 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
     const myLessonRoom = myActualLessons[0]?.room || '';
     const matchCandidates = [];
 
-    // 遍歷五天尋找目標時段
     for (let d = 1; d <= 5; d++) {
         const dayClassLessons = allLessons.filter(l => l.class === targetClass && l.day === d && l.teacher !== myTeacher);
         
@@ -382,11 +577,7 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
             }
 
             if (isConsecutive && candidatePeriods.length === myPeriods.length) {
-                
-                if (isSplittingConsecutiveLesson(targetClass, d, candidatePeriods)) {
-                    continue; 
-                }
-
+                if (isSplittingConsecutiveLesson(targetClass, d, candidatePeriods)) continue; 
                 if (checkLessonRestrictions(targetClass, d, candidatePeriods).invalid) continue;
 
                 const targetLessons = dayClassLessons.filter(l => candidatePeriods.includes(l.period));
@@ -412,9 +603,8 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
                 const areTargetRoomsFreeAtMyDay = targetRoomsInfo.every(t => isRoomFree(t.room, myDay, myPeriods));
 
                 if (areTargetTeachersFreeAtMyDay && isMyTeacherFreeAtTarget && areCoTeachersFreeAtTarget && isMyRoomFreeAtTarget && areCoRoomsFreeAtTarget && areTargetRoomsFreeAtMyDay) {
-                    
                     const targetWorkloads = targetTeachers.map(t => {
-                        return { displayName: targetLessons.find(l => l.teacher === t)?.teacherDisplayName || t, workload: getTeacherDailyWorkload(t, myDay) };
+                        return { teacher: t, displayName: targetLessons.find(l => l.teacher === t)?.teacherDisplayName || t, workload: getTeacherDailyWorkload(t, myDay) };
                     });
 
                     matchCandidates.push({
@@ -431,14 +621,16 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
     }
 
     if (matchCandidates.length === 0) {
-        resultsDiv.innerHTML = `<div class="info-box">⚠️ 找不到符合條件（符合獨立堂/完整連堂/非禁止科目/特別室空閒）的調堂對象。</div>`;
+        resultsDiv.innerHTML = `<div class="info-box">⚠️ 找不到符合條件（符合獨立堂/完整連堂/非禁止科目/英文數學多師限制/特別室空閒）的調堂對象。</div>`;
         return;
     }
 
     let html = '';
 
+    const reqPeriodsJson = JSON.stringify(myPeriods);
+
     if (coTeachersInfo.length > 0) {
-        const coNames = coTeachersInfo.map(c => `<strong>${c.displayName}</strong> (${c.room || '無特別室'})`).join('、');
+        const coNames = coTeachersInfo.map(c => `<span class="teacher-link" onclick='showTeacherTimetable("${c.teacher}", ${myDay}, ${reqPeriodsJson})'>${c.displayName}</span> (${c.room || '無特別室'})`).join('、');
         const coListOnlyNames = coTeachersInfo.map(c => c.displayName).join('、');
         
         html += `
@@ -451,7 +643,7 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
     }
 
     html += `
-        <h3>🎯 為您找到 ${matchCandidates.length} 個可對換「合法對換方案」：</h3>
+        <h3>🎯 為您找到 ${matchCandidates.length} 個可對換「合法對換方案」（點擊姓名可查閱課表）：</h3>
         <table class="results-table">
             <thead>
                 <tr>
@@ -469,7 +661,9 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
     matchCandidates.forEach(cand => {
         const myRoomText = cand.myRoom ? ` (於 ${cand.myRoom})` : '';
         
-        const teamNames = cand.targetTeam.map(t => `<strong>${t.displayName}</strong>`).join(' + ');
+        const targetPeriodsJson = JSON.stringify(cand.targetPeriods);
+        // 點擊對換教師：同時帶入 要求調堂時段 (myDay, myPeriods -> 紅色) 與 被換到時段 (targetDay, targetPeriods -> 橙色)
+        const teamNames = cand.targetTeam.map(t => `<span class="teacher-link" onclick='showTeacherTimetable("${t.teacher}", ${myDay}, ${reqPeriodsJson}, ${cand.targetDay}, ${targetPeriodsJson})'>${t.displayName}</span>`).join(' + ');
         const teamSubjectDesc = cand.targetTeam.map(t => `<span class="badge-subject">${t.displayName}: ${t.subject}</span>`).join('<br>');
         const teamRoomsDesc = cand.targetTeam.map(t => `${t.displayName} 於 ${t.room || '班房'}`).join('、');
 
@@ -480,7 +674,7 @@ document.getElementById('searchSwapBtn').addEventListener('click', function() {
 
         let coTeacherStatus = '<span style="color:#94a3b8;">無協同教師</span>';
         if (cand.coTeachers && cand.coTeachers.length > 0) {
-            coTeacherStatus = cand.coTeachers.map(c => `<span class="badge-ok">✅ ${c.displayName} 可調堂</span>`).join('<br>');
+            coTeacherStatus = cand.coTeachers.map(c => `<span class="badge-ok">✅ <span class="teacher-link" onclick='showTeacherTimetable("${c.teacher}", ${myDay}, ${reqPeriodsJson})'>${c.displayName}</span> 可調堂</span>`).join('<br>');
         }
 
         const targetRoomsStatus = cand.targetTeam.map(t => {
