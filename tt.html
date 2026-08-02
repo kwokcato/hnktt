@@ -697,6 +697,12 @@
                         if (hasIct) { lines.push('X3');}
                         else if (hasChem) {lines.push('X2');}
                         else if (hasPHY) {lines.push('X1');}
+                        else {
+                            const subjects = [...new Set(dayLessons.map(l => getLessonSubject(l, useChinese)))].join('/');
+                            let subjectDisplay = subjects;
+                            if (hasGroup && groupClassNames.length > 0) {
+                            subjectDisplay = `${groupClassNames.join('/')} ${subjects}`;
+                        }
                         if (rooms) lines.push(rooms);
                         if (teachers) lines.push(`(${teachers})`);
                     /*
