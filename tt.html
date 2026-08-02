@@ -31,7 +31,7 @@
     // Google 登入驗證機制
     // ==========================================
     const id_token = window.sessionStorage.getItem('google_id_token');
-    let is_authenticated = true;
+    let is_authenticated = false;
 
     if (id_token) {
         const payload = decodeJwtResponse(id_token);
