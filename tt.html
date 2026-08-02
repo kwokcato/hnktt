@@ -384,7 +384,7 @@
             subjectMap.forEach((infoList, subj) => {
                 const uniqueInfo = [...new Set(infoList)];
                 if (uniqueInfo.length > 0) {
-                    const infoStr = uniqueInfo.join(' / ');
+                    const infoStr = uniqueInfo.join(' /<BR>');
                     if (isHtml) {
                         resultParts.push(`${subj} <span style="font-size: 9px; font-weight: normal; color: #555;">(${infoStr})</span>`);
                     } else {
