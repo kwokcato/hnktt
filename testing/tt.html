@@ -683,6 +683,7 @@
                     const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                     const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                     const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
+                    const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
                     const hasGroup = dayLessons.some(l => l.group && l.group.trim() !== '');
                     const groupClassNames = [...new Set(dayLessons.map(l => getEffectiveClass(l)).filter(c => c))];
 
@@ -692,13 +693,13 @@
                         lines.push('X2/X3');
                         if (rooms) lines.push(rooms);
                         if (teachers) lines.push(`(${teachers})`);
-                    } else if ((currentTitle.includes('班別') && /^[45][A-D]$/i.test(currentTitle.split(' ')[1])) || slotPeriod !== '10') {
+                    } else if (isForm4or5 || slotPeriod !== '10') {
                         if (hasIct) { lines.push('X3');}
                         else if (hasChem) {lines.push('X2');}
                         else if (hasPHY) {lines.push('X1');}
                         if (rooms) lines.push(rooms);
                         if (teachers) lines.push(`(${teachers})`);
-                    
+                    /*
                     } else if (isForm4or5 || slotPeriod !== '10') {
                         const subjects = [...new Set(dayLessons.map(l => getLessonSubject(l, useChinese)))].join('/');
                         let subjectDisplay = subjects;
@@ -707,7 +708,7 @@
                         }
                         lines.push(subjectDisplay);
                         if (rooms) lines.push(rooms);
-                        if (teachers) lines.push(`(${teachers})`);
+                        if (teachers) lines.push(`(${teachers})`); */
                     } else if (hasMaup) {
                         lines.push(useChinese ? '班主任課' : 'MAUP');
                         if (teachers) lines.push(`(${teachers})`);
@@ -1048,7 +1049,7 @@
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
-
+                            const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
                             const hasGroup = dayLessons.some(l => l.group && l.group.trim() !== '');
                             const groupClassNames = [...new Set(dayLessons.map(l => getEffectiveClass(l)).filter(c => c))];
 
@@ -1490,7 +1491,7 @@
                             const hasMaup = dayLessons.some(l => l.subject === 'MAUP');
                             const hasChem = dayLessons.some(l => l.subject.includes('CHEM'));
                             const hasIct = dayLessons.some(l => l.subject.includes('ICT'));
-                            
+                            const hasPHY = dayLessons.some(l => l.subject.includes('PHY'));
                             const rooms = [...new Set(dayLessons.filter(l => l.room).map(l => l.room))].join(',');
 
                             const hasGroup = dayLessons.some(l => l.group && l.group.trim() !== '');
