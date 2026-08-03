@@ -2,152 +2,345 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教師調堂/代堂自動配對系統</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>教師空堂查詢及列表系統</title>
+    
+    <script>
+    // *** 請在這裡設定貴校的 Google Workspace 網域名稱 ***
+    const SCHOOL_DOMAIN = "bhnkc.edu.hk"; 
+
+    function decodeJwtResponse(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    const id_token = window.sessionStorage.getItem('google_id_token');
+    let is_authenticated = true;
+
+    if (id_token) {
+        const payload = decodeJwtResponse(id_token);
+        if (payload && payload.hd === SCHOOL_DOMAIN && payload.exp && (payload.exp * 1000) > Date.now()) {
+            is_authenticated = true;
+        }
+    }
+
+    if (!is_authenticated) {
+        window.top.location.href = 'index.html';
+    }
+    </script>
+
     <style>
-        body { font-family: Arial, sans-serif; width: 95%; margin: 0 auto; padding: 15px; background: #fafafa; }
-        .container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        h2 { color: #2c3e50; border-bottom: 2px solid #e67e22; padding-bottom: 8px; margin-top: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            width: 90%;
+            margin: 0 auto;
+            padding: 15px;
+            background-color: #fafafa;
+        }
         
-        .system-notice {
-            background-color: #fffbe6;
-            border: 1px solid #ffe58f;
-            color: #d46b08;
-            padding: 10px 15px;
-            border-radius: 6px;
-            font-size: 14px;
+        .refresh-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(200, 200, 200, 0.3);
+            border: 1px solid rgba(150, 150, 150, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .refresh-btn:hover {
+            background-color: rgba(200, 200, 200, 0.7);
+            transform: scale(1.1);
+        }
+        .refresh-icon {
+            width: 16px;
+            height: 16px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23333333"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>');
+            background-size: contain;
+            opacity: 0.7;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
             margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .tab-btn {
+            padding: 8px 16px;
+            border: 1px solid #cbd5e1;
+            background: #f1f5f9;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #64748b;
+        }
+        .tab-btn.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #eef0f2;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-weight: bold;
+            color: #34495e;
+            font-size: 14px;
+        }
+
+        select {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            background-color: white;
+            font-size: 14px;
+        }
+
+        .search-input-group {
             display: flex;
             align-items: center;
             gap: 8px;
         }
+        .search-input-group input {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+        }
+        .long-input {
+            width: 320px; 
+            max-width: 100%;
+        }
+        .normal-input {
+            width: 200px;
+        }
 
-        .filter-section { background: #fdf8f6; padding: 15px; border-radius: 6px; border: 1px solid #fbe5d6; margin-bottom: 20px; }
-        .filter-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 12px; }
-        label { font-weight: bold; color: #34495e; font-size: 14px; }
-        select, input { padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 14px; }
-        
-        .checkbox-group { display: flex; gap: 8px; flex-wrap: wrap; background: #fff; padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e1; }
-        .btn-swap { background-color: #e67e22; color: white; border: none; padding: 8px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        .btn-swap:hover { background-color: #d35400; }
-        
-        .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        .results-table th, .results-table td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
-        .results-table th { background-color: #e67e22; color: white; }
-        .highlight { background-color: #fef3c7; font-weight: bold; padding: 2px 6px; border-radius: 4px; color: #b45309; }
-        .badge-room { background: #0284c7; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: inline-block; }
-        .badge-ok { background: #16a34a; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: inline-block; }
-        .badge-workload { background: #64748b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: inline-block; margin-bottom: 3px; }
-        .badge-heavy { background: #e11d48; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: inline-block; margin-bottom: 3px; }
-        .badge-group { background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: inline-block; }
-        .badge-subject { background: #d97706; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: inline-block; margin-right: 4px; }
-        
-        .warning-box { padding: 15px; background: #f8d7da; color: #721c24; border-radius: 4px; border: 1px solid #f5c6cb; margin-top: 10px; }
-        .info-box { padding: 15px; background: #fff3cd; color: #856404; border-radius: 4px; border: 1px solid #ffeeba; margin-top: 10px; }
-        .co-teacher-alert { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
-        #loading { color: #7f8c8d; font-style: italic; margin-bottom: 15px; }
-
-        .teacher-link {
-            color: #1d4ed8;
-            font-weight: bold;
+        .clear-btn {
+            background: #e2e8f0;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
             cursor: pointer;
-            text-decoration: underline;
+            font-size: 13px;
+            color: #475569;
         }
-        .teacher-link:hover {
-            color: #1e40af;
+        .clear-btn:hover {
+            background: #cbd5e1;
         }
 
-        /* 教師時間表樣式 */
-        .timetable-section {
-            margin-top: 25px;
-            padding: 15px;
-            background: #ffffff;
+        .shortcut-btn {
+            background: #f1f5f9;
             border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        .timetable-section h4 {
-            margin-top: 0;
-            color: #1e293b;
-            border-bottom: 2px solid #3b82f6;
-            padding-bottom: 6px;
-        }
-        .timetable-grid {
-            width: 100%;
-            border-collapse: collapse;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
             font-size: 12px;
-            text-align: center;
-        }
-        .timetable-grid th, .timetable-grid td {
-            border: 1px solid #cbd5e1;
-            padding: 6px;
-            height: 48px;
-            vertical-align: middle;
-        }
-        .timetable-grid th {
-            background-color: #f1f5f9;
             color: #334155;
+            font-weight: 500;
         }
-        /* 第 3、5、8 節前方（頂部）加上雙橫線 */
-        .double-line-top td {
-            border-top: 3px double #334155 !important;
-        }
-        .timetable-cell-has-class {
-            background-color: #e0f2fe;
-            color: #0369a1;
-            font-weight: bold;
-            line-height: 1.3;
-        }
-        .timetable-cell-empty {
-            color: #94a3b8;
-            background-color: #fafafa;
+        .shortcut-btn:hover {
+            background: #e2e8f0;
         }
 
-        /* 要求調堂的節（申請人原定節數）：紅色外框與淺紅底色 */
-        .timetable-cell-red-highlight {
-            border: 2.5px solid #ef4444 !important;
-            background-color: #fef2f2 !important;
-            color: #991b1b !important;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* 被換到的節（對方原定節數）：橙色外框與淺橙底色 */
-        .timetable-cell-orange-highlight {
-            border: 2.5px solid #f97316 !important;
-            background-color: #fff7ed !important;
-            color: #c2410c !important;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* 圖例說明樣式 */
-        .timetable-legend {
+        .checkbox-container {
             display: flex;
-            gap: 15px;
-            font-size: 12px;
-            margin-bottom: 10px;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
         }
-        .legend-item {
+
+        .checkbox-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
+            font-size: 14px;
+            cursor: pointer;
         }
-        .legend-box-red {
-            width: 14px;
-            height: 14px;
-            border: 2px solid #ef4444;
-            background-color: #fef2f2;
+
+        .f6-ended-box {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #ea580c;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
         }
-        .legend-box-orange {
-            width: 14px;
-            height: 14px;
-            border: 2px solid #f97316;
-            background-color: #fff7ed;
+        .f6-ended-box input {
+            cursor: pointer;
+            width: 15px;
+            height: 15px;
+            accent-color: #ea580c;
+        }
+
+        .grade-select-box {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .action-btn:hover {
+            background-color: #2980b9;
+        }
+        .action-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .search-results {
+            margin-top: 15px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .results-table th, .results-table td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        .results-table th {
+            background-color: #3498db;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        .sortable-th {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .sortable-th:hover {
+            background-color: #2980b9;
+        }
+
+        .results-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        .free-block {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .f6-free-block {
+            color: #ea580c;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .busy-block {
+            color: #e74c3c;
+            font-size: 12px;
+            opacity: 0.4;
+        }
+        .status-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .f6-mini-tag {
+            color: #ea580c;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        #loading {
+            color: #7f8c8d;
+            font-style: italic;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
+
     <script>
         document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
         document.addEventListener('keydown', (e) => {
@@ -156,557 +349,718 @@
             }
         });
     </script>
-<div class="container">
-    <div class="system-notice">
-        📌 <strong>溫馨提示：</strong>本系統配對結果僅供參考，最終調堂方案必須與相關受影響教師溝通並達成共識後，始可提出申請。
+
+    <div class="refresh-btn" title="重整頁面">
+        <div class="refresh-icon"></div>
     </div>
-
-    <div id="loading">正在連線至雲端資料庫讀取課表...</div>
-
-    <div class="filter-section">
-        <div class="filter-row">
-            <label for="myTeacherSelect">1. 你的簡稱：</label>
-            <select id="myTeacherSelect"><option value="">-- 請選擇教師 --</option></select>
-
-            <label for="targetClassSelect">2. 調堂班別：</label>
-            <select id="targetClassSelect"><option value="">-- 請選擇班別 --</option></select>
-        </div>
-
-        <div class="filter-row">
-            <label for="myDaySelect">3. 原定課堂星期：</label>
-            <select id="myDaySelect">
-                <option value="" selected>-- 請選擇星期 --</option>
-                <option value="1">星期一</option>
-                <option value="2">星期二</option>
-                <option value="3">星期三</option>
-                <option value="4">星期四</option>
-                <option value="5">星期五</option>
-            </select>
-
-            <label>4. 調堂時段：</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" class="my-p-chk" value="1"> 1</label>
-                <label><input type="checkbox" class="my-p-chk" value="2"> 2</label>
-                <label><input type="checkbox" class="my-p-chk" value="3"> 3</label>
-                <label><input type="checkbox" class="my-p-chk" value="4"> 4</label>
-                <label><input type="checkbox" class="my-p-chk" value="5"> 5</label>
-                <label><input type="checkbox" class="my-p-chk" value="6"> 6</label>
-                <label><input type="checkbox" class="my-p-chk" value="7"> 7</label>
-                <label><input type="checkbox" class="my-p-chk" value="8"> 8</label>
-                <label><input type="checkbox" class="my-p-chk" value="9"> 9</label>
-                <label><input type="checkbox" class="my-p-chk" value="10"> 10</label>
-            </div>
-
-            <button id="searchSwapBtn" class="btn-swap">🔍 尋找可調堂對象</button>
-        </div>
-    </div>
-
-    <div id="swapResults"></div>
-    <div id="teacherTimetableContainer"></div>
-</div>
-
-<script>
-let allLessons = [];
-let allTeachers = [];
-let allClasses = [];
-const dayNames = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
-
-const prohibitedSubjects = [
-    "READ", "PLM", "ARD", "PE", "PRM",
-    "BIO", "PHY", "CHEM", "BM", "ACC", "HMSC", "THS", "THS3", 
-    "VAD", "VAD3", "ICT", "ERS", "ERS3", "BIO3", 
-    "CHIS", "ECON", "ASOS", "MAM2"
-];
-
-const strictSingleTeacherSubjects = ["ENG", "MATH", "ENGLISH", "MATHEMATICS"];
-const seniorElectiveSubjects = ["GEOG", "HIST"];
-
-function loadGoogleSheetData() {
-    const sheetId = '10TdramDTMZLQxl-jShrZeYJLCTtq0iu98PVPb-sZXyU';
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&t=${Date.now()}`;
-    const script = document.createElement('script');
-    script.src = url;
-    document.head.appendChild(script);
-}
-
-window.handleGoogleSheetResponse = function(jsonData) {
-    const rows = jsonData.table.rows;
-    allLessons = [];
     
-    rows.forEach(row => {
-        const c = row.c;
-        if (c && c.length >= 7) {
-            const dayValue      = c[1] ? parseInt(c[1].v) : 0;
-            const periodValue   = c[2] ? parseInt(c[2].v) : 0;
-            const teacherName   = c[3] ? String(c[3].v).trim() : '';
-            const className     = c[4] ? String(c[4].v).trim() : '';
-            const subjectName   = c[5] ? String(c[5].v).trim() : '';
-            const roomName      = c[6] ? String(c[6].v).trim() : '';
-            const teacherZhName = c[7] ? String(c[7].v).trim() : '';
-            const classGroup    = c[8] ? String(c[8].v).trim() : '';
-            const biWeekly      = c[9] ? String(c[9].v).trim() : '';
-
-            if (teacherName) {
-                const displayName = teacherZhName ? `${teacherZhName} (${teacherName})` : teacherName;
-
-                allLessons.push({
-                    day: dayValue,
-                    period: periodValue,
-                    teacher: teacherName,
-                    teacherDisplayName: displayName,
-                    class: className.toUpperCase(),
-                    subject: subjectName.toUpperCase(),
-                    room: roomName.toUpperCase(),
-                    classGroup: classGroup.toUpperCase(),
-                    biWeekly: biWeekly
-                });
-            }
-        }
-    });
-
-    const teacherMap = new Map();
-    allLessons.forEach(l => teacherMap.set(l.teacher, l.teacherDisplayName));
-    
-    allTeachers = Array.from(teacherMap.entries()).sort((a,b) => a[0].localeCompare(b[0]));
-    allClasses = [...new Set(allLessons.map(l => l.class).filter(c => c))].sort();
-
-    const teacherSelect = document.getElementById('myTeacherSelect');
-    teacherSelect.innerHTML = '<option value="">-- 請選擇教師 --</option>';
-    allTeachers.forEach(([code, name]) => {
-        teacherSelect.innerHTML += `<option value="${code}">${name}</option>`;
-    });
-
-    const classSelect = document.getElementById('targetClassSelect');
-    classSelect.innerHTML = '<option value="">-- 請選擇班別 --</option>';
-    allClasses.forEach(c => {
-        classSelect.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-
-    document.getElementById('loading').style.display = 'none';
-};
-
-function isValidPeriodBlock(periods) {
-    if (!periods || periods.length === 0) return false;
-
-    const validBlocks = [
-        [1, 2],
-        [3, 4],
-        [5, 6], [6, 7], [5, 6, 7],
-        [8, 9], [9, 10], [8, 9, 10]
-    ];
-
-    const sorted = [...periods].sort((a, b) => a - b);
-    return validBlocks.some(block => {
-        if (block.length !== sorted.length) return false;
-        return block.every((val, index) => val === sorted[index]);
-    });
-}
-
-function isTeacherFree(teacher, day, periods) {
-    return periods.every(p => {
-        return !allLessons.some(l => l.teacher === teacher && l.day === day && l.period === p);
-    });
-}
-
-function isRoomFree(room, day, periods) {
-    if (!room || room.includes('班房') || room.includes('CLASSROOM')) {
-        return true; 
-    }
-    return periods.every(p => {
-        return !allLessons.some(l => l.room === room && l.day === day && l.period === p);
-    });
-}
-
-function getTeacherDailyWorkload(teacher, day) {
-    const dayLessons = allLessons.filter(l => l.teacher === teacher && l.day === day);
-    const uniquePeriods = new Set(dayLessons.map(l => l.period));
-    return uniquePeriods.size;
-}
-
-function checkLessonRestrictions(targetClass, day, periods) {
-    const periodLessons = allLessons.filter(l => l.day === day && periods.includes(l.period) && (l.class.includes(targetClass) || targetClass.includes(l.class)));
-    const isSeniorLevel = /^(S[456]|[456])/.test(targetClass.toUpperCase());
-
-    for (let p of periods) {
-        const pLessons = periodLessons.filter(l => l.period === p);
-        
-        for (let l of pLessons) {
-            if (prohibitedSubjects.some(subj => l.subject.includes(subj))) {
-                return { invalid: true, reason: `選修科目或特定分組科目不適宜作出調堂處理。` };
-            }
-            if (isSeniorLevel && seniorElectiveSubjects.some(subj => l.subject.includes(subj))) {
-                return { invalid: true, reason: `高中選修科目不可調堂。` };
-            }
-        }
-
-        const engMathLessons = pLessons.filter(l => strictSingleTeacherSubjects.some(subj => l.subject.includes(subj)));
-        if (engMathLessons.length > 0) {
-            const teachersCount = new Set(engMathLessons.map(l => l.teacher)).size;
-            if (teachersCount > 1) {
-                return { invalid: true, reason: `英文科及數學科若屬多於一人任教（分組/協同），不可調堂及不可被調。` };
-            }
-        }
-    }
-
-    return { invalid: false };
-}
-
-function isSplittingConsecutiveLesson(targetClass, day, candidatePeriods) {
-    const dayClassLessons = allLessons.filter(l => l.class === targetClass && l.day === day);
-
-    for (let p of candidatePeriods) {
-        const currentLessons = dayClassLessons.filter(l => l.period === p);
-        for (let l of currentLessons) {
-            if (p > 1 && !candidatePeriods.includes(p - 1)) {
-                const prevLesson = dayClassLessons.find(prev => prev.period === p - 1 && prev.teacher === l.teacher && prev.subject === l.subject);
-                if (prevLesson) return true;
-            }
-            if (p < 10 && !candidatePeriods.includes(p + 1)) {
-                const nextLesson = dayClassLessons.find(next => next.period === p + 1 && next.teacher === l.teacher && next.subject === l.subject);
-                if (nextLesson) return true;
-            }
-        }
-    }
-    return false;
-}
-
-function formatClassNames(classList) {
-    const uniqueClasses = [...new Set(classList)].sort();
-    if (uniqueClasses.length === 0) return '';
-    if (uniqueClasses.length === 1) return uniqueClasses[0];
-
-    const groups = {};
-    uniqueClasses.forEach(c => {
-        const match = c.match(/^([S\d]+)([A-Z]+)$/i);
-        if (match) {
-            const grade = match[1];
-            const letter = match[2];
-            if (!groups[grade]) groups[grade] = [];
-            groups[grade].push(letter);
-        } else {
-            if (!groups[c]) groups[c] = [];
-        }
-    });
-
-    const result = [];
-    for (const [grade, letters] of Object.entries(groups)) {
-        if (letters.length > 0) {
-            result.push(`${grade}${letters.join('')}`);
-        } else {
-            result.push(grade);
-        }
-    }
-    return result.join(' / ');
-}
-
-/**
- * 顯示教師時間表
- * @param {string} teacherCode 教師代碼
- * @param {number|null} reqDay 要求調堂的星期（紅色）
- * @param {Array<number>} reqPeriods 要求調堂的節數（紅色）
- * @param {number|null} targetDay 被換到的星期（橙色）
- * @param {Array<number>} targetPeriods 被換到的節數（橙色）
- */
-function showTeacherTimetable(teacherCode, reqDay = null, reqPeriods = [], targetDay = null, targetPeriods = []) {
-    const container = document.getElementById('teacherTimetableContainer');
-    const teacherLessons = allLessons.filter(l => l.teacher === teacherCode);
-    const teacherDisplayName = teacherLessons[0]?.teacherDisplayName || teacherCode;
-
-    let tableHtml = `
-        <div class="timetable-section">
-            <h4>📅 教師課表：${teacherDisplayName}</h4>
-            <div class="timetable-legend">
-                <div class="legend-item"><div class="legend-box-red"></div><span>要求調堂的節（申請人原定節數）</span></div>
-                <div class="legend-item"><div class="legend-box-orange"></div><span>被換到的節（對方原定節數）</span></div>
-            </div>
-            <table class="timetable-grid">
-                <thead>
-                    <tr>
-                        <th style="width: 8%;">節數</th>
-                        <th style="width: 18.4%;">星期一</th>
-                        <th style="width: 18.4%;">星期二</th>
-                        <th style="width: 18.4%;">星期三</th>
-                        <th style="width: 18.4%;">星期四</th>
-                        <th style="width: 18.4%;">星期五</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    for (let p = 1; p <= 10; p++) {
-        const rowClass = [3, 5, 8].includes(p) ? 'class="double-line-top"' : '';
-        tableHtml += `<tr ${rowClass}><td><strong>第 ${p} 節</strong></td>`;
-        for (let d = 1; d <= 5; d++) {
-            const lessons = teacherLessons.filter(l => l.day === d && l.period === p);
-            
-            // 判斷是否高亮
-            const isRedHighlight = (reqDay === d && reqPeriods.includes(p));
-            const isOrangeHighlight = (targetDay === d && targetPeriods.includes(p));
-
-            let highlightClass = '';
-            let cellNote = '';
-
-            if (isRedHighlight) {
-                highlightClass = ' timetable-cell-red-highlight';
-                cellNote = ' (要求調堂節)';
-            } else if (isOrangeHighlight) {
-                highlightClass = ' timetable-cell-orange-highlight';
-                cellNote = ' (被換到的節)';
-            }
-
-            if (lessons.length > 0) {
-                const groupMap = new Map();
-                lessons.forEach(l => {
-                    const key = `${l.subject}___${l.room}`;
-                    if (!groupMap.has(key)) {
-                        groupMap.set(key, { classes: [], subject: l.subject, room: l.room });
-                    }
-                    groupMap.get(key).classes.push(l.class);
-                });
-
-                const contentArr = [];
-                groupMap.forEach(group => {
-                    const formattedClasses = formatClassNames(group.classes);
-                    let block = `<div>${formattedClasses}<br>${group.subject}`;
-                    if (group.room) {
-                        block += `<br>${group.room}`;
-                    }
-                    block += `</div>`;
-                    contentArr.push(block);
-                });
-
-                tableHtml += `<td class="timetable-cell-has-class${highlightClass}">${contentArr.join('<hr style="border:0;border-top:1px dashed #93c5fd;margin:4px 0;">')}</td>`;
-            } else {
-                tableHtml += `<td class="timetable-cell-empty${highlightClass}">${isRedHighlight || isOrangeHighlight ? cellNote.replace(' (', '').replace(')', '') : '空堂'}</td>`;
-            }
-        }
-        tableHtml += `</tr>`;
-    }
-
-    tableHtml += `</tbody></table></div>`;
-    container.innerHTML = tableHtml;
-    container.scrollIntoView({ behavior: 'smooth' });
-}
-
-document.getElementById('searchSwapBtn').addEventListener('click', function() {
-    const myTeacher = document.getElementById('myTeacherSelect').value;
-    const targetClass = document.getElementById('targetClassSelect').value;
-    const myDayVal = document.getElementById('myDaySelect').value;
-    const myPeriods = Array.from(document.querySelectorAll('.my-p-chk:checked')).map(c => parseInt(c.value));
-
-    document.getElementById('teacherTimetableContainer').innerHTML = '';
-
-    if (!myTeacher) { alert("請先選擇「你的姓名」！"); return; }
-    if (!targetClass) { alert("請選擇「目標班別」！"); return; }
-    if (!myDayVal) { alert("請選擇「原定課堂星期」！"); return; }
-    if (myPeriods.length === 0) { alert("請至少勾選一個缺席節數！"); return; }
-
-    const myDay = parseInt(myDayVal);
-    const resultsDiv = document.getElementById('swapResults');
-
-    if (!isValidPeriodBlock(myPeriods)) {
-        resultsDiv.innerHTML = `<div class="warning-box">❌ <strong>不合法的調堂時段組合：</strong><br>學校規定調堂節數必須符合區塊組合（如 1-2 節、3-4 節、5-6 節、6-7 節、5-7 節、8-9 節、9-10 節、8-10 節）。不可跨區塊調堂！</div>`;
-        return;
-    }
-
-    const myActualLessons = allLessons.filter(l => 
-        l.teacher === myTeacher && 
-        l.day === myDay && 
-        myPeriods.includes(l.period)
-    );
-
-    if (myActualLessons.length === 0) {
-        resultsDiv.innerHTML = `<div class="warning-box">❌ <strong>資料輸入有誤：</strong>教師 <strong>${myTeacher}</strong> 在 <strong>${dayNames[myDay]} 第 ${myPeriods.join(', ')} 節</strong> 本身為空堂，無需申請調堂！</div>`;
-        return;
-    }
-
-    const hasClassMatch = myActualLessons.some(l => l.class.includes(targetClass) || targetClass.includes(l.class));
-    if (!hasClassMatch) {
-        const actualClasses = [...new Set(myActualLessons.map(l => l.class))].join(', ');
-        resultsDiv.innerHTML = `<div class="warning-box">❌ <strong>課堂班別不符：</strong>教師 <strong>${myTeacher}</strong> 在 <strong>${dayNames[myDay]} 第 ${myPeriods.join(', ')} 節</strong> 上課班別為 [<strong>${actualClasses}</strong>]，非選擇的 [<strong>${targetClass}</strong>] 班！</div>`;
-        return;
-    }
-
-    const myCheck = checkLessonRestrictions(targetClass, myDay, myPeriods);
-    if (myCheck.invalid) {
-        resultsDiv.innerHTML = `<div class="warning-box">🚫 <strong>無法調堂：</strong>您於 ${dayNames[myDay]} 第 ${myPeriods.join(', ')} 節的課堂<sup>${myCheck.reason}</sup></div>`;
-        return;
-    }
-
-    resultsDiv.innerHTML = '正在進行連堂保護驗證與交叉配對...';
-
-    const coTeacherLessons = allLessons.filter(l => 
-        l.day === myDay && 
-        myPeriods.includes(l.period) && 
-        (l.class.includes(targetClass) || targetClass.includes(l.class)) &&
-        l.teacher !== myTeacher
-    );
-
-    const coTeachersInfo = [];
-    coTeacherLessons.forEach(l => {
-        if (!coTeachersInfo.some(c => c.teacher === l.teacher)) {
-            coTeachersInfo.push({ teacher: l.teacher, displayName: l.teacherDisplayName, room: l.room });
-        }
-    });
-
-    const myLessonRoom = myActualLessons[0]?.room || '';
-    const matchCandidates = [];
-
-    for (let d = 1; d <= 5; d++) {
-        const dayClassLessons = allLessons.filter(l => l.class === targetClass && l.day === d && l.teacher !== myTeacher);
-        
-        const periodGroups = new Map();
-        dayClassLessons.forEach(l => {
-            if (!periodGroups.has(l.period)) periodGroups.set(l.period, []);
-            periodGroups.get(l.period).push(l);
+    <script>
+        document.querySelector('.refresh-btn').addEventListener('click', function() {
+            this.style.transform = 'scale(1.2) rotate(360deg)';
+            this.style.backgroundColor = 'rgba(150, 150, 150, 0.8)';
+            setTimeout(() => { location.reload(); }, 1000);
         });
+    </script>
 
-        const sortedPeriods = Array.from(periodGroups.keys()).sort((a,b)=>a-b);
+    <div class="container">
+        <h2>教師空堂查詢系統</h2>
+        <div id="loading">正在連線至雲端資料庫，請稍候...</div>
+        
+        <div class="tab-container">
+            <button id="tabQuery" class="tab-btn active">特定時段篩選</button>
+            <button id="tabListAll" class="tab-btn">全校每日空堂總表</button>
+        </div>
+        
+        <div id="panelQuery" class="filter-section">
+            <div class="filter-row">
+                <label for="daySelect">選擇星期：</label>
+                <select id="daySelect">
+                    <option value="1">星期一 (Monday)</option>
+                    <option value="2">星期二 (Tuesday)</option>
+                    <option value="3">星期三 (Wednesday)</option>
+                    <option value="4">星期四 (Thursday)</option>
+                    <option value="5">星期五 (Friday)</option>
+                </select>
 
-        for (let i = 0; i <= sortedPeriods.length - myPeriods.length; i++) {
-            const candidatePeriods = sortedPeriods.slice(i, i + myPeriods.length);
+                <label class="f6-ended-box" for="f6EndedCheckbox">
+                    <input type="checkbox" id="f6EndedCheckbox">
+                    🎓 中六已完結
+                </label>
 
-            if (!isValidPeriodBlock(candidatePeriods)) continue;
+                <div class="search-input-group">
+                    <label for="multiTeacherInput">教師姓名：</label>
+                    <input type="text" id="multiTeacherInput" class="long-input" placeholder="例如: KAA CCA 或 KAA, CCA">
+                    <button id="clearMultiBtn" class="clear-btn">清除</button>
+                </div>
+            </div>
 
-            let isConsecutive = true;
-            for (let k = 0; k < candidatePeriods.length - 1; k++) {
-                if (candidatePeriods[k+1] - candidatePeriods[k] !== 1) {
-                    isConsecutive = false;
+            <!-- 年級與班別篩選區 (可多選) -->
+            <div class="filter-row" style="gap: 10px;">
+                <div class="grade-select-box">
+                    <label>任教年級：</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="1"> 中一</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="2"> 中二</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="3"> 中三</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="4"> 中四</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="5"> 中五</label>
+                    <label class="checkbox-item"><input type="checkbox" class="grade-filter-chk" value="6"> 中六</label>
+                    <button type="button" id="selectAllGradesBtn" class="shortcut-btn">全選</button>
+                    <button type="button" id="clearAllGradesBtn" class="shortcut-btn">清除</button>
+                </div>
+
+                <div class="grade-select-box">
+                    <label>任教班別：</label>
+                    <label class="checkbox-item"><input type="checkbox" class="class-letter-chk" value="A"> A 班</label>
+                    <label class="checkbox-item"><input type="checkbox" class="class-letter-chk" value="B"> B 班</label>
+                    <label class="checkbox-item"><input type="checkbox" class="class-letter-chk" value="C"> C 班</label>
+                    <label class="checkbox-item"><input type="checkbox" class="class-letter-chk" value="D"> D 班</label>
+                    <button type="button" id="selectAllLettersBtn" class="shortcut-btn">全選</button>
+                    <button type="button" id="clearAllLettersBtn" class="shortcut-btn">清除</button>
+                </div>
+            </div>
+
+            <div class="filter-row" style="align-items: flex-start; gap: 12px;">
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <label>選擇節數：</label>
+                    <div style="display: flex; gap: 4px;">
+                        <button type="button" id="selectAllPeriodsBtn" class="shortcut-btn">全選</button>
+                        <button type="button" id="clearAllPeriodsBtn" class="shortcut-btn">清除</button>
+                    </div>
+                </div>
+
+                <div style="flex-grow: 1;">
+                    <div class="checkbox-container" id="periodCheckboxGroup">
+                        <script>
+                            for(let i=1; i<=10; i++) {
+                                document.write(`<div class="checkbox-item" id="p${i}Wrapper"><input type="checkbox" class="period-chk" id="p${i}" value="${i}"><label for="p${i}">  ${i}</label></div>`);
+                                if (i===2 || i === 4  || i === 7) {
+                                  document.write(`<div> | </div>`);
+                                }
+                            }
+                        </script>
+                    </div>
+                    
+                    <div class="checkbox-container" style="margin-top: 6px; border: none; padding: 0; gap: 15px;">
+                        <div class="checkbox-item">
+                            <input type="radio" id="operatorOr" name="period-operator" value="or">
+                            <label for="operatorOr"><strong>或 (OR)</strong> - 任一節為空堂</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" id="operatorAnd" name="period-operator" value="and" checked>
+                            <label for="operatorAnd"><strong>和 (AND)</strong> - 所有節皆為空堂</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panelListAll" class="filter-section hidden">
+            <div class="filter-row" style="justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button id="listAllButton" class="action-btn" style="background-color: #2ec4b6;" disabled>生成全校每日空堂總表</button>
+                    <label class="f6-ended-box" for="f6EndedCheckboxList">
+                        <input type="checkbox" id="f6EndedCheckboxList">
+                        🎓 中六已完結
+                    </label>
+                </div>
+                
+                <div id="filterWrapper" class="search-input-group hidden">
+                    <label for="teacherLikeInput">教師姓名：</label>
+                    <input type="text" id="teacherLikeInput" class="normal-input" placeholder="輸入英文縮寫...">
+                    <button id="clearLikeBtn" class="clear-btn">清除</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="searchResults" class="search-results"></div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loadingDiv = document.getElementById('loading');
+        const listAllButton = document.getElementById('listAllButton');
+        const searchResultsDiv = document.getElementById('searchResults');
+        
+        const tabQuery = document.getElementById('tabQuery');
+        const tabListAll = document.getElementById('tabListAll');
+        const panelQuery = document.getElementById('panelQuery');
+        const panelListAll = document.getElementById('panelListAll');
+
+        // 中六雙向同步核取方塊
+        const f6EndedCheckbox = document.getElementById('f6EndedCheckbox');
+        const f6EndedCheckboxList = document.getElementById('f6EndedCheckboxList');
+
+        // 模式一 DOM
+        const daySelect = document.getElementById('daySelect');
+        const multiTeacherInput = document.getElementById('multiTeacherInput');
+        const clearMultiBtn = document.getElementById('clearMultiBtn');
+        const periodCheckboxGroup = document.getElementById('periodCheckboxGroup');
+        const selectAllPeriodsBtn = document.getElementById('selectAllPeriodsBtn');
+        const clearAllPeriodsBtn = document.getElementById('clearAllPeriodsBtn');
+        
+        const selectAllGradesBtn = document.getElementById('selectAllGradesBtn');
+        const clearAllGradesBtn = document.getElementById('clearAllGradesBtn');
+        const selectAllLettersBtn = document.getElementById('selectAllLettersBtn');
+        const clearAllLettersBtn = document.getElementById('clearAllLettersBtn');
+        
+        // 模式二 DOM
+        const filterWrapper = document.getElementById('filterWrapper');
+        const teacherLikeInput = document.getElementById('teacherLikeInput');
+        const clearLikeBtn = document.getElementById('clearLikeBtn');
+        
+        let allLessons = [];    
+        let allTeachers = [];   
+        let currentActiveTab = "query"; 
+        const dayNames = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
+
+        // 排序狀態管理
+        let currentSortColumn = 'name'; // 'name', 'freeCount', 'dailyLessons', 'formTeacherClass'
+        let currentSortOrder = 'asc';    // 'asc', 'desc'
+
+        // 取得所選的年級與班別字母
+        function getSelectedGrades() {
+            return Array.from(document.querySelectorAll('.grade-filter-chk:checked')).map(c => c.value);
+        }
+        function getSelectedLetters() {
+            return Array.from(document.querySelectorAll('.class-letter-chk:checked')).map(c => c.value.toUpperCase());
+        }
+
+        // 判斷教師是否符合年級與班別的篩選
+        function teacherMatchesGradeAndClass(teacher, selectedGrades, selectedLetters) {
+            if (selectedGrades.length === 0 && selectedLetters.length === 0) return true;
+
+            const teacherLessons = allLessons.filter(l => l.teacher === teacher);
+
+            return teacherLessons.some(l => {
+                if (!l.class) return false;
+                const cls = l.class.toUpperCase();
+
+                const matchesGrade = (selectedGrades.length === 0) || selectedGrades.some(g => cls.includes(g));
+                const matchesLetter = (selectedLetters.length === 0) || selectedLetters.some(lettr => cls.includes(lettr));
+
+                return matchesGrade && matchesLetter;
+            });
+        }
+
+        // 計算教師在「現時」是否為空堂的輔助函式（已更新為貴校正確時間表）
+        function getTeacherCurrentStatus(teacher, targetDay, isF6Ended) {
+            const now = new Date();
+            const currentDay = now.getDay(); 
+            const currentMin = now.getHours() * 60 + now.getMinutes();
+        
+            // 判斷今天是否為星期三，採用對應的時間表
+            const isWednesday = (currentDay === 3);
+        
+            // 貴校正確課節時間表（以分鐘計算）
+            const periodSchedule = isWednesday ? [
+                { p: 1,  start: 8 * 60 + 20, end: 8 * 60 + 55 },   // 08:20 - 08:55
+                { p: 2,  start: 8 * 60 + 55, end: 9 * 60 + 30 },   // 08:55 - 09:30
+                { p: 3,  start: 9 * 60 + 40, end: 10 * 60 + 20 },  // 09:40 - 10:20
+                { p: 4,  start: 10 * 60 + 20, end: 10 * 60 + 55 }, // 10:20 - 10:55
+                { p: 5,  start: 11 * 60 + 10, end: 11 * 60 + 45 }, // 11:10 - 11:45
+                { p: 6,  start: 11 * 60 + 45, end: 12 * 60 + 20 }, // 11:45 - 12:20
+                { p: 7,  start: 12 * 60 + 20, end: 12 * 60 + 55 }, // 12:20 - 12:55
+                { p: 8,  start: 14 * 60 + 0,  end: 14 * 60 + 40 }, // 14:00 - 14:40
+                { p: 9,  start: 14 * 60 + 40, end: 15 * 60 + 30 }  // 周三第九節：14:40 - 15:30
+            ] : [
+                { p: 1,  start: 8 * 60 + 20, end: 8 * 60 + 55 },   // 08:20 - 08:55
+                { p: 2,  start: 8 * 60 + 55, end: 9 * 60 + 30 },   // 08:55 - 09:30
+                { p: 3,  start: 9 * 60 + 40, end: 10 * 60 + 20 },  // 09:40 - 10:20
+                { p: 4,  start: 10 * 60 + 20, end: 10 * 60 + 55 }, // 10:20 - 10:55
+                { p: 5,  start: 11 * 60 + 10, end: 11 * 60 + 45 }, // 11:10 - 11:45
+                { p: 6,  start: 11 * 60 + 45, end: 12 * 60 + 20 }, // 11:45 - 12:20
+                { p: 7,  start: 12 * 60 + 20, end: 12 * 60 + 55 }, // 12:20 - 12:55
+                { p: 8,  start: 14 * 60 + 0,  end: 14 * 60 + 40 }, // 14:00 - 14:40
+                { p: 9,  start: 14 * 60 + 40, end: 15 * 60 + 15 }, // 14:40 - 15:15
+                { p: 10, start: 15 * 60 + 15, end: 15 * 60 + 50 }  // 15:15 - 15:50
+            ];
+        
+            let currentPeriod = null;
+            for (let slot of periodSchedule) {
+                if (currentMin >= slot.start && currentMin < slot.end) {
+                    currentPeriod = slot.p;
                     break;
                 }
             }
-
-            if (isConsecutive && candidatePeriods.length === myPeriods.length) {
-                if (isSplittingConsecutiveLesson(targetClass, d, candidatePeriods)) continue; 
-                if (checkLessonRestrictions(targetClass, d, candidatePeriods).invalid) continue;
-
-                const targetLessons = dayClassLessons.filter(l => candidatePeriods.includes(l.period));
-                const targetTeachers = [...new Set(targetLessons.map(l => l.teacher))];
-
-                if (targetTeachers.length === 0) continue;
-
-                const areTargetTeachersFreeAtMyDay = targetTeachers.every(t => isTeacherFree(t, myDay, myPeriods));
-                const isMyTeacherFreeAtTarget = isTeacherFree(myTeacher, d, candidatePeriods);
-                const areCoTeachersFreeAtTarget = coTeachersInfo.every(co => isTeacherFree(co.teacher, d, candidatePeriods));
-                const isMyRoomFreeAtTarget = isRoomFree(myLessonRoom, d, candidatePeriods);
-                const areCoRoomsFreeAtTarget = coTeachersInfo.every(co => isRoomFree(co.room, d, candidatePeriods));
-
-                const targetRoomsInfo = [];
-                targetTeachers.forEach(t => {
-                    const lessonsForT = targetLessons.filter(l => l.teacher === t);
-                    const room = lessonsForT[0]?.room || '';
-                    const subjects = [...new Set(lessonsForT.map(l => l.subject))].join(' + ');
-                    const displayName = lessonsForT[0]?.teacherDisplayName || t;
-                    targetRoomsInfo.push({ teacher: t, displayName: displayName, room: room, subject: subjects });
-                });
-
-                const areTargetRoomsFreeAtMyDay = targetRoomsInfo.every(t => isRoomFree(t.room, myDay, myPeriods));
-
-                if (areTargetTeachersFreeAtMyDay && isMyTeacherFreeAtTarget && areCoTeachersFreeAtTarget && isMyRoomFreeAtTarget && areCoRoomsFreeAtTarget && areTargetRoomsFreeAtMyDay) {
-                    const targetWorkloads = targetTeachers.map(t => {
-                        return { teacher: t, displayName: targetLessons.find(l => l.teacher === t)?.teacherDisplayName || t, workload: getTeacherDailyWorkload(t, myDay) };
-                    });
-
-                    matchCandidates.push({
-                        targetDay: d,
-                        targetPeriods: candidatePeriods,
-                        targetTeam: targetRoomsInfo,
-                        targetWorkloads: targetWorkloads,
-                        myRoom: myLessonRoom,
-                        coTeachers: coTeachersInfo
-                    });
+        
+            // 若不在任何課堂時間內（例如午休 12:55-14:00 或放學後）
+            if (currentPeriod === null) {
+                return `<span class="status-tag" style="background-color: #2ecc71;">FREE 空堂 (非課堂時間)</span>`;
+            }
+        
+            // 只有當「查詢的星期」與「今天」一致時，才顯示即時 BUSY/FREE 狀態
+            const checkDay = (currentDay >= 1 && currentDay <= 5) ? currentDay : targetDay;
+        
+            // 星期三沒有第 10 節
+            if (checkDay === 3 && currentPeriod === 10) {
+                return `<span class="status-tag" style="background-color: #2ecc71;">FREE 空堂</span>`;
+            }
+        
+            const matchingLessons = allLessons.filter(l => l.teacher === teacher && l.day === checkDay && l.period === currentPeriod);
+        
+            if (matchingLessons.length === 0) {
+                return `<span class="status-tag" style="background-color: #2ecc71;">FREE 空堂</span>`;
+            } else {
+                const allLessonsAreF6 = matchingLessons.every(l => l.class && l.class.includes('6'));
+                if (isF6Ended && allLessonsAreF6) {
+                    return `<span class="status-tag" style="background-color: #2ecc71;">FREE 空堂 (中六)</span>`;
+                } else {
+                    return `<span class="status-tag" style="background-color: #e74c3c;">BUSY 上課中</span>`;
                 }
             }
         }
-    }
 
-    if (matchCandidates.length === 0) {
-        resultsDiv.innerHTML = `<div class="info-box">⚠️ 找不到符合條件（符合獨立堂/完整連堂/非禁止科目/英文數學多師限制/特別室空閒）的調堂對象。</div>`;
-        return;
-    }
+        // 計算教師在指定天數的總上課節數
+        function calculateDailyLessonsCount(teacher, targetDay, isF6Ended) {
+            const maxPeriod = (targetDay === 3) ? 9 : 10;
+            let busyCount = 0;
 
-    let html = '';
-
-    const reqPeriodsJson = JSON.stringify(myPeriods);
-
-    if (coTeachersInfo.length > 0) {
-        const coNames = coTeachersInfo.map(c => `<span class="teacher-link" onclick='showTeacherTimetable("${c.teacher}", ${myDay}, ${reqPeriodsJson})'>${c.displayName}</span> (${c.room || '無特別室'})`).join('、');
-        const coListOnlyNames = coTeachersInfo.map(c => c.displayName).join('、');
-        
-        html += `
-            <div class="co-teacher-alert">
-                📢 <strong>涉及協同/分組教師提醒：</strong><br>
-                此課堂同時有協同/分組教師：${coNames}。<br>
-                ⚠️ 系統已確認該協同教師及房間在調堂目標時段皆為空閒！<strong>請務必於提交調堂申請前，先與 ${coListOnlyNames} 討論並確認調堂事宜。</strong>
-            </div>
-        `;
-    }
-
-    html += `
-        <h3>🎯 為您找到 ${matchCandidates.length} 個可對換「合法對換方案」（點擊姓名可查閱課表）：</h3>
-        <table class="results-table">
-            <thead>
-                <tr>
-                    <th>對換教師</th>
-                    <th>對方在 ${targetClass} 的時段與科目</th>
-                    <th>對換團隊在 ${dayNames[myDay]} 原本課堂數</th>
-                    <th>申請人協同狀態</th>
-                    <th>對換團隊特別室空閒狀態</th>
-                    <th>調堂建議方案與地點</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    matchCandidates.forEach(cand => {
-        const myRoomText = cand.myRoom ? ` (於 ${cand.myRoom})` : '';
-        
-        const targetPeriodsJson = JSON.stringify(cand.targetPeriods);
-        // 點擊對換教師：同時帶入 要求調堂時段 (myDay, myPeriods -> 紅色) 與 被換到時段 (targetDay, targetPeriods -> 橙色)
-        const teamNames = cand.targetTeam.map(t => `<span class="teacher-link" onclick='showTeacherTimetable("${t.teacher}", ${myDay}, ${reqPeriodsJson}, ${cand.targetDay}, ${targetPeriodsJson})'>${t.displayName}</span>`).join(' + ');
-        const teamSubjectDesc = cand.targetTeam.map(t => `<span class="badge-subject">${t.displayName}: ${t.subject}</span>`).join('<br>');
-        const teamRoomsDesc = cand.targetTeam.map(t => `${t.displayName} 於 ${t.room || '班房'}`).join('、');
-
-        const workloadsDesc = cand.targetWorkloads.map(w => {
-            const bClass = w.workload >= 5 ? 'badge-heavy' : 'badge-workload';
-            return `<span class="${bClass}">${w.displayName}: 原有 ${w.workload} 節</span>`;
-        }).join('<br>');
-
-        let coTeacherStatus = '<span style="color:#94a3b8;">無協同教師</span>';
-        if (cand.coTeachers && cand.coTeachers.length > 0) {
-            coTeacherStatus = cand.coTeachers.map(c => `<span class="badge-ok">✅ <span class="teacher-link" onclick='showTeacherTimetable("${c.teacher}", ${myDay}, ${reqPeriodsJson})'>${c.displayName}</span> 可調堂</span>`).join('<br>');
+            for (let p = 1; p <= maxPeriod; p++) {
+                const matchingLessons = allLessons.filter(l => l.teacher === teacher && l.day === targetDay && l.period === p);
+                if (matchingLessons.length > 0) {
+                    const allLessonsAreF6 = matchingLessons.every(l => l.class && l.class.includes('6'));
+                    if (!(isF6Ended && allLessonsAreF6)) {
+                        busyCount++;
+                    }
+                }
+            }
+            return busyCount;
         }
 
-        const targetRoomsStatus = cand.targetTeam.map(t => {
-            return t.room ? `<span class="badge-room">✅ ${t.room} 空閒</span>` : '<span style="color:#94a3b8;">普通班房</span>';
-        }).join('<br>');
+        // 取得班主任班別（星期三第九節，課堂名稱含有 CPA）
+        function getFormTeacherClass(teacher) {
+            const cpaLesson = allLessons.find(l => 
+                l.teacher === teacher && 
+                l.day === 3 && 
+                l.period === 9 && 
+                l.subject && 
+                l.subject.toUpperCase().includes('CPA')
+            );
+            return cpaLesson ? cpaLesson.class : '-';
+        }
 
-        const isMultiTeacher = cand.targetTeam.length > 1;
-        const groupBadge = isMultiTeacher ? `<br><span class="badge-group">👥 跨科/分組組合 (${cand.targetTeam.length}位老師)</span>` : '';
+        // 自動同步兩個中六核取方塊的狀態
+        function syncF6State(sourceChecked) {
+            f6EndedCheckbox.checked = sourceChecked;
+            f6EndedCheckboxList.checked = sourceChecked;
+            if (currentActiveTab === "query") {
+                executePeriodQuery();
+            } else if (currentActiveTab === "listAll" && !filterWrapper.classList.contains('hidden')) {
+                renderListAllTable(teacherLikeInput.value);
+            }
+        }
+        f6EndedCheckbox.addEventListener('change', function() { syncF6State(this.checked); });
+        f6EndedCheckboxList.addEventListener('change', function() { syncF6State(this.checked); });
 
-        html += `
-            <tr>
-                <td>${teamNames} ${groupBadge}</td>
-                <td>
-                    <span class="highlight">${dayNames[cand.targetDay]} 第 ${cand.targetPeriods.join(', ')} 節</span><br>
-                    <small>${teamSubjectDesc}</small>
-                </td>
-                <td>${workloadsDesc}</td>
-                <td>${coTeacherStatus}</td>
-                <td>${targetRoomsStatus}</td>
-                <td style="color: #d35400; font-weight: bold;">
-                    您與協同教師於 ${dayNames[cand.targetDay]} 第 ${cand.targetPeriods.join(', ')} 節 替 ${cand.targetTeam.map(t=>t.displayName).join('及')} 上課${myRoomText}；<br>
-                    ${cand.targetTeam.map(t=>t.displayName).join('及')} 於 ${dayNames[myDay]} 第 ${myPeriods.join(', ')} 節 替您上課（分別${teamRoomsDesc}）。
-                </td>
-            </tr>
-        `;
+        // 自動偵測今日星期
+        function initDefaultDayToCurrent() {
+            const currentDay = new Date().getDay(); 
+            if (currentDay >= 1 && currentDay <= 5) {
+                daySelect.value = String(currentDay);
+            } else {
+                daySelect.value = "1";
+            }
+        }
+        initDefaultDayToCurrent();
+
+        // 頁籤切換
+        tabQuery.addEventListener('click', () => {
+            currentActiveTab = "query";
+            tabQuery.classList.add('active');
+            tabListAll.classList.remove('active');
+            panelQuery.classList.remove('hidden');
+            panelListAll.classList.add('hidden');
+            searchResultsDiv.innerHTML = '';
+            filterWrapper.classList.add('hidden');
+            teacherLikeInput.value = '';
+            handleWednesdayPeriodVisibility(); 
+            executePeriodQuery();
+        });
+
+        tabListAll.addEventListener('click', () => {
+            currentActiveTab = "listAll";
+            tabListAll.classList.add('active');
+            tabQuery.classList.remove('active');
+            panelListAll.classList.remove('hidden');
+            panelQuery.classList.add('hidden');
+            searchResultsDiv.innerHTML = '';
+        });
+
+        // Google Sheet 引擎
+        window.handleGoogleSheetResponse = function(jsonData) {
+            try {
+                if (!jsonData || !jsonData.table || !jsonData.table.rows) {
+                    throw new Error("試算表格式不正確！");
+                }
+                
+                const rows = jsonData.table.rows;
+                allLessons = [];
+                
+                rows.forEach(row => {
+                    const c = row.c;
+                    if (c && c.length >= 6) {
+                        const teacherName = c[3] ? String(c[3].v).trim() : '';
+                        const className = c[4] ? String(c[4].v).trim() : ''; 
+                        const subjectName = c[5] ? String(c[5].v).trim() : ''; // 第六欄：課堂名稱
+                        if (teacherName) {
+                            allLessons.push({
+                                day:     c[1] ? parseInt(c[1].v) : 0,
+                                period:  c[2] ? parseInt(c[2].v) : 0,
+                                teacher: teacherName,
+                                class:   className,
+                                subject: subjectName
+                            });
+                        }
+                    }
+                });
+
+                allTeachers = [...new Set(allLessons.map(item => item.teacher))].sort();
+                loadingDiv.innerHTML = '<span style="color:green; font-weight:bold;">✓ 成功從雲端同步最新課表數據庫</span>';
+                listAllButton.disabled = false;
+                
+                for(let i=1; i<=10; i++) {
+                    document.getElementById(`p${i}`).checked = false;
+                }
+                
+                handleWednesdayPeriodVisibility(); 
+                executePeriodQuery();
+                
+            } catch (error) {
+                console.error('資料解析錯誤:', error);
+                loadingDiv.innerHTML = `<span style="color:red; font-weight:bold;">✗ 數據同步失敗: ${error.message}</span>`;
+            }
+        };
+
+        function loadGoogleSheetData() {
+            const sheetId = '10TdramDTMZLQxl-jShrZeYJLCTtq0iu98PVPb-sZXyU';
+            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&t=`;
+            
+            const script = document.createElement('script');
+            script.src = url + Date.now(); 
+            script.onerror = function() {
+                loadingDiv.innerHTML = `<span style="color:orange;">⚠️ 連線失敗，正在重試...</span>`;
+                setTimeout(loadGoogleSheetData, 2000);
+            };
+            document.head.appendChild(script);
+        }
+
+        // 星期三第10節隱藏
+        function handleWednesdayPeriodVisibility() {
+            const targetDay = parseInt(daySelect.value);
+            const p10Wrapper = document.getElementById('p10Wrapper');
+            const p10Checkbox = document.getElementById('p10');
+
+            if (targetDay === 3) {
+                if (p10Wrapper) p10Wrapper.classList.add('hidden');
+                if (p10Checkbox) p10Checkbox.checked = false;
+            } else {
+                if (p10Wrapper) p10Wrapper.classList.remove('hidden');
+            }
+        }
+
+        // 欄位排序處理器
+        window.handleSort = function(column) {
+            if (currentSortColumn === column) {
+                currentSortOrder = (currentSortOrder === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = column;
+                currentSortOrder = 'asc';
+            }
+            executePeriodQuery();
+        };
+
+        // 功能一：特定時段篩選計算
+        function executePeriodQuery() {
+            if (currentActiveTab !== "query") return;
+
+            const targetDay = parseInt(daySelect.value);
+            const isF6Ended = f6EndedCheckbox.checked; 
+            const selectedGrades = getSelectedGrades();
+            const selectedLetters = getSelectedLetters();
+            
+            const maxPeriod = (targetDay === 3) ? 9 : 10;
+            const selectedPeriods = [];
+            for (let i = 1; i <= maxPeriod; i++) {
+                if (document.getElementById(`p${i}`).checked) selectedPeriods.push(i);
+            }
+
+            if (selectedPeriods.length === 0) {
+                searchResultsDiv.innerHTML = `<div style="padding:10px; background:#e2e8f0; color:#475569; border-radius:4px; font-size:14px;">請勾選上方需要查詢的節數。</div>`;
+                return;
+            }
+
+            const operator = document.querySelector('input[name="period-operator"]:checked').value;
+            const rawInput = multiTeacherInput.value;
+            const teacherKeywords = rawInput
+                .replace(/，/g, ',') 
+                .split(/[\s,]+/)    
+                .map(k => k.trim().toUpperCase())
+                .filter(k => k.length > 0);
+
+            const freeTeachersResult = [];
+
+            allTeachers.forEach(teacher => {
+                const teacherUpper = teacher.toUpperCase();
+                
+                // 1. 姓名關鍵字過濾
+                if (teacherKeywords.length > 0) {
+                    const matchesAnyKeyword = teacherKeywords.some(keyword => teacherUpper.startsWith(keyword));
+                    if (!matchesAnyKeyword) return; 
+                }
+
+                // 2. 年級與班別條件過濾
+                if (!teacherMatchesGradeAndClass(teacher, selectedGrades, selectedLetters)) {
+                    return;
+                }
+
+                const statusMap = {};        
+                const isF6ReleasedMap = {};  
+
+                selectedPeriods.forEach(p => {
+                    const matchingLessons = allLessons.filter(l => l.teacher === teacher && l.day === targetDay && l.period === p);
+                    
+                    if (matchingLessons.length === 0) {
+                        statusMap[p] = true;
+                        isF6ReleasedMap[p] = false;
+                    } else {
+                        const allLessonsAreF6 = matchingLessons.every(l => l.class && l.class.includes('6'));
+                        if (isF6Ended && allLessonsAreF6) {
+                            statusMap[p] = true;
+                            isF6ReleasedMap[p] = true;
+                        } else {
+                            statusMap[p] = false;
+                            isF6ReleasedMap[p] = false;
+                        }
+                    }
+                });
+
+                const totalSelected = selectedPeriods.length;
+                const freeCount = selectedPeriods.filter(p => statusMap[p] === true).length;
+                let isMatch = (operator === 'or') ? (freeCount > 0) : (freeCount === totalSelected);
+
+                if (isMatch) {
+                    const periodDisplayStrings = selectedPeriods
+                        .filter(p => statusMap[p] === true)
+                        .map(p => {
+                            if (isF6ReleasedMap[p]) {
+                                return ` ${p} <span class="f6-mini-tag">中六</span>`;
+                            }
+                            return ` ${p} `;
+                        });
+
+                    const dailyCount = calculateDailyLessonsCount(teacher, targetDay, isF6Ended);
+                    const formTeacherClass = getFormTeacherClass(teacher);
+
+                    freeTeachersResult.push({
+                        name: teacher,
+                        currentStatusHtml: getTeacherCurrentStatus(teacher, targetDay, isF6Ended),
+                        freeCount: freeCount,
+                        dailyLessons: dailyCount,
+                        formTeacherClass: formTeacherClass,
+                        displayPeriods: periodDisplayStrings
+                    });
+                }
+            });
+
+            if (freeTeachersResult.length === 0) {
+                searchResultsDiv.innerHTML = `<div style="padding:12px; background:#fff3cd; color:#856404; border-radius:4px; font-size:14px;">找不到符合條件的教師。</div>`;
+                return;
+            }
+
+            // 執行資料排序邏輯
+            freeTeachersResult.sort((a, b) => {
+                let valA = a[currentSortColumn];
+                let valB = b[currentSortColumn];
+
+                if (typeof valA === 'string') {
+                    const cmp = valA.localeCompare(valB);
+                    return (currentSortOrder === 'asc') ? cmp : -cmp;
+                } else {
+                    return (currentSortOrder === 'asc') ? (valA - valB) : (valB - valA);
+                }
+            });
+
+            // 取得標頭排序圖示
+            const getSortIcon = (col) => {
+                if (currentSortColumn !== col) return ' ↕';
+                return currentSortOrder === 'asc' ? ' ▲' : ' ▼';
+            };
+
+            let html = `
+                <div style="margin-bottom:8px; font-weight:bold; color:#2c3e50; font-size:14px;">🔍 符合條件的空堂教師 (共 ${freeTeachersResult.length} 位)：</div>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 18%;" class="sortable-th" onclick="handleSort('name')">教師姓名${getSortIcon('name')}</th>
+                            <th style="width: 22%;">現時狀態</th>
+                            <th class="sortable-th" onclick="handleSort('freeCount')">具體空堂時段${getSortIcon('freeCount')}</th>
+                            <th style="width: 16%; text-align: center;" class="sortable-th" onclick="handleSort('dailyLessons')">當天總上課節數${getSortIcon('dailyLessons')}</th>
+                            <th style="width: 12%; text-align: center;" class="sortable-th" onclick="handleSort('formTeacherClass')">班主任${getSortIcon('formTeacherClass')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            freeTeachersResult.forEach(item => {
+                html += `
+                    <tr>
+                        <td><strong>${item.name}</strong></td>
+                        <td>${item.currentStatusHtml}</td>
+                        <td><span style="color: #2980b9; font-weight: 500; display:flex; gap:10px; flex-wrap:wrap;">${item.displayPeriods.join(', ')}</span></td>
+                        <td style="text-align: center;"><strong>${item.dailyLessons}</strong> 節</td>
+                        <td style="text-align: center;"><strong>${item.formTeacherClass}</strong></td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table>`;
+            searchResultsDiv.innerHTML = html;
+        }
+
+        // 年級全選/清除
+        selectAllGradesBtn.addEventListener('click', function() {
+            document.querySelectorAll('.grade-filter-chk').forEach(chk => chk.checked = true);
+            executePeriodQuery();
+        });
+        clearAllGradesBtn.addEventListener('click', function() {
+            document.querySelectorAll('.grade-filter-chk').forEach(chk => chk.checked = false);
+            executePeriodQuery();
+        });
+        document.querySelectorAll('.grade-filter-chk').forEach(chk => {
+            chk.addEventListener('change', executePeriodQuery);
+        });
+
+        // 班別全選/清除
+        selectAllLettersBtn.addEventListener('click', function() {
+            document.querySelectorAll('.class-letter-chk').forEach(chk => chk.checked = true);
+            executePeriodQuery();
+        });
+        clearAllLettersBtn.addEventListener('click', function() {
+            document.querySelectorAll('.class-letter-chk').forEach(chk => chk.checked = false);
+            executePeriodQuery();
+        });
+        document.querySelectorAll('.class-letter-chk').forEach(chk => {
+            chk.addEventListener('change', executePeriodQuery);
+        });
+
+        // 節數全選/清除與切換
+        selectAllPeriodsBtn.addEventListener('click', function() {
+            const targetDay = parseInt(daySelect.value);
+            const maxPeriod = (targetDay === 3) ? 9 : 10;
+            for (let i = 1; i <= 10; i++) {
+                document.getElementById(`p${i}`).checked = (i <= maxPeriod);
+            }
+            executePeriodQuery(); 
+        });
+
+        clearAllPeriodsBtn.addEventListener('click', function() {
+            for (let i = 1; i <= 10; i++) {
+                document.getElementById(`p${i}`).checked = false;
+            }
+            executePeriodQuery(); 
+        });
+
+        daySelect.addEventListener('change', function() {
+            handleWednesdayPeriodVisibility();
+            executePeriodQuery();
+        });
+
+        multiTeacherInput.addEventListener('input', executePeriodQuery);
+        periodCheckboxGroup.addEventListener('change', executePeriodQuery);
+        document.querySelectorAll('input[name="period-operator"]').forEach(radio => {
+            radio.addEventListener('change', executePeriodQuery);
+        });
+
+        clearMultiBtn.addEventListener('click', function() {
+            multiTeacherInput.value = '';
+            executePeriodQuery();
+            multiTeacherInput.focus();
+        });
+
+        // 功能二：總表核心
+        listAllButton.addEventListener('click', function() {
+            teacherLikeInput.value = ''; 
+            filterWrapper.classList.remove('hidden'); 
+            renderListAllTable(""); 
+        });
+
+        function renderListAllTable(keyword) {
+            const cleanKeyword = keyword.trim().toUpperCase();
+            const isF6Ended = f6EndedCheckbox.checked; 
+
+            const filteredTeachers = allTeachers.filter(teacher => 
+                teacher.toUpperCase().startsWith(cleanKeyword)
+            );
+
+            if (filteredTeachers.length === 0) {
+                searchResultsDiv.innerHTML = `<div style="padding:10px; background:#fff3cd; color:#856404; border-radius:4px; margin-top:10px; font-size:14px;">找不到教師。</div>`;
+                return;
+            }
+
+            let html = `
+                <div style="margin-bottom:8px; font-weight:bold; color:#2c3e50; margin-top: 10px; font-size:14px;">
+                    📊 全校教師每日空堂對照總表 (共 ${filteredTeachers.length} 位)
+                </div>
+                <div style="overflow-x: auto;">
+                <table class="results-table" style="font-size: 13px; text-align: center;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; min-width: 90px;">教師姓名</th>
+                            <th>星期</th>
+                            <th>第1節</th><th>第2節</th><th>第3節</th><th>第4節</th><th>第5節</th>
+                            <th>第6節</th><th>第7節</th><th>第8節</th><th>第9節</th><th>第10節</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            filteredTeachers.forEach(teacher => {
+                for (let day = 1; day <= 5; day++) {
+                    if (day === 1) {
+                        html += `<tr><td rowspan="5" style="text-align: left; vertical-align: middle; background: #ffffff; border-right: 2px solid #cbd5e1;"><strong>${teacher}</strong></td>`;
+                    } else {
+                        html += `<tr>`;
+                    }
+                    
+                    html += `<td style="background: #f1f5f9; font-weight: bold;">${dayNames[day].replace("星期", "周")}</td>`;
+                    
+                    for (let p = 1; p <= 10; p++) {
+                        if (day === 3 && p === 10) {
+                            html += `<td><span class="busy-block">-</span></td>`;
+                            continue;
+                        }
+
+                        const matchingLessons = allLessons.filter(l => l.teacher === teacher && l.day === day && l.period === p);
+                        
+                        if (matchingLessons.length === 0) {
+                            html += `<td><span class="free-block">O</span></td>`; 
+                        } else {
+                            const allLessonsAreF6 = matchingLessons.every(l => l.class && l.class.includes('6'));
+                            if (isF6Ended && allLessonsAreF6) {
+                                html += `<td><span class="f6-free-block">6</span></td>`;
+                            } else {
+                                html += `<td><span class="busy-block">-</span></td>`; 
+                            }
+                        }
+                    }
+                    html += `</tr>`;
+                }
+            });
+
+            html += `</tbody></table></div>`;
+            searchResultsDiv.innerHTML = html;
+        }
+
+        teacherLikeInput.addEventListener('input', function() {
+            renderListAllTable(this.value);
+        });
+
+        clearLikeBtn.addEventListener('click', function() {
+            teacherLikeInput.value = '';
+            renderListAllTable("");
+            teacherLikeInput.focus();
+        });
+
+        loadGoogleSheetData();
     });
-
-    html += `</tbody></table>`;
-    resultsDiv.innerHTML = html;
-});
-
-loadGoogleSheetData();
-</script>
+    </script>
 </body>
 </html>
