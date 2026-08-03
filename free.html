@@ -434,8 +434,8 @@
                             for(let i=1; i<=10; i++) {
                                 document.write(`<div class="checkbox-item" id="p${i}Wrapper"><input type="checkbox" class="period-chk" id="p${i}" value="${i}"><label for="p${i}">  ${i}</label></div>`);
                                 if (i===2 || i === 4  || i === 7) {
-                				  document.write(`<div> | </div>`);
-                				}
+                                  document.write(`<div> | </div>`);
+                                }
                             }
                         </script>
                     </div>
@@ -514,7 +514,7 @@
         const dayNames = ["", "星期一", "星期二", "星期三", "星期四", "星期五"];
 
         // 排序狀態管理
-        let currentSortColumn = 'name'; // 'name', 'freeCount', 'dailyLessons'
+        let currentSortColumn = 'name'; // 'name', 'freeCount', 'dailyLessons', 'formTeacherClass'
         let currentSortOrder = 'asc';    // 'asc', 'desc'
 
         // 取得所選的年級與班別字母
@@ -627,6 +627,18 @@
             return busyCount;
         }
 
+        // 取得班主任班別（星期三第九節，課堂名稱含有 CPA）
+        function getFormTeacherClass(teacher) {
+            const cpaLesson = allLessons.find(l => 
+                l.teacher === teacher && 
+                l.day === 3 && 
+                l.period === 9 && 
+                l.subject && 
+                l.subject.toUpperCase().includes('CPA')
+            );
+            return cpaLesson ? cpaLesson.class : '-';
+        }
+
         // 自動同步兩個中六核取方塊的狀態
         function syncF6State(sourceChecked) {
             f6EndedCheckbox.checked = sourceChecked;
@@ -686,15 +698,17 @@
                 
                 rows.forEach(row => {
                     const c = row.c;
-                    if (c && c.length >= 7) {
+                    if (c && c.length >= 6) {
                         const teacherName = c[3] ? String(c[3].v).trim() : '';
                         const className = c[4] ? String(c[4].v).trim() : ''; 
+                        const subjectName = c[5] ? String(c[5].v).trim() : ''; // 第六欄：課堂名稱
                         if (teacherName) {
                             allLessons.push({
                                 day:     c[1] ? parseInt(c[1].v) : 0,
                                 period:  c[2] ? parseInt(c[2].v) : 0,
                                 teacher: teacherName,
-                                class:   className 
+                                class:   className,
+                                subject: subjectName
                             });
                         }
                     }
@@ -835,12 +849,14 @@
                         });
 
                     const dailyCount = calculateDailyLessonsCount(teacher, targetDay, isF6Ended);
+                    const formTeacherClass = getFormTeacherClass(teacher);
 
                     freeTeachersResult.push({
                         name: teacher,
                         currentStatusHtml: getTeacherCurrentStatus(teacher, targetDay, isF6Ended),
                         freeCount: freeCount,
                         dailyLessons: dailyCount,
+                        formTeacherClass: formTeacherClass,
                         displayPeriods: periodDisplayStrings
                     });
                 }
@@ -875,10 +891,11 @@
                 <table class="results-table">
                     <thead>
                         <tr>
-                            <th style="width: 20%;" class="sortable-th" onclick="handleSort('name')">教師姓名${getSortIcon('name')}</th>
+                            <th style="width: 18%;" class="sortable-th" onclick="handleSort('name')">教師姓名${getSortIcon('name')}</th>
                             <th style="width: 22%;">現時狀態</th>
                             <th class="sortable-th" onclick="handleSort('freeCount')">具體空堂時段${getSortIcon('freeCount')}</th>
-                            <th style="width: 18%; text-align: center;" class="sortable-th" onclick="handleSort('dailyLessons')">當天總上課節數${getSortIcon('dailyLessons')}</th>
+                            <th style="width: 16%; text-align: center;" class="sortable-th" onclick="handleSort('dailyLessons')">當天總上課節數${getSortIcon('dailyLessons')}</th>
+                            <th style="width: 12%; text-align: center;" class="sortable-th" onclick="handleSort('formTeacherClass')">班主任${getSortIcon('formTeacherClass')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -890,6 +907,7 @@
                         <td>${item.currentStatusHtml}</td>
                         <td><span style="color: #2980b9; font-weight: 500; display:flex; gap:10px; flex-wrap:wrap;">${item.displayPeriods.join(', ')}</span></td>
                         <td style="text-align: center;"><strong>${item.dailyLessons}</strong> 節</td>
+                        <td style="text-align: center;"><strong>${item.formTeacherClass}</strong></td>
                     </tr>
                 `;
             });
